@@ -1,9 +1,10 @@
 import classNames from "classnames/bind";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Button from "@/components/Button";
-import { useUsersQuery } from "@/queries/useUsersQuery";
 import { useViewStore } from "@/store/view";
+import { supabase } from "@/utils/supabase";
 
 import styles from "./index.module.scss";
 
@@ -13,7 +14,7 @@ export default function Entry() {
   const { addToastMessage } = useViewStore((s) => s.actions);
   const navigate = useNavigate();
 
-  const { isLoading, refetch } = useUsersQuery();
+  const [isLoading, setIsLoading] = useState(false);
 
   return (
     <main className={cn("Entry")}>
@@ -39,7 +40,19 @@ export default function Entry() {
         <Button
           disabled={isLoading}
           onClick={async () => {
-            const { data } = await refetch();
+            setIsLoading(true);
+
+            const { data, error } = await supabase
+              .from("users")
+              .select("*")
+              .eq("id", 1)
+              .single();
+
+            if (error) {
+              alert(error);
+            }
+
+            setIsLoading(false);
 
             addToastMessage({
               message: `name : ${data?.name} / createdAt : ${data?.createdAt}`,
