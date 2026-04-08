@@ -55,7 +55,7 @@ export default function Entry() {
             setIsLoading(false);
 
             addToastMessage({
-              message: `name : ${data?.name} / createdAt : ${data?.createdAt}`,
+              message: `name : ${data?.name} / createdAt : ${data?.created_at}`,
             });
           }}
         >
