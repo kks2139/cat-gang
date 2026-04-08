@@ -1,0 +1,29 @@
+.ToastMessage {
+  z-index: 9999;
+  position: fixed;
+  top: calc(100% - 160px);
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 300px;
+  max-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: hidden;
+
+  .messages {
+    background-color: rgb(49, 49, 49);
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+    padding: 8px 16px;
+    border-radius: 12px;
+    text-align: center;
+    word-break: break-all;
+    width: fit-content;
+
+    &:not(:first-child) {
+      opacity: 0.2 !important;
+    }
+  }
+}

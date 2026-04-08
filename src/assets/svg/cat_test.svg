@@ -1,0 +1,87 @@
+<svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    /* 1. 꼬리 흔들기 */
+    @keyframes tailWag {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(20deg); }
+    }
+
+    /* 2. 숨쉬기 효과 (몸통 부풀리기) */
+    @keyframes breathing {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+    }
+
+    /* 3. 귀 움직이기 */
+    @keyframes earTwitch {
+      0%, 90%, 100% { transform: rotate(0deg); }
+      95% { transform: rotate(-20deg); }
+    }
+
+    .tail-group {
+      animation: tailWag 2s infinite ease-in-out;
+      transform-origin: 410px 230px;
+    }
+
+    .body-group {
+      animation: breathing 4s infinite ease-in-out;
+      transform-origin: 250px 250px;
+    }
+
+    .ear-left {
+      animation: earTwitch 3s infinite ease-in-out;
+      transform-origin: 150px 100px;
+    }
+
+    .ear-right {
+      animation: earTwitch 3.2s infinite ease-in-out reverse;
+      transform-origin: 350px 100px;
+    }
+  </style>
+
+  <g class="tail-group">
+    <path d="M 420 240 Q 480 200, 470 120 Q 465 80, 430 80 Q 400 80, 410 140 L 415 240" fill="#a1a6b0" stroke="#7e8491" stroke-width="2"/>
+    <path d="M 445 95 Q 465 105, 445 120" stroke="#7e8491" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M 440 135 Q 460 145, 440 160" stroke="#7e8491" stroke-width="4" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <path d="M 160 420 Q 160 460, 200 460 L 220 460 Q 240 460, 240 420" fill="#a1a6b0" stroke="#7e8491" stroke-width="2" />
+  <path d="M 340 420 Q 340 460, 300 460 L 280 460 Q 260 460, 260 420" fill="#a1a6b0" stroke="#7e8491" stroke-width="2" />
+  <path d="M 165 445 Q 180 460, 215 455" stroke="white" stroke-width="8" fill="none" stroke-linecap="round" />
+  <path d="M 335 445 Q 320 460, 285 455" stroke="white" stroke-width="8" fill="none" stroke-linecap="round" />
+
+  <g class="ear-left">
+    <path d="M 110 140 L 130 40 Q 150 20, 200 100 Z" fill="#a1a6b0" stroke="#7e8491" stroke-width="2"/>
+    <path d="M 130 120 L 145 60 Q 155 55, 180 100 Z" fill="#f3a4b6" />
+  </g>
+  <g class="ear-right">
+    <path d="M 390 140 L 370 40 Q 350 20, 300 100 Z" fill="#a1a6b0" stroke="#7e8491" stroke-width="2"/>
+    <path d="M 370 120 L 355 60 Q 345 55, 320 100 Z" fill="#f3a4b6" />
+  </g>
+
+  <g class="body-group">
+    <path d="M 70 250 Q 70 80, 250 80 Q 430 80, 430 250 Q 430 430, 250 430 Q 70 430, 70 250" fill="#a1a6b0" stroke="#7e8491" stroke-width="2"/>
+    <ellipse cx="250" cy="340" rx="110" ry="70" fill="#dbe1e8" />
+    
+    <path d="M 220 100 Q 250 85, 280 100" stroke="#7e8491" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <path d="M 235 125 Q 250 115, 265 125" stroke="#7e8491" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M 380 230 Q 410 235, 415 255" stroke="#7e8491" stroke-width="10" fill="none" stroke-linecap="round" opacity="0.6"/>
+    <path d="M 375 275 Q 405 280, 410 300" stroke="#7e8491" stroke-width="10" fill="none" stroke-linecap="round" opacity="0.6"/>
+
+    <circle cx="175" cy="210" r="35" fill="white" />
+    <circle cx="175" cy="210" r="25" fill="#4a352a" />
+    <circle cx="185" cy="200" r="8" fill="white" />
+    <circle cx="325" cy="210" r="35" fill="white" />
+    <circle cx="325" cy="210" r="25" fill="#4a352a" />
+    <circle cx="335" cy="200" r="8" fill="white" />
+
+    <circle cx="230" cy="265" r="22" fill="#f5f5f5" />
+    <circle cx="270" cy="265" r="22" fill="#f5f5f5" />
+    <path d="M 242 250 Q 250 242, 258 250 L 250 262 Z" fill="#f3a4b6" />
+
+    <line x1="100" y1="240" x2="40" y2="230" stroke="#7e8491" stroke-width="2" />
+    <line x1="100" y1="260" x2="35" y2="265" stroke="#7e8491" stroke-width="2" />
+    <line x1="400" y1="240" x2="460" y2="230" stroke="#7e8491" stroke-width="2" />
+    <line x1="400" y1="260" x2="465" y2="265" stroke="#7e8491" stroke-width="2" />
+  </g>
+</svg>

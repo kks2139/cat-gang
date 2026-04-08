@@ -1,0 +1,66 @@
+.Status {
+  font-size: 15px;
+
+  &.me {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+  }
+
+  .label {
+    width: 40px;
+  }
+
+  strong {
+    font-weight: bold;
+    color: var(--yellow-1);
+  }
+
+  .hp {
+    .hp-bar {
+      position: relative;
+      width: 100px;
+      height: 6px;
+      border-radius: 8px;
+      box-shadow: 0 0 0 1px white;
+
+      .bar,
+      .effect {
+        height: 100%;
+        border-radius: 8px;
+        background-color: var(--green-1);
+        transition: 0.5s;
+      }
+
+      .effect {
+        z-index: -1;
+        position: absolute;
+        top: 0;
+        left: 0;
+        transition: width 1.5s;
+        background-color: rgb(255, 87, 87);
+      }
+    }
+
+    .value {
+      display: flex;
+      justify-content: center;
+      margin-top: 3px;
+      font-weight: bold;
+
+      .current {
+        margin-right: 4px;
+        transition: 0.2s;
+
+        &.red {
+          color: rgb(255, 173, 173);
+        }
+      }
+    }
+  }
+}

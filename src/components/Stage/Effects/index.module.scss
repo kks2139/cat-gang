@@ -1,0 +1,51 @@
+.punch {
+  z-index: 9;
+  position: absolute;
+  bottom: 20px;
+
+  img {
+    transform: rotate(45deg);
+  }
+}
+
+.seduce {
+  z-index: 9;
+  position: absolute;
+  top: 0;
+  animation: verticalWave 0.5s ease-in-out infinite,
+    horizontalMove 3s linear infinite;
+
+  &.enemy {
+    top: 100%;
+    animation: verticalWave 0.5s ease-in-out infinite,
+      horizontalMoveEnemy 3s linear infinite;
+  }
+
+  @keyframes verticalWave {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+
+  @keyframes horizontalMove {
+    0% {
+      left: 100%;
+    }
+    100% {
+      left: 85vw;
+    }
+  }
+
+  @keyframes horizontalMoveEnemy {
+    0% {
+      left: 0;
+    }
+    100% {
+      left: -60vh;
+    }
+  }
+}

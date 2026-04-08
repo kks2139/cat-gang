@@ -1,0 +1,21 @@
+.Entry {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  padding: 20px;
+
+  background-image: url("@/assets/img/cat_gang.png");
+  background-size: cover; /* 이미지가 비율을 유지하며 화면을 가득 채움 */
+  background-position: center; /* 이미지를 중앙에 배치 */
+  background-repeat: no-repeat; /* 이미지 반복 안 함 */
+  background-attachment: fixed; /* 스크롤 해도 배경은 고정 (선택 사항) */
+
+  .menu {
+    display: flex;
+    flex-direction: column;
+    row-gap: 5px;
+    transform: translateY(50px);
+  }
+}

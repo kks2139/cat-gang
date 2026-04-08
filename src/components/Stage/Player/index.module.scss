@@ -1,0 +1,67 @@
+.Player {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  column-gap: 15px;
+  color: white;
+
+  .cat {
+    position: relative;
+
+    &.speaking {
+      animation: speaking-shake 0.5s infinite;
+    }
+
+    .cat-img {
+      transition: 0.5s;
+
+      &.punch {
+        animation: hit 0.5s;
+      }
+
+      &.lose {
+        transform: rotate(20deg) translateY(10px);
+        filter: grayscale(100%) brightness(0.3);
+      }
+
+      &.run {
+        animation: run-to-left 1.5s forwards;
+      }
+    }
+
+    @keyframes speaking-shake {
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-4px);
+      }
+    }
+
+    @keyframes hit {
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+      33% {
+        transform: translateX(-10px);
+      }
+      66% {
+        transform: translateX(10px);
+      }
+    }
+
+    @keyframes run-to-left {
+      0% {
+        transform: translateX(0);
+      }
+      10% {
+        transform: translateX(20px);
+      }
+      100% {
+        transform: translateX(-50vw);
+      }
+    }
+  }
+}

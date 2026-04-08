@@ -1,0 +1,32 @@
+.Button {
+  padding: 10px 20px;
+  border-radius: 16px;
+  font-size: 18px;
+  font-weight: bold;
+  background-color: white;
+  color: black;
+  border: 2px dashed black;
+  outline: 1px solid;
+  outline-offset: -5px;
+  text-align: center;
+  transition: 0.1s;
+
+  &.small {
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+
+  &.large {
+    width: 100%;
+    font-size: 20px;
+  }
+
+  &:disabled {
+    background-color: rgb(192, 192, 192);
+  }
+
+  &:active {
+    background-color: rgb(192, 192, 192);
+    transform: scaleX(0.97);
+  }
+}
