@@ -4,22 +4,14 @@ import { supabase } from "@/utils/db/supabase";
 
 import { QUERY_KEY } from "./config";
 
-interface Result {
-  id: number;
-  name: string;
-  crying: string;
-  created_at: string;
-}
-
-export const useUsersQuery = () => {
+export const useMyCatsQuery = () => {
   return useQuery({
-    queryKey: [QUERY_KEY.USERS],
+    queryKey: [QUERY_KEY.MY_CATS],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", 1) // 유저 아이디로 교체
-        .single<Result>();
+        .from("own_cats")
+        .select("cat_name, position, created_at")
+        .eq("user_id", 1);
 
       if (error) {
         alert(error);
@@ -27,6 +19,6 @@ export const useUsersQuery = () => {
 
       return data;
     },
-    staleTime: Infinity,
+    staleTime: 1000 * 60 * 5,
   });
 };

@@ -7,9 +7,11 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "update-types": "npx supabase gen types typescript --project-id \"vvdwvymzsuezknmfuoza\" > src/utils/db/types.ts"
   },
   "dependencies": {
+    "@apps-in-toss/web-framework": "^2.4.5",
     "@number-flow/react": "^0.6.0",
     "@supabase/supabase-js": "^2.102.1",
     "@tanstack/react-query": "^5.96.2",

@@ -1,0 +1,31 @@
+.Skeleton {
+  $back: #e0e0e0;
+  $center: #bebebee3;
+  $dark-back: #707070;
+  $dark-center: #4b4b4be3;
+
+  background-size: 400% 400% !important;
+  background: linear-gradient(
+    -60deg,
+    $back,
+    $back,
+    $back,
+    $back,
+    $center,
+    $back,
+    $back,
+    $back,
+    $back
+  );
+  animation: animate 1.2s linear infinite;
+}
+
+@keyframes animate {
+  0% {
+    background-position: 100% 100%;
+  }
+
+  100% {
+    background-position: 0% 0%;
+  }
+}

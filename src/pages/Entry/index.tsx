@@ -2,6 +2,7 @@ import classNames from "classnames/bind";
 import { useNavigate } from "react-router-dom";
 
 import Button from "@/components/Button";
+import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
 import { useUsersQuery } from "@/queries/useUsersQuery";
 import { useViewStore } from "@/store/view";
 
@@ -14,6 +15,7 @@ export default function Entry() {
   const navigate = useNavigate();
 
   const { refetch, isFetching } = useUsersQuery();
+  useMyCatsQuery();
 
   return (
     <main className={cn("Entry")}>

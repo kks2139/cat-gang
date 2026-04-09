@@ -10,18 +10,18 @@ import Map from "@/components/Map";
 import Stage from "@/components/Stage";
 import { useCatchCatMutation } from "@/queries/useCatchCatMutation";
 import { useCatStore } from "@/store/cat";
-import { catCharacters, type CatInfo } from "@/utils/cats";
+import { type CatInfo } from "@/utils/cats";
 import { getPostposition } from "@/utils/helper";
 
 import styles from "./index.module.scss";
+import MyCats from "./MyCats";
 
 const cn = classNames.bind(styles);
 
 export default function FindCat() {
   const navigate = useNavigate();
 
-  const { setSelectedCat, addCatchedCat } = useCatStore((s) => s.actions);
-  const catchedCats = useCatStore((s) => s.catchedCats);
+  const { setSelectedCat } = useCatStore((s) => s.actions);
 
   const [isShowPopup, setIsShowPopup] = useState(false);
   const [catchedCat, setCatchedCat] = useState<CatInfo>();
@@ -50,13 +50,6 @@ export default function FindCat() {
           </Button>
           <Button
             onClick={() => {
-              setSelectedMenu("all");
-            }}
-          >
-            냥아치 목록
-          </Button>
-          <Button
-            onClick={() => {
               navigate(-1);
             }}
           >
@@ -73,45 +66,11 @@ export default function FindCat() {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
-              <button
-                className={cn("close-button")}
-                type="button"
-                onClick={() => {
+              <MyCats
+                onClose={() => {
                   setSelectedMenu(undefined);
                 }}
-              >
-                닫기
-              </button>
-
-              <div className={cn("wrapper")}>
-                {selectedMenu === "catched" &&
-                  (catchedCats.length > 0 ? (
-                    <ul>
-                      {catchedCats.map(({ name, img, crying }) => (
-                        <li key={name}>
-                          <img src={img} alt={name} width={50} height={50} />
-                          <span>{name} :</span>
-                          <span>{crying}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <div className={cn("empty")}>
-                      크흡.. 부하가 하나도 없다니
-                    </div>
-                  ))}
-                {selectedMenu === "all" && (
-                  <ul>
-                    {catCharacters.map(({ name, img, crying }) => (
-                      <li key={name}>
-                        <img src={img} alt={name} width={50} height={50} />
-                        <span>{name} :</span>
-                        <span>{crying}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+              />
             </motion.div>
           )}
         </AnimatePresence>
@@ -177,10 +136,6 @@ export default function FindCat() {
         }
         buttonLable="확인"
         onButtonClick={() => {
-          if (catchedCat) {
-            addCatchedCat(catchedCat);
-          }
-
           setCatchedCat(undefined);
         }}
       />

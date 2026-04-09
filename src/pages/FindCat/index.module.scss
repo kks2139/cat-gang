@@ -16,7 +16,6 @@ $map-margin: 6px;
     display: flex;
     flex-direction: column;
     padding: 10px;
-    // box-shadow: 0 0 0 1px blue;
 
     .buttons {
       display: flex;
@@ -25,60 +24,9 @@ $map-margin: 6px;
     .content {
       position: relative;
       margin-top: 15px;
-      // padding: 10px;
-      // min-height: 150px;
-      // max-height: 350px;
-      // overflow-y: auto;
       border: 1px solid black;
       outline: 2px solid;
       outline-offset: 3px;
-
-      .wrapper {
-        padding: 10px;
-        min-height: 150px;
-        max-height: 350px;
-        overflow-y: auto;
-      }
-
-      .close-button {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        padding: 2px 14px;
-        border: 1px solid black;
-        border-radius: 10px;
-      }
-
-      ul {
-        display: flex;
-        flex-direction: column;
-        row-gap: 6px;
-
-        li {
-          display: flex;
-          column-gap: 10px;
-          align-items: center;
-          font-weight: bold;
-
-          &:not(:last-of-type)::after {
-            content: "";
-            position: absolute;
-            left: 0;
-            bottom: -10px;
-            width: 100%;
-            background-color: blue;
-          }
-        }
-      }
-
-      .empty {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-weight: bold;
-        font-size: 16px;
-      }
     }
   }
 
