@@ -2,7 +2,7 @@ import classNames from "classnames/bind";
 
 import Skeleton from "@/components/Skeleton";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
-import { catCharacters } from "@/utils/cats";
+import { catCharacters, type CatInfo, getCat } from "@/utils/cats";
 
 import styles from "./index.module.scss";
 
@@ -15,9 +15,9 @@ interface Props {
 export default function MyCats({ onClose }: Props) {
   const { data, isLoading } = useMyCatsQuery();
 
-  const myCats = catCharacters.filter(({ name }) =>
-    data?.some((c) => c.cat_name === name)
-  );
+  const myCats = data
+    ?.filter(({ cat_name }) => catCharacters.some((c) => c.name === cat_name))
+    .map((c) => getCat(c.cat_name)) as CatInfo[];
 
   if (isLoading) {
     return (
@@ -47,8 +47,8 @@ export default function MyCats({ onClose }: Props) {
       <div className={cn("wrapper")}>
         {myCats?.length ? (
           <ul>
-            {myCats.map(({ name, img, crying }) => (
-              <li key={name}>
+            {myCats.map(({ name, img, crying }, i) => (
+              <li key={name + i}>
                 <img src={img} alt={name} width={50} height={50} />
                 <span>{name} :</span>
                 <span>{crying}</span>

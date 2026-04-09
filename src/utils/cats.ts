@@ -517,3 +517,7 @@ export const catCharacters = [
     },
   },
 ];
+
+export const getCat = (name: string) => {
+  return catCharacters.find((c) => c.name === name);
+};
