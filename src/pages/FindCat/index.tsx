@@ -8,6 +8,7 @@ import Button from "@/components/Button";
 import Dialog from "@/components/Dialog";
 import Map from "@/components/Map";
 import Stage from "@/components/Stage";
+import { useCatchCatMutation } from "@/queries/useCatchCatMutation";
 import { useCatStore } from "@/store/cat";
 import { catCharacters, type CatInfo } from "@/utils/cats";
 import { getPostposition } from "@/utils/helper";
@@ -25,6 +26,8 @@ export default function FindCat() {
   const [isShowPopup, setIsShowPopup] = useState(false);
   const [catchedCat, setCatchedCat] = useState<CatInfo>();
   const [selectedMenu, setSelectedMenu] = useState<"catched" | "all">();
+
+  const { mutate: addCat } = useCatchCatMutation();
 
   return (
     <main className={cn("FindCat")}>
@@ -130,6 +133,14 @@ export default function FindCat() {
               onWin={(cat) => {
                 setIsShowPopup(false);
 
+                addCat({
+                  catName: cat.name,
+                  position: {
+                    lat: cat.marker?.getPosition().getLat() || 0,
+                    lng: cat.marker?.getPosition().getLng() || 0,
+                  },
+                });
+
                 setTimeout(() => {
                   cat.marker?.setImage(
                     new kakao.maps.MarkerImage(
@@ -168,8 +179,6 @@ export default function FindCat() {
         onButtonClick={() => {
           if (catchedCat) {
             addCatchedCat(catchedCat);
-
-            // TODO: 잡은 고양이목록 디비저장
           }
 
           setCatchedCat(undefined);

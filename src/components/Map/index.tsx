@@ -202,7 +202,13 @@ export default function Map({ className, onClickCatMarker }: Props) {
   }, [showRandomCatMarkers]);
 
   useEffect(() => {
+    if (mapRef.current) {
+      return;
+    }
+
     if (window.kakao?.maps) {
+      initMap();
+
       return;
     }
 

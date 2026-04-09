@@ -1,25 +1,32 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { fetchData } from "@/utils/fetch";
+import { supabase } from "@/utils/supabase";
 
 import { QUERY_KEY } from "./config";
 
-interface ResponseData {
+interface User {
   id: number;
   name: string;
-  createdAt: string;
+  crying: string;
+  created_at: string;
 }
 
 export const useUsersQuery = () => {
   return useQuery({
     enabled: false,
     queryKey: [QUERY_KEY.USERS],
-    queryFn: () => {
-      return fetchData<ResponseData>({
-        method: "GET",
-        url: "/api/users",
-        params: { id: 1 },
-      });
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("id", 1) // 유저 아이디로 교체
+        .single<User>();
+
+      if (error) {
+        alert(error);
+      }
+
+      return data;
     },
   });
 };
