@@ -64,13 +64,27 @@ input {
 }
 
 .my-overlay {
+  z-index: 10;
+  position: relative;
   background-color: var(--yellow-1);
   border-radius: 6px;
-  box-shadow: 0 2px 8px 0 rgb(95, 95, 95);
-  padding: 2px 4px;
+  box-shadow: 0 2px 5px 0 rgba(95, 95, 95, 0.438);
+  padding: 3px 8px;
   color: rgb(0, 0, 0);
   font-size: 13px;
-  transform: translateY(-55px);
+  transform: translateY(-60px);
+
+  &::after {
+    content: "";
+    z-index: -1;
+    position: absolute;
+    top: calc(100% - 4px);
+    left: 50%;
+    transform: rotate(45deg) translateX(-50%);
+    width: 10px;
+    height: 10px;
+    background-color: var(--yellow-1);
+  }
 }
 
 .cat-overlay {

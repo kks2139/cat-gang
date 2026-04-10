@@ -23,7 +23,7 @@ export default function FindCat() {
 
   const { setSelectedCat } = useCatStore((s) => s.actions);
 
-  const [isShowPopup, setIsShowPopup] = useState(false);
+  const [isShowStage, setIsShowStage] = useState(false);
   const [catchedCat, setCatchedCat] = useState<CatInfo>();
   const [selectedMenu, setSelectedMenu] = useState<"catched" | "all">();
 
@@ -34,7 +34,7 @@ export default function FindCat() {
       <Map
         className={cn("map")}
         onClickCatMarker={() => {
-          setIsShowPopup(true);
+          setIsShowStage(true);
           setSelectedMenu(undefined);
         }}
       />
@@ -77,7 +77,7 @@ export default function FindCat() {
       </div>
 
       <AnimatePresence>
-        {!!isShowPopup && (
+        {!!isShowStage && (
           <motion.div
             className={cn("img-popup")}
             initial={{ opacity: 0, scale: 0 }}
@@ -87,10 +87,10 @@ export default function FindCat() {
           >
             <Stage
               onClose={() => {
-                setIsShowPopup(false);
+                setIsShowStage(false);
               }}
               onWin={(cat) => {
-                setIsShowPopup(false);
+                setIsShowStage(false);
 
                 addCat({
                   catName: cat.name,

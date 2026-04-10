@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import ImgCatGuide from "@/assets/img/cat_guide.png";
+import ImgCatMe from "@/assets/img/cat_me.png";
 import { useCatStore } from "@/store/cat";
 import { catCharacters } from "@/utils/cats";
 import { getRandomLocation } from "@/utils/helper";
@@ -22,6 +23,7 @@ export default function Map({ className, onClickCatMarker }: Props) {
 
   const [isLoading, setIsLoading] = useState(false);
 
+  const isRendered = useRef(false);
   const mapDivRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<kakao.maps.Map>(null);
   const myMarkerRef = useRef<kakao.maps.Marker>(null);
@@ -35,8 +37,8 @@ export default function Map({ className, onClickCatMarker }: Props) {
       const markerImage = imageSrc
         ? new kakao.maps.MarkerImage(
             imageSrc,
-            new kakao.maps.Size(40, 40), // 마커이미지의 크기입니다
-            { offset: new kakao.maps.Point(0, 0) } // 마커이미지의 옵션입니다. 마커의 좌표와 일치시킬 이미지 안에서의 좌표를 설정합니다.
+            new kakao.maps.Size(40, 40) // 마커이미지의 크기입니다
+            // { offset: new kakao.maps.Point(0, 0) } // 마커이미지의 옵션입니다. 마커의 좌표와 일치시킬 이미지 안에서의 좌표를 설정합니다.
           )
         : undefined;
 
@@ -86,14 +88,15 @@ export default function Map({ className, onClickCatMarker }: Props) {
         ({ coords: { latitude, longitude } }) => {
           const position = new kakao.maps.LatLng(latitude, longitude);
           const marker =
-            myMarkerRef.current || showMarker(mapRef.current!, position);
+            myMarkerRef.current ||
+            showMarker(mapRef.current!, position, ImgCatMe);
 
           myMarkerRef.current = marker;
 
           showMyOverLay(
             marker,
             `<div class="my-overlay">
-              <span>내 위치</span>
+              <span>나</span>
             </div>`
           );
 
@@ -202,7 +205,7 @@ export default function Map({ className, onClickCatMarker }: Props) {
   }, [showRandomCatMarkers]);
 
   useEffect(() => {
-    if (mapRef.current) {
+    if (mapRef.current || isRendered.current) {
       return;
     }
 
@@ -212,20 +215,17 @@ export default function Map({ className, onClickCatMarker }: Props) {
       return;
     }
 
-    const script = document.createElement("script");
     const appKey = import.meta.env.VITE_KKO_MAP_KEY;
-
+    const script = document.createElement("script");
     script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&libraries=services&autoload=false`;
     script.async = true;
-
     script.onload = () => {
-      // 카카오맵 특유의 'autoload=false' 설정 시 필요
-      window.kakao.maps.load(() => {
-        initMap();
-      });
+      initMap();
     };
 
     document.head.appendChild(script);
+
+    isRendered.current = true;
   }, [initMap]);
 
   return (
