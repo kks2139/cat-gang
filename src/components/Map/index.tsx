@@ -26,52 +26,51 @@ export default function Map({ className, onClickCatMarker }: Props) {
   const isRendered = useRef(false);
   const mapDivRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<kakao.maps.Map>(null);
-  const myMarkerRef = useRef<kakao.maps.Marker>(null);
-  const myOverlayRef = useRef<kakao.maps.CustomOverlay>(null);
+
+  const myCatOverlayRef = useRef<kakao.maps.CustomOverlay>(null);
   const catOverlaysRef = useRef<kakao.maps.CustomOverlay[]>([]);
-  const randomMarkersRef = useRef<kakao.maps.Marker[]>([]);
 
-  // 지도에 마커를 표시하는 함수입니다
-  const showMarker = useCallback(
-    (map: kakao.maps.Map, position: kakao.maps.LatLng, imageSrc?: string) => {
-      const markerImage = imageSrc
-        ? new kakao.maps.MarkerImage(
-            imageSrc,
-            new kakao.maps.Size(40, 40) // 마커이미지의 크기입니다
-            // { offset: new kakao.maps.Point(0, 0) } // 마커이미지의 옵션입니다. 마커의 좌표와 일치시킬 이미지 안에서의 좌표를 설정합니다.
-          )
-        : undefined;
+  const createCatOverlay = useCallback(
+    (position: kakao.maps.LatLng, charImgUrl: string, isMe?: boolean) => {
+      // 최상위 컨테이너
+      const container = document.createElement("div");
+      container.dataset.cat = "true";
+      container.dataset.status = "none";
+      container.classList.add("cat-overlay");
+      container.style.animationDelay = `-${Math.floor(Math.random() * 10)}s`;
 
-      // 마커를 생성합니다
-      const marker = new kakao.maps.Marker({
-        map,
-        position,
-        image: markerImage,
-      });
+      if (isMe) {
+        container.classList.add("no-animation");
 
-      return marker;
-    },
-    []
-  );
+        const wrapper = document.createElement("div");
+        wrapper.className = "arrow-3d-wrapper";
+        const arrow = document.createElement("div");
+        arrow.className = "arrow-3d";
 
-  const showMyOverLay = useCallback(
-    (marker: kakao.maps.Marker, content: string) => {
-      if (!mapRef.current) {
-        return;
+        wrapper.appendChild(arrow);
+        container.appendChild(wrapper);
       }
 
-      const overlay =
-        myOverlayRef.current ||
-        new kakao.maps.CustomOverlay({
-          map: mapRef.current,
-          content,
-          position: marker.getPosition(),
-        });
+      // 캐릭터 이미지
+      const character = document.createElement("img");
+      character.src = charImgUrl;
 
-      myOverlayRef.current = overlay;
+      container.appendChild(character);
 
-      // 중심좌표를 해당 위치로 부드럽게 이동
-      mapRef.current.panTo(marker.getPosition());
+      const overlay = new kakao.maps.CustomOverlay({
+        position: position,
+        content: container,
+        xAnchor: 0.5,
+        yAnchor: 1,
+      });
+
+      // 생성한 overlay 지도에 표시
+      overlay.setMap(mapRef.current);
+
+      return {
+        overlay,
+        container,
+      };
     },
     []
   );
@@ -87,18 +86,10 @@ export default function Map({ className, onClickCatMarker }: Props) {
       navigator.geolocation.getCurrentPosition(
         ({ coords: { latitude, longitude } }) => {
           const position = new kakao.maps.LatLng(latitude, longitude);
-          const marker =
-            myMarkerRef.current ||
-            showMarker(mapRef.current!, position, ImgCatMe);
+          const { overlay } = createCatOverlay(position, ImgCatMe, true);
 
-          myMarkerRef.current = marker;
-
-          showMyOverLay(
-            marker,
-            `<div class="my-overlay">
-              <span>나</span>
-            </div>`
-          );
+          myCatOverlayRef.current = overlay;
+          mapRef.current!.panTo(overlay.getPosition());
 
           setIsLoading(false);
           res();
@@ -112,77 +103,47 @@ export default function Map({ className, onClickCatMarker }: Props) {
         }
       );
     });
-  }, [showMarker, showMyOverLay]);
+  }, [createCatOverlay]);
 
   const showRandomCatMarkers = useCallback(async () => {
     await showMyPosition();
 
-    if (!myMarkerRef.current) {
+    if (!myCatOverlayRef.current) {
       return;
     }
 
-    const position = myMarkerRef.current.getPosition();
+    const myPosition = myCatOverlayRef.current.getPosition();
 
     // 이전에 생성한 랜덤 마커들 해제
-    randomMarkersRef.current.forEach((marker) => {
-      marker.setMap(null);
+    catOverlaysRef.current.forEach((overlay) => {
+      overlay.setMap(null);
     });
-    randomMarkersRef.current = [];
+    catOverlaysRef.current = [];
 
     catCharacters.forEach((cat) => {
       const randomLatLng = getRandomLocation(
-        position.getLat(),
-        position.getLng(),
-        40
+        myPosition.getLat(),
+        myPosition.getLng(),
+        55
       );
 
-      const marker = showMarker(mapRef.current!, randomLatLng, cat.img);
+      const { overlay, container } = createCatOverlay(randomLatLng, cat.img);
 
-      // 이긴 상대인지 아닌지 알기위한 표시
-      marker.setTitle("active");
+      container.addEventListener("click", (e) => {
+        const elem = e.currentTarget as HTMLElement;
 
-      kakao.maps.event.addListener(marker, "click", () => {
-        if (marker.getTitle() !== "active") {
+        if (elem.dataset.status !== "none") {
           return;
         }
 
-        setSelectedCat({ ...cat, marker });
+        setSelectedCat({ ...cat, overlay, overlayContent: container });
 
         onClickCatMarker?.();
       });
 
-      // 이전에 생성한 overlay들 해제
-      catOverlaysRef.current.forEach((overlays) => {
-        overlays.setMap(null);
-      });
-      catOverlaysRef.current = [];
-
-      const catOverlay = new kakao.maps.CustomOverlay({
-        content: `<div class='cat-overlay'>
-            <div class='name'>
-              <span>이름 : </span>
-              <strong>${cat.name}</strong>
-            </div>
-            <div class='description'>
-              <span>소개 : </span>
-              <strong>${cat.crying}</strong>
-            </div>
-          </div>`,
-        position: marker.getPosition(),
-      });
-
-      catOverlaysRef.current.push(catOverlay);
-
-      kakao.maps.event.addListener(marker, "mouseover", () => {
-        catOverlay.setMap(mapRef.current);
-      });
-      kakao.maps.event.addListener(marker, "mouseout", function () {
-        catOverlay.setMap(null);
-      });
-
-      randomMarkersRef.current.push(marker);
+      catOverlaysRef.current.push(overlay);
     });
-  }, [onClickCatMarker, setSelectedCat, showMarker, showMyPosition]);
+  }, [createCatOverlay, onClickCatMarker, setSelectedCat, showMyPosition]);
 
   const initMap = useCallback(() => {
     kakao.maps.load(() => {

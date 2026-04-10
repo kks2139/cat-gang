@@ -21,7 +21,8 @@ export interface CatInfo {
   img: string;
   hp: number;
   punchPower: number;
-  marker?: kakao.maps.Marker;
+  overlay?: kakao.maps.CustomOverlay;
+  overlayContent?: HTMLDivElement;
   // 상황별 대사
   dialog: {
     meet: string[]; // 시작

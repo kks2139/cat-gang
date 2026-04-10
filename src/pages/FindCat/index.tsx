@@ -3,7 +3,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import ImgWinningFlag from "@/assets/img/winning_flag.png";
 import Button from "@/components/Button";
 import Dialog from "@/components/Dialog";
 import Map from "@/components/Map";
@@ -27,7 +26,7 @@ export default function FindCat() {
   const [catchedCat, setCatchedCat] = useState<CatInfo>();
   const [selectedMenu, setSelectedMenu] = useState<"catched" | "all">();
 
-  const { mutate: addCat } = useCatchCatMutation();
+  const { mutate: postCatMutate } = useCatchCatMutation();
 
   return (
     <main className={cn("FindCat")}>
@@ -92,25 +91,17 @@ export default function FindCat() {
               onWin={(cat) => {
                 setIsShowStage(false);
 
-                addCat({
+                const { overlay } = cat;
+
+                postCatMutate({
                   catName: cat.name,
                   position: {
-                    lat: cat.marker?.getPosition().getLat() || 0,
-                    lng: cat.marker?.getPosition().getLng() || 0,
+                    lat: overlay?.getPosition().getLat() || 0,
+                    lng: overlay?.getPosition().getLng() || 0,
                   },
                 });
 
                 setTimeout(() => {
-                  cat.marker?.setImage(
-                    new kakao.maps.MarkerImage(
-                      ImgWinningFlag,
-                      new kakao.maps.Size(30, 30),
-                      { offset: new kakao.maps.Point(0, 0) }
-                    )
-                  );
-
-                  cat.marker?.setTitle("catched");
-
                   setSelectedCat(undefined);
                   setCatchedCat(cat);
                 }, 500);

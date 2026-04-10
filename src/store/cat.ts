@@ -16,7 +16,8 @@ export const useCatStore = create<CatStore>()(
     actions: {
       setSelectedCat(value) {
         set((state) => {
-          state.selectedCat = value;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          state.selectedCat = value as any;
         });
       },
     },
