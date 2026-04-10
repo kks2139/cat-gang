@@ -36,3 +36,23 @@ export const getRandomLocation = (
 
 export const getRandomNumber = (maxNum: number) =>
   Math.floor(Math.random() * maxNum);
+
+export const getFireworkElement = () => {
+  // 1. 폭죽 컨테이너 생성
+  const explosion = document.createElement("div");
+  explosion.className = "papyrus-explosion";
+
+  // 2. 8개의 조각 생성 및 조립
+  for (let i = 0; i < 8; i++) {
+    const piece = document.createElement("div");
+    piece.className = "piece";
+    explosion.appendChild(piece);
+  }
+
+  // 4. 애니메이션 종료 후 DOM에서 제거 (메모리 관리)
+  setTimeout(() => {
+    explosion.remove();
+  }, 3200); // 애니메이션 시간($duration)보다 살짝 길게
+
+  return explosion;
+};

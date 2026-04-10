@@ -29,6 +29,9 @@ importers:
       classnames:
         specifier: ^2.5.1
         version: 2.5.1
+      date-fns:
+        specifier: ^4.1.0
+        version: 4.1.0
       framer-motion:
         specifier: ^12.38.0
         version: 12.38.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -3778,6 +3781,9 @@ packages:
   date-fns@2.30.0:
     resolution: {integrity: sha512-fnULvOpxnC5/Vg3NCiWelDsLiUc9bRwAPs/+LfTLNvetFCtCTN+yQz15C/fs4AwX1R9K5GLtLfn8QW+dWisaAw==}
     engines: {node: '>=0.11'}
+
+  date-fns@4.1.0:
+    resolution: {integrity: sha512-Ukq0owbQXxa/U3EGtsdVBkR1w7KOQ5gIBqdH2hkvknzZPYvBxb/aa6E8L7tmjFtkwZBu3UXBbjIgPo/Ez4xaNg==}
 
   dayjs@1.11.20:
     resolution: {integrity: sha512-YbwwqR/uYpeoP4pu043q+LTDLFBLApUP6VxRihdfNTqu4ubqMlGDLd6ErXhEgsyvY0K6nCs7nggYumAN+9uEuQ==}
@@ -12578,6 +12584,8 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.29.2
 
+  date-fns@4.1.0: {}
+
   dayjs@1.11.20: {}
 
   debug@2.6.9:
@@ -13957,7 +13965,7 @@ snapshots:
       '@babel/register': 7.28.6(@babel/core@7.29.0)
       babel-core: 7.0.0-bridge.0(@babel/core@7.29.0)
       chalk: 4.1.2
-      flow-parser: 0.206.0
+      flow-parser: 0.309.0
       graceful-fs: 4.2.11
       micromatch: 4.0.8
       neo-async: 2.6.2
@@ -14565,7 +14573,7 @@ snapshots:
 
   metro-runtime@0.76.8:
     dependencies:
-      '@babel/runtime': 7.28.4
+      '@babel/runtime': 7.29.2
       react-refresh: 0.4.3
 
   metro-source-map@0.72.3:

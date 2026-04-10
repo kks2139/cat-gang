@@ -1,5 +1,7 @@
-// 기본 스타일 제거
+@use "sass:math";
+@use "sass:list";
 
+// 기본 스타일 제거
 *,
 *::before,
 *::after {
@@ -106,6 +108,116 @@ input {
     }
   }
 
+  &.small-shadow {
+    &::after {
+      width: 40px;
+      height: 3px;
+      opacity: 0.6;
+      margin-top: -5px;
+      margin-left: 5px;
+    }
+  }
+
+  .flag-wrapper {
+    $flag-color: #f8f9fa;
+    $pole-color: #969696;
+    $waving-speed: 1.5s;
+
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 40px;
+    margin-bottom: 5px;
+
+    // 생성될때 모션션
+    animation: appear 1.5s forwards;
+
+    // 1. 깃대 (Pole)
+    .pole {
+      position: absolute;
+      bottom: 0;
+      left: 10px; // 깃발이 붙을 위치
+      width: 3px;
+      height: 100%;
+      background-color: $pole-color;
+      border-radius: 2px;
+      z-index: 2;
+
+      // 깃대 꼭대기 장식 (선택 사항)
+      &::after {
+        content: "";
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        width: 7px;
+        height: 7px;
+        background-color: #969696;
+        border-radius: 50%;
+      }
+    }
+
+    // 2. 깃발 (Flag)
+    .flag {
+      position: absolute;
+      top: 5px;
+      left: 13px; // 깃대 바로 옆에 부착
+      width: 35px;
+      height: 22px;
+      background-color: $flag-color;
+      border: 1px solid #ddd;
+      border-left: none; // 깃대와 붙는 부분은 선을 없앰
+
+      // 왼쪽(깃대쪽)을 기준으로 휘날리게 설정 (핵심!)
+      transform-origin: left center;
+      animation: flag-wave $waving-speed ease-in-out infinite;
+
+      // 깃발 안의 주름 효과
+      background: linear-gradient(
+        -45deg,
+        rgba(255, 255, 255, 1) 0%,
+        rgba(240, 240, 240, 1) 50%,
+        rgba(220, 220, 220, 1) 100%
+      );
+    }
+
+    // 깃대 축을 기준으로 물결치는 애니메이션
+    @keyframes flag-wave {
+      0%,
+      100% {
+        transform: rotateY(0deg) skewY(0deg);
+      }
+      25% {
+        transform: rotateY(20deg) skewY(-3deg) scaleX(0.95);
+      }
+      50% {
+        transform: rotateY(0deg) skewY(0deg);
+      }
+      75% {
+        transform: rotateY(-15deg) skewY(3deg) scaleX(1.05);
+      }
+    }
+
+    @keyframes appear {
+      from {
+        opacity: 0;
+        transform: translateY(-200px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  }
+
+  // 고양이 이미지지
+  img {
+    position: relative;
+    width: 50px;
+    height: 50px;
+    animation: walk-bounce $walk-duration ease-in-out infinite alternate;
+  }
+
+  // 내 고양이 위치 화살표
   .arrow-3d-wrapper {
     z-index: 99;
     position: absolute;
@@ -145,24 +257,16 @@ input {
     }
   }
 
-  img {
-    position: relative;
-    width: 50px;
-    height: 50px;
-    animation: walk-bounce $walk-duration ease-in-out infinite alternate;
-  }
-
+  // 바닥 그림자
   &::after {
     content: "";
-    z-index: 1;
     position: absolute;
-    top: 100%;
+    top: calc(100% - 5px);
     left: 50%;
     width: 40px;
     height: 8px;
     background: rgba(0, 0, 0, 0.2);
     border-radius: 50%;
-    margin: -5px auto 0;
     animation: shadow-pulse $walk-duration ease-in-out infinite alternate;
   }
 
@@ -211,6 +315,90 @@ input {
     to {
       transform: translateX(-50%) scale(0.95);
       opacity: 1;
+    }
+  }
+}
+
+.papyrus-explosion {
+  // 변수 설정
+  $piece-count: 8;
+  $explosion-radius: 60px; // 퍼져나가는 거리
+  $duration: 1.5s; // 애니메이션 속도
+  $piece-size: 8px; // 종이 조각 크기
+
+  // 종이 조각들의 색상 리스트 (무작위 느낌)
+  $fragment-colors: (
+    #ff7b00,
+    #ff0000,
+    #ffae00,
+    #5500ff,
+    #0073ff,
+    #00ffff,
+    #02ee29,
+    #ea00ff
+  );
+
+  position: absolute;
+  top: 50%; // 부모(고양이)의 중앙에 위치
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 0; // 컨테이너 자체는 크기가 없음
+  z-index: 99; // 고양이보다 위에 표시
+
+  .piece {
+    position: absolute;
+    width: $piece-size;
+    height: $piece-size * 1.5; // 약간 긴 직사각형
+    background-color: #fff; // 기본색
+    border-radius: 2px;
+    opacity: 0; // 처음에는 안 보임
+
+    // 퍼져나가면서 회전하고 사라지는 애니메이션
+    animation: papyrus-scatter $duration ease-out;
+    will-change: transform, opacity;
+
+    // SCSS 반복문으로 8방향 좌표 및 색상 설정
+    @for $i from 1 through $piece-count {
+      &:nth-child(#{$i}) {
+        // 각도 계산 (360도 / 8 = 45도씩)
+        $angle: calc(360deg / $piece-count) * ($i - 1);
+
+        // 삼각함수로 도착 좌표 계산
+        $qx: cos($angle) * $explosion-radius;
+        $qy: sin($angle) * $explosion-radius;
+
+        // 변수 전달 (CSS Variable 사용)
+        --qx: #{$qx};
+        --qy: #{$qy};
+
+        // 무작위 회전값 (입체감)
+        --rot: #{math.random(360)}deg;
+
+        // 색상 배정
+        background-color: list.nth($fragment-colors, $i);
+
+        // 애니메이션 딜레이 (살짝 엇박자로 터지게)
+        animation-delay: #{math.random(10) * 0.02s};
+      }
+    }
+  }
+
+  // --- 폭발 애니메이션 Keyframes ---
+  @keyframes papyrus-scatter {
+    0% {
+      transform: translate(-50%, -50%) rotate(0deg) scale(0);
+      opacity: 0;
+    }
+    10%,
+    60% {
+      opacity: 1; // 팍! 하고 나타남
+    }
+    100% {
+      // 저장해둔 도착 좌표(--qx, --qy)로 이동하며 회전
+      transform: translate(calc(-50% + var(--qx)), calc(-50% + var(--qy)))
+        rotate(var(--rot)) scale(1);
+      opacity: 0; // 서서히 사라짐
     }
   }
 }

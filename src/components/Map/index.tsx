@@ -6,40 +6,72 @@ import ImgCatGuide from "@/assets/img/cat_guide.png";
 import ImgCatMe from "@/assets/img/cat_me.png";
 import { useCatStore } from "@/store/cat";
 import { catCharacters } from "@/utils/cats";
-import { getRandomLocation } from "@/utils/helper";
+import { getRandomLocation, getRandomNumber } from "@/utils/helper";
 
 import Button from "../Button";
 import styles from "./index.module.scss";
 
 const cn = classNames.bind(styles);
 
-interface Props {
-  className?: string;
-  onClickCatMarker?: () => void;
+type OverlayType = "me" | "owned";
+
+interface CreateOverlayOptions {
+  position: kakao.maps.LatLng;
+  imgUrl?: string;
+  type?: OverlayType;
+  catName?: string;
 }
 
-export default function Map({ className, onClickCatMarker }: Props) {
+export interface OwnCat {
+  name: string;
+  position: { lat: number; lng: number };
+  createdAt?: string;
+}
+
+interface Props {
+  className?: string;
+  onClickCat?: () => void;
+  ownCats?: OwnCat[];
+  onClickOwnCat?: (value: OwnCat) => void;
+}
+
+export default function Map({
+  className,
+  onClickCat,
+  ownCats,
+  onClickOwnCat,
+}: Props) {
   const { setSelectedCat } = useCatStore((s) => s.actions);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [kakaoMap, setKakaoMap] = useState<kakao.maps.Map>();
 
   const isRendered = useRef(false);
   const mapDivRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<kakao.maps.Map>(null);
-
   const myCatOverlayRef = useRef<kakao.maps.CustomOverlay>(null);
   const catOverlaysRef = useRef<kakao.maps.CustomOverlay[]>([]);
+  const ownCatOverlaysRef = useRef<kakao.maps.CustomOverlay[]>([]);
 
   const createCatOverlay = useCallback(
-    (position: kakao.maps.LatLng, charImgUrl: string, isMe?: boolean) => {
+    ({ position, imgUrl, type }: CreateOverlayOptions) => {
       // 최상위 컨테이너
       const container = document.createElement("div");
       container.dataset.cat = "true";
       container.dataset.status = "none";
       container.classList.add("cat-overlay");
-      container.style.animationDelay = `-${Math.floor(Math.random() * 10)}s`;
+      container.style.animationDelay = `-${getRandomNumber(10)}s`;
 
-      if (isMe) {
+      if (imgUrl) {
+        // 고양이 이미지
+        const catImg = document.createElement("img");
+        catImg.src = imgUrl;
+
+        container.appendChild(catImg);
+      }
+
+      // 내 고양이일때
+      if (type === "me") {
         container.classList.add("no-animation");
 
         const wrapper = document.createElement("div");
@@ -51,12 +83,26 @@ export default function Map({ className, onClickCatMarker }: Props) {
         container.appendChild(wrapper);
       }
 
-      // 캐릭터 이미지
-      const character = document.createElement("img");
-      character.src = charImgUrl;
+      // 잡은 고양이일때
+      if (type === "owned") {
+        container.classList.add("no-animation", "small-shadow");
 
-      container.appendChild(character);
+        const flagWrapper = document.createElement("div");
+        flagWrapper.className = "flag-wrapper";
 
+        const pole = document.createElement("div");
+        pole.className = "pole";
+
+        const flag = document.createElement("div");
+        flag.className = "flag";
+
+        flagWrapper.appendChild(pole);
+        flagWrapper.appendChild(flag);
+
+        container.appendChild(flagWrapper);
+      }
+
+      // overlay 생성
       const overlay = new kakao.maps.CustomOverlay({
         position: position,
         content: container,
@@ -64,7 +110,11 @@ export default function Map({ className, onClickCatMarker }: Props) {
         yAnchor: 1,
       });
 
-      // 생성한 overlay 지도에 표시
+      if (type === "me") {
+        overlay.setZIndex(99);
+      }
+
+      // 지도에 overlay 표시
       overlay.setMap(mapRef.current);
 
       return {
@@ -86,7 +136,11 @@ export default function Map({ className, onClickCatMarker }: Props) {
       navigator.geolocation.getCurrentPosition(
         ({ coords: { latitude, longitude } }) => {
           const position = new kakao.maps.LatLng(latitude, longitude);
-          const { overlay } = createCatOverlay(position, ImgCatMe, true);
+          const { overlay } = createCatOverlay({
+            type: "me",
+            position,
+            imgUrl: ImgCatMe,
+          });
 
           myCatOverlayRef.current = overlay;
           mapRef.current!.panTo(overlay.getPosition());
@@ -127,7 +181,10 @@ export default function Map({ className, onClickCatMarker }: Props) {
         55
       );
 
-      const { overlay, container } = createCatOverlay(randomLatLng, cat.img);
+      const { overlay, container } = createCatOverlay({
+        position: randomLatLng,
+        imgUrl: cat.img,
+      });
 
       container.addEventListener("click", (e) => {
         const elem = e.currentTarget as HTMLElement;
@@ -138,12 +195,43 @@ export default function Map({ className, onClickCatMarker }: Props) {
 
         setSelectedCat({ ...cat, overlay, overlayContent: container });
 
-        onClickCatMarker?.();
+        onClickCat?.();
       });
 
       catOverlaysRef.current.push(overlay);
     });
-  }, [createCatOverlay, onClickCatMarker, setSelectedCat, showMyPosition]);
+  }, [createCatOverlay, onClickCat, setSelectedCat, showMyPosition]);
+
+  const drwaOwnCats = useCallback(() => {
+    if (!mapRef.current) {
+      return;
+    }
+
+    // 이전에 생성한 랜덤 마커들 해제
+    ownCatOverlaysRef.current.forEach((overlay) => {
+      overlay.setMap(null);
+    });
+    ownCatOverlaysRef.current = [];
+
+    // 잡은 고양이들 overlay 그리기
+    ownCats?.forEach((cat) => {
+      const { name, position } = cat;
+
+      const pos = new kakao.maps.LatLng(position.lat, position.lng);
+
+      const { overlay, container } = createCatOverlay({
+        position: pos,
+        catName: name,
+        type: "owned",
+      });
+
+      container.addEventListener("click", () => {
+        onClickOwnCat?.(cat);
+      });
+
+      ownCatOverlaysRef.current.push(overlay);
+    });
+  }, [createCatOverlay, onClickOwnCat, ownCats]);
 
   const initMap = useCallback(() => {
     kakao.maps.load(() => {
@@ -160,6 +248,7 @@ export default function Map({ className, onClickCatMarker }: Props) {
       // map.setZoomable(false);
 
       mapRef.current = map;
+      setKakaoMap(map);
 
       showRandomCatMarkers();
     });
@@ -188,6 +277,16 @@ export default function Map({ className, onClickCatMarker }: Props) {
 
     isRendered.current = true;
   }, [initMap]);
+
+  useEffect(() => {
+    if (!window.kakao?.maps) {
+      return;
+    }
+
+    if (kakaoMap) {
+      drwaOwnCats();
+    }
+  }, [drwaOwnCats, kakaoMap, ownCats]);
 
   return (
     <>

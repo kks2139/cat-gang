@@ -85,4 +85,36 @@ $map-margin: 6px;
       }
     }
   }
+
+  .own-cat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    .crying {
+      display: flex;
+      justify-content: center;
+      margin: -20px 0 10px 0;
+    }
+
+    img {
+      width: 170px;
+    }
+
+    .info {
+      text-align: center;
+      justify-content: center;
+      font-size: 16px;
+      margin-top: 25px;
+
+      .label {
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+
+      .created-at {
+        font-size: 18px;
+      }
+    }
+  }
 }

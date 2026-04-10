@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
+import { getRandomNumber } from "@/utils/helper";
+
 interface Message {
   message: string;
   id: number;
@@ -23,7 +25,7 @@ export const useViewStore = create<ViewStore>()(
         set((state) => {
           state.toastMessages.unshift({
             message,
-            id: Math.floor(Math.random() * 10000),
+            id: getRandomNumber(10000),
           });
 
           setTimeout(() => {
