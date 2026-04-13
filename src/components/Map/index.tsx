@@ -12,12 +12,12 @@ import {
   getRandomLocationInCircle,
 } from "@/utils/helper";
 
-import Button from "../Button";
 import styles from "./index.module.scss";
 
 const cn = classNames.bind(styles);
 
 const BOUNDARY_METER_OF_ME = 50;
+const POLLING_MS = 3000;
 
 export interface OwnCat {
   name: string;
@@ -45,6 +45,7 @@ export default function Map({
 
   const isRendered = useRef(false);
   const currentPositionTimer = useRef(0);
+  const zoomLevel = useRef<1 | 2>(1);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<kakao.maps.Map>(null);
@@ -59,16 +60,16 @@ export default function Map({
       return;
     }
 
-    if (spreadOutOverlayRef.current) {
-      spreadOutOverlayRef.current.setMap(null);
-    }
-
     // 내 위치 표시 overlay
     const { overlay } = createCustomOverlay({
       type: "loacation-spread-out",
       position,
       map: mapRef.current,
     });
+
+    if (spreadOutOverlayRef.current) {
+      spreadOutOverlayRef.current.setMap(null);
+    }
 
     spreadOutOverlayRef.current = overlay;
   }, []);
@@ -84,10 +85,6 @@ export default function Map({
         return;
       }
 
-      if (myCatOverlayRef.current) {
-        myCatOverlayRef.current.setMap(null);
-      }
-
       const { latitude, longitude } = coords;
       const position = new kakao.maps.LatLng(latitude, longitude);
       const { overlay } = createCustomOverlay({
@@ -96,6 +93,10 @@ export default function Map({
         imgUrl: ImgCatMe,
         map: mapRef.current,
       });
+
+      if (myCatOverlayRef.current) {
+        myCatOverlayRef.current.setMap(null);
+      }
 
       myCatOverlayRef.current = overlay;
 
@@ -130,6 +131,8 @@ export default function Map({
       );
 
       const { overlay, container } = createCustomOverlay({
+        type: "enemy",
+        catName: cat.name,
         position: randomLatLng,
         imgUrl: cat.img,
         map: mapRef.current!,
@@ -192,7 +195,7 @@ export default function Map({
 
       // eslint-disable-next-line react-hooks/immutability
       pollCurrentPosition();
-    }, 3_000);
+    }, POLLING_MS);
   }, [drawMe]);
 
   const initMap = useCallback(() => {
@@ -204,10 +207,14 @@ export default function Map({
       // 지도를 생성합니다
       const map = new kakao.maps.Map(mapContainerRef.current, {
         center: new kakao.maps.LatLng(37.566826, 126.9786567),
-        level: 1,
+        level: zoomLevel.current,
+        draggable: false,
       });
 
+      // 줌 가능 단계 세팅
       map.setZoomable(true);
+      map.setMaxLevel(2);
+      map.setMinLevel(1);
 
       mapRef.current = map;
       setKakaoMap(map);
@@ -216,6 +223,15 @@ export default function Map({
       await drawMe();
       drawCats();
       pollCurrentPosition();
+
+      // 맵 이벤트 등록
+      kakao.maps.event.addListener(map, "zoom_changed", () => {
+        const pos = myCatOverlayRef.current?.getPosition();
+
+        if (pos) {
+          map.setCenter(pos);
+        }
+      });
     };
 
     kakao.maps.load(async () => {
@@ -284,7 +300,7 @@ export default function Map({
         </AnimatePresence>
 
         <div className={cn("buttons")}>
-          <Button
+          {/* <Button
             size="small"
             onClick={() => {
               if (isInitLoading) {
@@ -295,7 +311,7 @@ export default function Map({
             }}
           >
             내 위치
-          </Button>
+          </Button> */}
         </div>
       </div>
     </>

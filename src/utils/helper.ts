@@ -1,3 +1,5 @@
+import { getCat } from "./cats";
+
 export const wait = (delay: number) =>
   new Promise((res) => setTimeout(res, delay));
 
@@ -81,13 +83,14 @@ export const getCurrentPosition = () => {
   });
 };
 
-type OverlayType = "me" | "owned" | "loacation-spread-out";
+type OverlayType = "me" | "owned" | "enemy" | "loacation-spread-out";
 
 interface CreateOverlayOptions {
   position: kakao.maps.LatLng;
   imgUrl?: string;
   type?: OverlayType;
   map: kakao.maps.Map;
+  catName?: string;
 }
 
 export const createCustomOverlay = ({
@@ -95,13 +98,13 @@ export const createCustomOverlay = ({
   imgUrl,
   type,
   map,
+  catName,
 }: CreateOverlayOptions) => {
   // 최상위 컨테이너
   const container = document.createElement("div");
   container.dataset.cat = "true";
   container.dataset.status = "none";
   container.classList.add("custom-overlay-container");
-  container.style.animationDelay = `-${getRandomNumber(10)}s`;
 
   if (imgUrl) {
     // 고양이 이미지
@@ -144,11 +147,26 @@ export const createCustomOverlay = ({
   }
 
   if (type === "loacation-spread-out") {
-    container.classList.add("no-animation");
+    container.classList.add("no-animation", "no-shadow");
 
     const wrapper = document.createElement("div");
     wrapper.className = "location-spread-out";
 
+    container.appendChild(wrapper);
+  }
+
+  if (type === "enemy") {
+    const wrapper = document.createElement("div");
+    wrapper.className = "chat";
+
+    const cat = getCat(catName || "");
+
+    if (cat) {
+      wrapper.textContent = cat.dialog.chat;
+    }
+
+    wrapper.style.animationDelay = `${getRandomNumber(10)}s`;
+    container.style.animationDelay = `-${getRandomNumber(10)}s`;
     container.appendChild(wrapper);
   }
 

@@ -76,6 +76,7 @@ export const catCharacters = [
     hp: 10,
     punchPower: 3,
     dialog: {
+      chat: "야옹! 냐앙",
       meet: [
         "사딸라로 협상해주지. 싫다면 주먹뿐이다.",
         "종로 바닥에 발을 들였으면 각오는 했겠지?",
@@ -108,6 +109,7 @@ export const catCharacters = [
     hp: 10,
     punchPower: 3,
     dialog: {
+      chat: "애오오옹냥",
       meet: [
         "내래 이북에서 온 시라소니야. 맛 좀 볼라우?",
         "함 붙어보자우, 누가 진짜 호랭이인지!",
@@ -140,6 +142,7 @@ export const catCharacters = [
     hp: 10,
     punchPower: 3,
     dialog: {
+      chat: "끄응, 야옹",
       meet: [
         "어, 왔니? 진실의 방으로 갈까?",
         "나 아트박스 사장인데, 너 귀엽게 생겼다?",
@@ -172,6 +175,7 @@ export const catCharacters = [
     hp: 10,
     punchPower: 3,
     dialog: {
+      chat: "가오! 냐앙",
       meet: [
         "어이, 가오가이가 왔다. 쫄았냐?",
         "가오 떨어지게 말 길게 안 한다. 덤벼.",
@@ -204,6 +208,7 @@ export const catCharacters = [
     hp: 10,
     punchPower: 3,
     dialog: {
+      chat: "rrr.. 야옹",
       meet: [
         "리듬 타기 전에 한 대 맞을래?",
         "네 펀치는 비트가 없어. 내가 가르쳐주지.",
@@ -236,6 +241,7 @@ export const catCharacters = [
     hp: 10,
     punchPower: 3,
     dialog: {
+      chat: "하암, 냐앙",
       meet: [
         "아... 졸린데 그냥 가면 안 돼?",
         "하암... 빨리 끝내고 자게 해줘.",
@@ -268,6 +274,7 @@ export const catCharacters = [
     hp: 10,
     punchPower: 3,
     dialog: {
+      chat: "크르릉, 야옹",
       meet: [
         "너, 고니라는 놈 아니? 곽철용이 죽었어... 아주 처참하게 죽었다고.",
         "신분증 좀 볼까? 아, 주먹으로 확인하자고?",
@@ -300,6 +307,7 @@ export const catCharacters = [
     hp: 10,
     punchPower: 3,
     dialog: {
+      chat: "끄아앙! 냐옹",
       meet: [
         "여기가 어디라고 발을 들여? 우미관이다!",
         "종로의 왕이 누군지 다시 각인시켜 주마.",
@@ -332,6 +340,7 @@ export const catCharacters = [
     hp: 10,
     punchPower: 3,
     dialog: {
+      chat: "뇸뇸, 야옹",
       meet: [
         "맛있는 냄새 나는데? 너 혹시 간식 있니?",
         "배고파서 예민해. 츄르 안 주면 팬다!",
@@ -364,6 +373,7 @@ export const catCharacters = [
     hp: 10,
     punchPower: 3,
     dialog: {
+      chat: "불쉿! 냐앙",
       meet: [
         "Bullsh*t! 다 비켜, 뭉치가 간다!",
         "닥치고 주먹이나 받아! 다른 건 다 필요 없어!",
@@ -396,6 +406,7 @@ export const catCharacters = [
     hp: 10,
     punchPower: 3,
     dialog: {
+      chat: "푸르르 냐옹",
       meet: [
         "Yo, I'm 죽이는 무게! 느낌 좀 있나?",
         "네 무게감으론 내 상대가 안 돼. 갓댐!",
@@ -428,6 +439,7 @@ export const catCharacters = [
     hp: 10,
     punchPower: 3,
     dialog: {
+      chat: "애오옹, 야옹",
       meet: [
         "모든 고양이여, 나를 따르라! 반역은 용납 못 한다!",
         "감히 내 권위에 도전하려느냐? 무릎 꿇어라!",
@@ -460,6 +472,7 @@ export const catCharacters = [
     hp: 10,
     punchPower: 3,
     dialog: {
+      chat: "바삭, 냐앙",
       meet: [
         "겉은 바삭하고 속은 촉촉한 무서움 맛을 보여주지.",
         "고소한 냄새에 취해서 방심하면 끝장이야.",
@@ -492,6 +505,7 @@ export const catCharacters = [
     hp: 10,
     punchPower: 3,
     dialog: {
+      chat: "메-에스트로옹",
       meet: [
         "덕소에서 여기까지 왔다. 리듬 좀 타볼까?",
         "내 마에스트로의 지휘봉(앞발)은 매섭다구.",

@@ -108,6 +108,12 @@ input {
     }
   }
 
+  &.no-shadow {
+    &::after {
+      display: none;
+    }
+  }
+
   &.small-shadow {
     &::after {
       width: 40px;
@@ -118,6 +124,48 @@ input {
     }
   }
 
+  // 지도 위 고양이 말풍선
+  .chat {
+    position: absolute;
+    top: -20px;
+    left: 0;
+    padding: 2px 4px;
+    background-color: white;
+    border-radius: 6px;
+    font-size: 10px;
+    opacity: 0;
+    animation: show-up 15s infinite;
+
+    &::after {
+      content: "";
+      z-index: -1;
+      position: absolute;
+      top: calc(100% - 1px);
+      left: 50%;
+      width: 4px;
+      height: 4px;
+      background-color: white;
+      transform: rotate(45deg) translateX(-50%);
+    }
+
+    @keyframes show-up {
+      0% {
+        opacity: 0;
+        transform: translateY(0);
+      }
+      10%,
+      30% {
+        opacity: 1;
+        transform: translateY(-5px);
+      }
+      35%,
+      100% {
+        opacity: 0;
+        transform: translateY(0);
+      }
+    }
+  }
+
   .flag-wrapper {
     $flag-color: #f8f9fa;
     $pole-color: #969696;
@@ -125,19 +173,19 @@ input {
 
     position: relative;
     display: inline-block;
-    width: 50px;
-    height: 40px;
+    width: 40px;
+    height: 30px;
     margin-bottom: 5px;
 
     // 생성될때 모션션
-    animation: appear 1.5s forwards;
+    animation: appear 1s forwards;
 
     // 1. 깃대 (Pole)
     .pole {
       position: absolute;
       bottom: 0;
       left: 10px; // 깃발이 붙을 위치
-      width: 3px;
+      width: 2px;
       height: 100%;
       background-color: $pole-color;
       border-radius: 2px;
@@ -149,9 +197,9 @@ input {
         position: absolute;
         top: -2px;
         left: -2px;
-        width: 7px;
-        height: 7px;
-        background-color: #969696;
+        width: 5px;
+        height: 5px;
+        background-color: #b1b1b1;
         border-radius: 50%;
       }
     }
@@ -159,10 +207,10 @@ input {
     // 2. 깃발 (Flag)
     .flag {
       position: absolute;
-      top: 5px;
+      top: 3px;
       left: 13px; // 깃대 바로 옆에 부착
-      width: 35px;
-      height: 22px;
+      width: 20px;
+      height: 15px;
       background-color: $flag-color;
       border: 1px solid #ddd;
       border-left: none; // 깃대와 붙는 부분은 선을 없앰
@@ -200,7 +248,7 @@ input {
     @keyframes appear {
       from {
         opacity: 0;
-        transform: translateY(-200px);
+        transform: translateY(-20px);
       }
       to {
         opacity: 1;
@@ -404,6 +452,7 @@ input {
 }
 
 .location-spread-out {
+  z-index: -1;
   position: relative;
   background-color: #ff4757;
   border-radius: 50%;
@@ -411,20 +460,19 @@ input {
   // 가상 요소를 사용하여 퍼지는 원 구현
   &::after {
     content: "";
-    z-index: -1;
     position: absolute;
     top: 50%;
     left: 50%;
 
     // 최종적으로 퍼질 원의 지름
-    width: 350px;
-    height: 350px;
+    width: 400px;
+    height: 400px;
 
-    background-color: #006eff;
+    background-color: #00ff9d;
     border-radius: 50%;
 
     // 애니메이션 설정: 2초 동안, 부드럽게 끝남, 무한 반복
-    animation: ripple 3s ease-out infinite;
+    animation: ripple 4s linear infinite;
 
     // 렌더링 최적화
     will-change: transform, opacity;
@@ -434,12 +482,15 @@ input {
   @keyframes ripple {
     0% {
       transform: translate(-50%, -50%) scale(0.1);
-      opacity: 0.3;
+      opacity: 0.4;
     }
-    100% {
+    50% {
       // scale(1)이 되면 설정한 width/height만큼 커집니다.
       transform: translate(-50%, -50%) scale(1);
       opacity: 0; // 완전히 투명해짐
+    }
+    100% {
+      opacity: 0;
     }
   }
 }
