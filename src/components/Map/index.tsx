@@ -125,7 +125,7 @@ export default function Map({
     []
   );
 
-  const showMyPosition = useCallback(async () => {
+  const drawMyCat = useCallback(async () => {
     if (!mapRef.current || !navigator.geolocation) {
       return;
     }
@@ -135,6 +135,10 @@ export default function Map({
     return new Promise<void>((res) => {
       navigator.geolocation.getCurrentPosition(
         ({ coords: { latitude, longitude } }) => {
+          if (myCatOverlayRef.current) {
+            myCatOverlayRef.current.setMap(null);
+          }
+
           const position = new kakao.maps.LatLng(latitude, longitude);
           const { overlay } = createCatOverlay({
             type: "me",
@@ -159,8 +163,8 @@ export default function Map({
     });
   }, [createCatOverlay]);
 
-  const showRandomCatMarkers = useCallback(async () => {
-    await showMyPosition();
+  const drawCats = useCallback(async () => {
+    await drawMyCat();
 
     if (!myCatOverlayRef.current) {
       return;
@@ -200,9 +204,9 @@ export default function Map({
 
       catOverlaysRef.current.push(overlay);
     });
-  }, [createCatOverlay, onClickCat, setSelectedCat, showMyPosition]);
+  }, [createCatOverlay, drawMyCat, onClickCat, setSelectedCat]);
 
-  const drwaOwnCats = useCallback(() => {
+  const drawOwnCats = useCallback(() => {
     if (!mapRef.current) {
       return;
     }
@@ -242,17 +246,17 @@ export default function Map({
       // 지도를 생성합니다
       const map = new kakao.maps.Map(mapDivRef.current, {
         center: new kakao.maps.LatLng(37.566826, 126.9786567),
-        level: -2, // 지도의 확대 레벨
+        level: 1,
       });
 
-      // map.setZoomable(false);
+      map.setZoomable(true);
 
       mapRef.current = map;
       setKakaoMap(map);
 
-      showRandomCatMarkers();
+      drawCats();
     });
-  }, [showRandomCatMarkers]);
+  }, [drawCats]);
 
   useEffect(() => {
     if (mapRef.current || isRendered.current) {
@@ -284,9 +288,9 @@ export default function Map({
     }
 
     if (kakaoMap) {
-      drwaOwnCats();
+      drawOwnCats();
     }
-  }, [drwaOwnCats, kakaoMap, ownCats]);
+  }, [drawOwnCats, kakaoMap, ownCats]);
 
   return (
     <>
@@ -318,7 +322,7 @@ export default function Map({
                 return;
               }
 
-              showMyPosition();
+              drawMyCat();
             }}
           >
             내 위치
@@ -330,7 +334,7 @@ export default function Map({
                 return;
               }
 
-              showRandomCatMarkers();
+              drawCats();
             }}
           >
             내 주변 냥아치
