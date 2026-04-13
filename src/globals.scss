@@ -89,7 +89,7 @@ input {
   }
 }
 
-.cat-overlay {
+.custom-overlay-container {
   $swim-duration: 20s;
   $walk-duration: 0.6s;
   $move-range: 12px;
@@ -399,6 +399,47 @@ input {
       transform: translate(calc(-50% + var(--qx)), calc(-50% + var(--qy)))
         rotate(var(--rot)) scale(1);
       opacity: 0; // 서서히 사라짐
+    }
+  }
+}
+
+.location-spread-out {
+  position: relative;
+  background-color: #ff4757;
+  border-radius: 50%;
+
+  // 가상 요소를 사용하여 퍼지는 원 구현
+  &::after {
+    content: "";
+    z-index: -1;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+
+    // 최종적으로 퍼질 원의 지름
+    width: 350px;
+    height: 350px;
+
+    background-color: #006eff;
+    border-radius: 50%;
+
+    // 애니메이션 설정: 2초 동안, 부드럽게 끝남, 무한 반복
+    animation: ripple 3s ease-out infinite;
+
+    // 렌더링 최적화
+    will-change: transform, opacity;
+  }
+
+  // 1. 퍼져나가는 애니메이션 정의
+  @keyframes ripple {
+    0% {
+      transform: translate(-50%, -50%) scale(0.1);
+      opacity: 0.3;
+    }
+    100% {
+      // scale(1)이 되면 설정한 width/height만큼 커집니다.
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 0; // 완전히 투명해짐
     }
   }
 }

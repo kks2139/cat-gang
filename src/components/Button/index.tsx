@@ -8,16 +8,19 @@ const cn = classNames.bind(styles);
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;
   size?: "small" | "regular" | "large";
+  radius?: number;
 }
 
 export default function Button({
   className,
   size = "regular",
   type = "button",
+  radius,
   ...rest
 }: Props) {
   return (
     <button
+      style={radius ? { borderRadius: radius } : undefined}
       className={cn("Button", className, { [size]: true })}
       type={type}
       {...rest}

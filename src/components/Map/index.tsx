@@ -6,21 +6,18 @@ import ImgCatGuide from "@/assets/img/cat_guide.png";
 import ImgCatMe from "@/assets/img/cat_me.png";
 import { useCatStore } from "@/store/cat";
 import { catCharacters } from "@/utils/cats";
-import { getRandomLocation, getRandomNumber } from "@/utils/helper";
+import {
+  createCustomOverlay,
+  getCurrentPosition,
+  getRandomLocationInCircle,
+} from "@/utils/helper";
 
 import Button from "../Button";
 import styles from "./index.module.scss";
 
 const cn = classNames.bind(styles);
 
-type OverlayType = "me" | "owned";
-
-interface CreateOverlayOptions {
-  position: kakao.maps.LatLng;
-  imgUrl?: string;
-  type?: OverlayType;
-  catName?: string;
-}
+const BOUNDARY_METER_OF_ME = 50;
 
 export interface OwnCat {
   name: string;
@@ -43,129 +40,76 @@ export default function Map({
 }: Props) {
   const { setSelectedCat } = useCatStore((s) => s.actions);
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isInitLoading, setIsInitLoading] = useState(false);
   const [kakaoMap, setKakaoMap] = useState<kakao.maps.Map>();
 
   const isRendered = useRef(false);
-  const mapDivRef = useRef<HTMLDivElement>(null);
+  const currentPositionTimer = useRef(0);
+
+  const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<kakao.maps.Map>(null);
+
   const myCatOverlayRef = useRef<kakao.maps.CustomOverlay>(null);
+  const spreadOutOverlayRef = useRef<kakao.maps.CustomOverlay>(null);
   const catOverlaysRef = useRef<kakao.maps.CustomOverlay[]>([]);
   const ownCatOverlaysRef = useRef<kakao.maps.CustomOverlay[]>([]);
 
-  const createCatOverlay = useCallback(
-    ({ position, imgUrl, type }: CreateOverlayOptions) => {
-      // 최상위 컨테이너
-      const container = document.createElement("div");
-      container.dataset.cat = "true";
-      container.dataset.status = "none";
-      container.classList.add("cat-overlay");
-      container.style.animationDelay = `-${getRandomNumber(10)}s`;
-
-      if (imgUrl) {
-        // 고양이 이미지
-        const catImg = document.createElement("img");
-        catImg.src = imgUrl;
-
-        container.appendChild(catImg);
-      }
-
-      // 내 고양이일때
-      if (type === "me") {
-        container.classList.add("no-animation");
-
-        const wrapper = document.createElement("div");
-        wrapper.className = "arrow-3d-wrapper";
-        const arrow = document.createElement("div");
-        arrow.className = "arrow-3d";
-
-        wrapper.appendChild(arrow);
-        container.appendChild(wrapper);
-      }
-
-      // 잡은 고양이일때
-      if (type === "owned") {
-        container.classList.add("no-animation", "small-shadow");
-
-        const flagWrapper = document.createElement("div");
-        flagWrapper.className = "flag-wrapper";
-
-        const pole = document.createElement("div");
-        pole.className = "pole";
-
-        const flag = document.createElement("div");
-        flag.className = "flag";
-
-        flagWrapper.appendChild(pole);
-        flagWrapper.appendChild(flag);
-
-        container.appendChild(flagWrapper);
-      }
-
-      // overlay 생성
-      const overlay = new kakao.maps.CustomOverlay({
-        position: position,
-        content: container,
-        xAnchor: 0.5,
-        yAnchor: 1,
-      });
-
-      if (type === "me") {
-        overlay.setZIndex(99);
-      }
-
-      // 지도에 overlay 표시
-      overlay.setMap(mapRef.current);
-
-      return {
-        overlay,
-        container,
-      };
-    },
-    []
-  );
-
-  const drawMyCat = useCallback(async () => {
-    if (!mapRef.current || !navigator.geolocation) {
+  const drawSpreadOut = useCallback((position: kakao.maps.LatLng) => {
+    if (!mapRef.current) {
       return;
     }
 
-    setIsLoading(true);
+    if (spreadOutOverlayRef.current) {
+      spreadOutOverlayRef.current.setMap(null);
+    }
 
-    return new Promise<void>((res) => {
-      navigator.geolocation.getCurrentPosition(
-        ({ coords: { latitude, longitude } }) => {
-          if (myCatOverlayRef.current) {
-            myCatOverlayRef.current.setMap(null);
-          }
-
-          const position = new kakao.maps.LatLng(latitude, longitude);
-          const { overlay } = createCatOverlay({
-            type: "me",
-            position,
-            imgUrl: ImgCatMe,
-          });
-
-          myCatOverlayRef.current = overlay;
-          mapRef.current!.panTo(overlay.getPosition());
-
-          setIsLoading(false);
-          res();
-        },
-        () => {
-          setIsLoading(false);
-          res();
-        },
-        {
-          enableHighAccuracy: true,
-        }
-      );
+    // 내 위치 표시 overlay
+    const { overlay } = createCustomOverlay({
+      type: "loacation-spread-out",
+      position,
+      map: mapRef.current,
     });
-  }, [createCatOverlay]);
 
-  const drawCats = useCallback(async () => {
-    await drawMyCat();
+    spreadOutOverlayRef.current = overlay;
+  }, []);
 
+  const drawMe = useCallback(
+    async (usePanTo = true) => {
+      if (!mapRef.current || !navigator.geolocation) {
+        return;
+      }
+      const coords = await getCurrentPosition();
+
+      if (!coords) {
+        return;
+      }
+
+      if (myCatOverlayRef.current) {
+        myCatOverlayRef.current.setMap(null);
+      }
+
+      const { latitude, longitude } = coords;
+      const position = new kakao.maps.LatLng(latitude, longitude);
+      const { overlay } = createCustomOverlay({
+        type: "me",
+        position,
+        imgUrl: ImgCatMe,
+        map: mapRef.current,
+      });
+
+      myCatOverlayRef.current = overlay;
+
+      if (usePanTo) {
+        mapRef.current!.panTo(overlay.getPosition());
+      }
+
+      // 내 위치 표시 overlay
+      drawSpreadOut(position);
+    },
+    [drawSpreadOut]
+  );
+
+  const drawCats = useCallback(() => {
     if (!myCatOverlayRef.current) {
       return;
     }
@@ -179,15 +123,16 @@ export default function Map({
     catOverlaysRef.current = [];
 
     catCharacters.forEach((cat) => {
-      const randomLatLng = getRandomLocation(
+      const randomLatLng = getRandomLocationInCircle(
         myPosition.getLat(),
         myPosition.getLng(),
-        55
+        BOUNDARY_METER_OF_ME
       );
 
-      const { overlay, container } = createCatOverlay({
+      const { overlay, container } = createCustomOverlay({
         position: randomLatLng,
         imgUrl: cat.img,
+        map: mapRef.current!,
       });
 
       container.addEventListener("click", (e) => {
@@ -204,7 +149,7 @@ export default function Map({
 
       catOverlaysRef.current.push(overlay);
     });
-  }, [createCatOverlay, drawMyCat, onClickCat, setSelectedCat]);
+  }, [onClickCat, setSelectedCat]);
 
   const drawOwnCats = useCallback(() => {
     if (!mapRef.current) {
@@ -219,14 +164,14 @@ export default function Map({
 
     // 잡은 고양이들 overlay 그리기
     ownCats?.forEach((cat) => {
-      const { name, position } = cat;
+      const { position } = cat;
 
       const pos = new kakao.maps.LatLng(position.lat, position.lng);
 
-      const { overlay, container } = createCatOverlay({
+      const { overlay, container } = createCustomOverlay({
         position: pos,
-        catName: name,
         type: "owned",
+        map: mapRef.current!,
       });
 
       container.addEventListener("click", () => {
@@ -235,16 +180,29 @@ export default function Map({
 
       ownCatOverlaysRef.current.push(overlay);
     });
-  }, [createCatOverlay, onClickOwnCat, ownCats]);
+  }, [onClickOwnCat, ownCats]);
+
+  const pollCurrentPosition = useCallback(() => {
+    if (currentPositionTimer.current) {
+      clearTimeout(currentPositionTimer.current);
+    }
+
+    currentPositionTimer.current = setTimeout(async () => {
+      await drawMe(false);
+
+      // eslint-disable-next-line react-hooks/immutability
+      pollCurrentPosition();
+    }, 3_000);
+  }, [drawMe]);
 
   const initMap = useCallback(() => {
-    kakao.maps.load(() => {
-      if (!mapDivRef.current) {
+    const initialize = async () => {
+      if (!mapContainerRef.current) {
         return;
       }
 
       // 지도를 생성합니다
-      const map = new kakao.maps.Map(mapDivRef.current, {
+      const map = new kakao.maps.Map(mapContainerRef.current, {
         center: new kakao.maps.LatLng(37.566826, 126.9786567),
         level: 1,
       });
@@ -254,9 +212,20 @@ export default function Map({
       mapRef.current = map;
       setKakaoMap(map);
 
+      // 맵생성 후 세팅
+      await drawMe();
       drawCats();
+      pollCurrentPosition();
+    };
+
+    kakao.maps.load(async () => {
+      setIsInitLoading(true);
+
+      await initialize();
+
+      setIsInitLoading(false);
     });
-  }, [drawCats]);
+  }, [drawCats, drawMe, pollCurrentPosition]);
 
   useEffect(() => {
     if (mapRef.current || isRendered.current) {
@@ -295,10 +264,10 @@ export default function Map({
   return (
     <>
       <div className={cn("Map", className)}>
-        <div ref={mapDivRef} className={cn("map-content")}></div>
+        <div ref={mapContainerRef} className={cn("map-content")}></div>
 
         <AnimatePresence>
-          {isLoading && (
+          {isInitLoading && (
             <motion.div
               className={cn("loading")}
               initial={{ opacity: 0 }}
@@ -318,26 +287,14 @@ export default function Map({
           <Button
             size="small"
             onClick={() => {
-              if (isLoading) {
+              if (isInitLoading) {
                 return;
               }
 
-              drawMyCat();
+              drawMe();
             }}
           >
             내 위치
-          </Button>
-          <Button
-            size="small"
-            onClick={() => {
-              if (isLoading) {
-                return;
-              }
-
-              drawCats();
-            }}
-          >
-            내 주변 냥아치
           </Button>
         </div>
       </div>

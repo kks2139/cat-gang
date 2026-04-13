@@ -72,4 +72,13 @@
     column-gap: 5px;
     margin-top: 10px;
   }
+
+  .icons {
+    z-index: 9;
+    position: absolute;
+    bottom: 0;
+    right: 4px;
+    display: flex;
+    column-gap: 5px;
+  }
 }

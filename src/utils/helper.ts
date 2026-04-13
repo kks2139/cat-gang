@@ -24,13 +24,23 @@ export const getPostposition = (
   return `${word}${mapping[type]}`;
 };
 
-export const getRandomLocation = (
+export const getRandomLocationInCircle = (
   lat: number,
   lng: number,
   radiusInMeters: number
 ): kakao.maps.LatLng => {
-  const lat_diff = (Math.random() - 0.5) * 2 * (radiusInMeters / 111000);
-  const lng_diff = (Math.random() - 0.5) * 2 * (radiusInMeters / 88000);
+  // 1. 0 ~ radiusInMeters 사이의 랜덤한 거리 생성
+  // (중심에 몰리지 않게 하기 위해 Math.sqrt 사용)
+  const r = radiusInMeters * Math.sqrt(Math.random());
+
+  // 2. 0 ~ 2π 사이의 랜덤한 각도 생성
+  const theta = Math.random() * 2 * Math.PI;
+
+  // 3. 미터 단위를 좌표 단위로 변환 (상수값 활용)
+  const lat_diff = (r * Math.cos(theta)) / 111000;
+  const lng_diff =
+    (r * Math.sin(theta)) / (111000 * Math.cos(lat * (Math.PI / 180)));
+
   return new kakao.maps.LatLng(lat + lat_diff, lng + lng_diff);
 };
 
@@ -55,4 +65,109 @@ export const getFireworkElement = () => {
   }, 3200); // 애니메이션 시간($duration)보다 살짝 길게
 
   return explosion;
+};
+
+// 기기 위치 반환
+export const getCurrentPosition = () => {
+  return new Promise<GeolocationCoordinates | undefined>((res) => {
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => res(coords),
+      () => res(undefined),
+      {
+        enableHighAccuracy: false,
+        maximumAge: 0,
+      }
+    );
+  });
+};
+
+type OverlayType = "me" | "owned" | "loacation-spread-out";
+
+interface CreateOverlayOptions {
+  position: kakao.maps.LatLng;
+  imgUrl?: string;
+  type?: OverlayType;
+  map: kakao.maps.Map;
+}
+
+export const createCustomOverlay = ({
+  position,
+  imgUrl,
+  type,
+  map,
+}: CreateOverlayOptions) => {
+  // 최상위 컨테이너
+  const container = document.createElement("div");
+  container.dataset.cat = "true";
+  container.dataset.status = "none";
+  container.classList.add("custom-overlay-container");
+  container.style.animationDelay = `-${getRandomNumber(10)}s`;
+
+  if (imgUrl) {
+    // 고양이 이미지
+    const catImg = document.createElement("img");
+    catImg.src = imgUrl;
+
+    container.appendChild(catImg);
+  }
+
+  // 내 고양이일때
+  if (type === "me") {
+    container.classList.add("no-animation");
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "arrow-3d-wrapper";
+
+    const arrow = document.createElement("div");
+    arrow.className = "arrow-3d";
+
+    wrapper.appendChild(arrow);
+    container.appendChild(wrapper);
+  }
+
+  // 잡은 고양이일때
+  if (type === "owned") {
+    container.classList.add("no-animation", "small-shadow");
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "flag-wrapper";
+
+    const pole = document.createElement("div");
+    pole.className = "pole";
+
+    const flag = document.createElement("div");
+    flag.className = "flag";
+
+    wrapper.appendChild(pole);
+    wrapper.appendChild(flag);
+    container.appendChild(wrapper);
+  }
+
+  if (type === "loacation-spread-out") {
+    container.classList.add("no-animation");
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "location-spread-out";
+
+    container.appendChild(wrapper);
+  }
+
+  // overlay 생성
+  const overlay = new kakao.maps.CustomOverlay({
+    position: position,
+    content: container,
+    clickable: true,
+  });
+
+  if (type === "me") {
+    overlay.setZIndex(99);
+  }
+
+  // 지도에 overlay 표시
+  overlay.setMap(map);
+
+  return {
+    overlay,
+    container,
+  };
 };
