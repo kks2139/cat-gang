@@ -43,7 +43,7 @@ export const myCat: CatInfo = {
   crying: "냐아앙! (끝까지 간다!)",
   img: ImgCatMe,
   hp: 5,
-  punchPower: 5,
+  punchPower: 3,
   dialog: {
     meet: [
       "난 최고의 주먹왕이 될 고양이야! 길을 비켜라!",

@@ -52,7 +52,7 @@ export function Status({ isMe, cat, introMotion, hp, hpEffect }: StatusProps) {
         </div>
         <div className={cn("hp-bar")}>
           <div
-            className={cn("bar")}
+            className={cn("bar", { [barColorClass]: true })}
             style={{
               width: barWidth,
             }}

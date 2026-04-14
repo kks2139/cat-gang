@@ -98,6 +98,7 @@ export default function Control({
             <motion.div
               key="dialog"
               {...MOTION_DATA}
+              whileTap={{ scale: 0.98, filter: "brightness(0.95)" }}
               className={cn("dialog")}
               onClick={() => {
                 onDialogConfirmClick({

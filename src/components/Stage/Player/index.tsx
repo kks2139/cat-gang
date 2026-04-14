@@ -73,7 +73,7 @@ export default function Player({
     () => (
       <Status cat={cat} hp={hp} introMotion={introMotion} hpEffect={hpEffect} />
     ),
-    [cat, hp, hpEffect, introMotion]
+    [cat, hp, hpEffect, introMotion],
   );
 
   useEffect(() => {
