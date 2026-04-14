@@ -1,3 +1,5 @@
+@import "@/styles/mixins";
+
 .Map {
   position: relative;
   background-color: var(--orange-map-border);
@@ -7,18 +9,7 @@
   overflow: hidden;
 
   // 봉제선 (Stitch line)
-  &::after {
-    content: "";
-    position: absolute;
-    top: 4px;
-    left: 4px;
-    right: 4px;
-    bottom: 4px;
-    border: 2px dashed rgba(255, 255, 255, 0.4);
-    border-radius: 20px;
-    pointer-events: none;
-    z-index: 10;
-  }
+  @include plush-stitch(4px, 20px, 0.4, 10);
 
   .loading {
     position: absolute;

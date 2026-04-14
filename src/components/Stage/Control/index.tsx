@@ -106,9 +106,11 @@ export default function Control({
                 });
               }}
             >
-              <div className={cn("guide-text")}>click {"→"} 넘기기</div>
-              <div className={cn("speaker")}>{`${dialogInfo.speaker}`}</div>
-              <Typing text={content} />
+              <div className={cn("wrapper")}>
+                <div className={cn("guide-text")}>click {"→"} 넘기기</div>
+                <div className={cn("speaker")}>{`${dialogInfo.speaker}`}</div>
+                <Typing text={content} />
+              </div>
             </motion.div>
           ) : (
             <div className={cn("menu")}>

@@ -1,3 +1,5 @@
+@import "@/styles/mixins";
+
 .Control {
   width: 100%;
   padding: 0 15px;
@@ -5,56 +7,69 @@
 
   .dialog {
     position: relative;
-    border-radius: 16px;
-    background-color: white;
-    color: black;
-    border: 2px dashed black;
-    outline: 1px solid;
-    outline-offset: -5px;
-    transition: 0.1s;
-    padding: 15px;
+    background-color: var(--orange-map-border);
+    padding: 8px;
+    border-radius: 24px;
+    box-shadow: 0 4px 0 var(--orange-map-shadow);
+    transition: transform 0.1s;
+    cursor: pointer;
 
-    .guide-text {
-      position: absolute;
-      top: 8px;
-      right: 14px;
-      color: gray;
-      font-size: 14px;
+    &:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 var(--orange-map-shadow);
     }
 
-    .speaker {
-      width: 100%;
-      font-weight: bold;
-      font-size: 22px;
-      margin-bottom: 10px;
-    }
+    // 봉제선 (Stitch line)
+    @include plush-stitch(4px, 20px, 0.4, 10);
 
-    .text {
-      font-size: 18px;
+    .wrapper {
+      padding: 18px 15px;
+      border-radius: 18px;
+      background-color: white;
+      display: flex;
+      flex-direction: column;
+      color: black;
+      min-height: 100px;
+      position: relative;
 
-      p {
-        position: relative;
-        white-space: pre-wrap;
+      .guide-text {
+        position: absolute;
+        top: 14px;
+        right: 18px;
+        color: #bbb;
+        font-size: 13px;
+        font-weight: 800;
+      }
 
-        &::after {
-          content: "";
-          position: absolute;
-          height: 18px;
-          width: 3px;
-          transform: translate(4px, 5px);
-          background-color: rgb(63, 63, 63);
-          animation: blink 0.8s infinite;
+      .speaker {
+        width: 100%;
+        font-weight: 900;
+        font-size: 20px;
+        margin-bottom: 8px;
+        color: var(--orange-shadow);
+      }
+
+      .text {
+        font-size: 17px;
+        font-weight: 600;
+        line-height: 1.4;
+        color: #333;
+
+        p {
+          position: relative;
+          white-space: pre-wrap;
+
+          &::after {
+            content: "";
+            display: inline-block;
+            height: 16px;
+            width: 3px;
+            margin-left: 4px;
+            background-color: var(--orange-map-shadow);
+            animation: blink 0.8s infinite;
+            vertical-align: middle;
+          }
         }
-      }
-    }
-
-    @keyframes blink {
-      0%,
-      100% {
-        opacity: 1;
-      }
-      50% {
-        opacity: 0;
       }
     }
   }
@@ -67,5 +82,15 @@
       flex-direction: column;
       row-gap: 10px;
     }
+  }
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
   }
 }

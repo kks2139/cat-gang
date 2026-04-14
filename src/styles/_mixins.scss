@@ -1,0 +1,14 @@
+@mixin plush-stitch($offset: 4px, $radius: 20px, $opacity: 0.4, $z-index: 10) {
+  &::after {
+    content: "";
+    position: absolute;
+    top: $offset;
+    left: $offset;
+    right: $offset;
+    bottom: $offset;
+    border: 2px dashed rgba(255, 255, 255, $opacity);
+    border-radius: $radius;
+    pointer-events: none;
+    z-index: $z-index;
+  }
+}
