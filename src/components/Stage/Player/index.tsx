@@ -26,17 +26,20 @@ function CatVisual({
   children,
 }: CatVisualProps) {
   return (
-    <motion.div {...catImgIntroMotion}>
+    <motion.div {...catImgIntroMotion} className={cn("visual-wrap")}>
       {!!cat && (
-        <img
-          className={cn("cat-img", {
-            [effectType || ""]: true,
-          })}
-          src={cat.img || ""}
-          alt={cat.name || ""}
-          width={100}
-          height={100}
-        />
+        <>
+          <img
+            className={cn("cat-img", {
+              [effectType || ""]: true,
+            })}
+            src={cat.img || ""}
+            alt={cat.name || ""}
+            width={100}
+            height={100}
+          />
+          <div className={cn("cat-shadow")} />
+        </>
       )}
       {children}
     </motion.div>

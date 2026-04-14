@@ -19,10 +19,18 @@ export interface StatusProps {
 }
 
 export function Status({ isMe, cat, introMotion, hp, hpEffect }: StatusProps) {
-  const barWidth = `${(hp / (cat?.hp || 0)) * 100}%`;
+  const hpMax = cat?.hp || 1;
+  const hpPercent = (hp / hpMax) * 100;
+  const barWidth = `${hpPercent}%`;
+
+  const barColorClass =
+    hpPercent > 50 ? "green" : hpPercent > 20 ? "orange" : "red";
 
   return (
-    <motion.ul className={cn("Status", { me: isMe })} {...introMotion}>
+    <motion.ul
+      className={cn("Status", { me: isMe, [barColorClass]: true })}
+      {...introMotion}
+    >
       <li>
         <div className={cn("label")}>이름</div>
         <strong>{cat?.name}</strong>
@@ -32,7 +40,16 @@ export function Status({ isMe, cat, introMotion, hp, hpEffect }: StatusProps) {
         <strong>{cat?.crying}</strong>
       </li>
       <li className={cn("hp")}>
-        <div className={cn("label")}>HP</div>
+        <div className={cn("hp-header")}>
+          <div className={cn("label")}>HP</div>
+          <div className={cn("value")}>
+            <NumberFlow
+              className={cn("current", { red: hpEffect === "down" })}
+              value={hp}
+            />
+            <span>{` / ${cat?.hp}`}</span>
+          </div>
+        </div>
         <div className={cn("hp-bar")}>
           <div
             className={cn("bar")}
@@ -46,13 +63,6 @@ export function Status({ isMe, cat, introMotion, hp, hpEffect }: StatusProps) {
               width: barWidth,
             }}
           />
-          <div className={cn("value")}>
-            <NumberFlow
-              className={cn("current", { red: hpEffect === "down" })}
-              value={hp}
-            />
-            <span>{` / ${cat?.hp}`}</span>
-          </div>
         </div>
       </li>
     </motion.ul>

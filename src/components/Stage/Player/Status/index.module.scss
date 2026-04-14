@@ -1,66 +1,123 @@
-.Status {
-  font-size: 15px;
+@use "@/styles/mixins" as *;
 
-  &.me {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-  }
+.Status {
+  position: relative;
+  background-color: #fff;
+  border: 4px solid var(--orange-map-border);
+  border-radius: 16px;
+  padding: 10px 14px;
+  box-shadow: 0 4px 0 var(--orange-map-shadow);
+  width: 200px; // 길이를 나랑 상대 동일하게 고정
+
+  @include plush-stitch(2px, 12px, 0.4, 5);
 
   li {
     display: flex;
     align-items: center;
+    margin-bottom: 4px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
   }
 
   .label {
-    width: 40px;
+    width: 35px;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--orange-shadow);
+    background-color: #fff0eb;
+    padding: 2px 4px;
+    border-radius: 4px;
+    margin-right: 8px;
+    text-align: center;
   }
 
   strong {
-    font-weight: bold;
-    color: var(--yellow-1);
+    font-weight: 900;
+    font-size: 14px;
+    color: #333;
   }
 
   .hp {
+    flex-direction: column;
+    align-items: stretch;
+    margin-top: 10px;
+
+    .hp-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 6px;
+
+      .value {
+        display: flex;
+        align-items: baseline;
+        font-size: 13px;
+        font-weight: 900;
+        color: #888;
+        line-height: 1;
+
+        .current {
+          color: #333;
+          margin-right: 2px;
+          transition:
+            color 0.2s,
+            transform 0.2s;
+
+          &.red {
+            color: #ff5757;
+            transform: scale(1.1);
+          }
+        }
+      }
+    }
+
     .hp-bar {
       position: relative;
-      width: 100px;
-      height: 6px;
-      border-radius: 8px;
-      box-shadow: 0 0 0 1px white;
+      width: 100%;
+      height: 14px;
+      background-color: #eee;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #ddd;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 
       .bar,
       .effect {
         height: 100%;
-        border-radius: 8px;
-        background-color: var(--green-1);
-        transition: 0.5s;
+        border-radius: 10px;
+        transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       }
 
       .effect {
-        z-index: -1;
+        z-index: 1;
         position: absolute;
         top: 0;
         left: 0;
-        transition: width 1.5s;
-        background-color: rgb(255, 87, 87);
+        transition: width 1.2s ease-out;
+        background: #ff5757;
+        opacity: 0.6;
       }
     }
+  }
 
-    .value {
-      display: flex;
-      justify-content: center;
-      margin-top: 3px;
-      font-weight: bold;
+  // HP 상태에 따른 색상 정의
+  &.green {
+    .hp-bar .bar {
+      background: linear-gradient(to bottom, #72ec1c, #48b400);
+    }
+  }
 
-      .current {
-        margin-right: 4px;
-        transition: 0.2s;
+  &.orange {
+    .hp-bar .bar {
+      background: linear-gradient(to bottom, #ffb444, #ff8c00);
+    }
+  }
 
-        &.red {
-          color: rgb(255, 173, 173);
-        }
-      }
+  &.red {
+    .hp-bar .bar {
+      background: linear-gradient(to bottom, #ff7b7b, #ff0000);
     }
   }
 }

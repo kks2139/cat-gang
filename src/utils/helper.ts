@@ -54,17 +54,17 @@ export const getFireworkElement = () => {
   const explosion = document.createElement("div");
   explosion.className = "papyrus-explosion";
 
-  // 2. 8개의 조각 생성 및 조립
-  for (let i = 0; i < 8; i++) {
+  // 2. 30개의 조각 생성 및 조립 (화려하게 증량)
+  for (let i = 0; i < 30; i++) {
     const piece = document.createElement("div");
     piece.className = "piece";
     explosion.appendChild(piece);
   }
 
-  // 4. 애니메이션 종료 후 DOM에서 제거 (메모리 관리)
+  // 4. 애니메이션 종료 후 DOM에서 제거 (메모리 관리: 3초 애니메이션 기준)
   setTimeout(() => {
     explosion.remove();
-  }, 3200); // 애니메이션 시간($duration)보다 살짝 길게
+  }, 3500); // 애니메이션 시간($duration)보다 살짝 길게
 
   return explosion;
 };
@@ -128,6 +128,10 @@ export const createCustomOverlay = ({
     const arrow = document.createElement("div");
     arrow.className = "arrow-3d";
 
+    const tip = document.createElement("div");
+    tip.className = "tip";
+
+    arrow.appendChild(tip);
     wrapper.appendChild(arrow);
     container.appendChild(wrapper);
   }

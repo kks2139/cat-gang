@@ -1,9 +1,6 @@
 import classNames from "classnames/bind";
 import { AnimatePresence, motion } from "framer-motion";
 
-import ImgCatFoot from "@/assets/img/cat_foot.png";
-import ImgHeart from "@/assets/img/heart.png";
-
 import { type Side } from "../Control";
 import styles from "./index.module.scss";
 
@@ -30,27 +27,44 @@ export default function Effects({
         enabled &&
         Array.from({ length: 2 }, (_, i) => {
           const isFirst = i === 0;
-          const moveX = 30;
 
           return (
             <motion.div
               className={cn("punch", { [target]: true })}
               key={i}
-              initial={{ opacity: 0, x: isFirst ? -moveX : 0 }}
-              animate={{ opacity: 1, x: isFirst ? 0 : moveX }}
+              initial={{
+                opacity: 0,
+                scale: 2,
+                rotate: isFirst ? -30 : 30,
+                x: isFirst ? -80 : 80,
+              }}
+              animate={{
+                opacity: 1,
+                scale: 0.8,
+                rotate: isFirst ? -10 : 10,
+                x: isFirst ? -22 : 22,
+              }}
               transition={{
-                duration: punchDuration,
-                delay: isFirst ? 0 : 0.2,
+                duration: punchDuration * 0.4,
+                delay: isFirst ? 0 : 0.05,
+                ease: "circOut",
               }}
             >
-              <img src={ImgCatFoot} alt="" width={30} height={60} />
+              <div className={cn("paw-stamp")}>
+                <div className={cn("toe")} />
+                <div className={cn("toe")} />
+                <div className={cn("toe")} />
+                <div className={cn("pad")} />
+              </div>
             </motion.div>
           );
         })}
 
       {effectType === "seduce" && enabled && (
         <div className={cn("seduce", { [target]: true })}>
-          <img src={ImgHeart} alt="" width={50} height={50} />
+          <div className={cn("heart")} />
+          <div className={cn("heart")} />
+          <div className={cn("heart")} />
         </div>
       )}
     </AnimatePresence>

@@ -1,51 +1,194 @@
 .punch {
-  z-index: 9;
+  z-index: 100;
   position: absolute;
-  bottom: 20px;
+  left: 20%;
+  top: 30%;
+  pointer-events: none;
 
-  img {
-    transform: rotate(45deg);
+  &.me {
+    // 플레이어가 맞을 때
+  }
+
+  &.enemy {
+    // 적 부근
+  }
+
+  .paw-stamp {
+    position: relative;
+    width: 50px;
+    height: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15));
+
+    .pad {
+      width: 40px;
+      height: 35px;
+      background-color: rgb(255, 139, 30);
+      border-radius: 50% 50% 45% 45%;
+      box-shadow: 0 0 10px 0 gray;
+    }
+
+    .toe {
+      position: absolute;
+      width: 15px;
+      height: 13px;
+      background-color: rgb(255, 139, 30);
+      border-radius: 50%;
+      top: -10px;
+      box-shadow: 0 0 10px 0 gray;
+
+      @for $i from 1 through 3 {
+        &:nth-child(#{$i}) {
+          @if $i == 1 {
+            left: 0;
+            transform: rotate(-20deg);
+          }
+          @if $i == 2 {
+            left: 50%;
+            transform: translateX(-50%) translateY(-5px);
+          }
+          @if $i == 3 {
+            right: 0;
+            transform: rotate(20deg);
+          }
+        }
+      }
+    }
+
+    // 타격 충격파 효과
+    &::before {
+      content: "";
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border: 3px solid var(--orange-map-border);
+      border-radius: 50%;
+      animation: punch-shock 0.4s ease-out forwards;
+      opacity: 0;
+      z-index: -1;
+    }
+  }
+
+  @keyframes punch-shock {
+    0% {
+      transform: scale(0.5);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(2.5);
+      opacity: 0;
+    }
   }
 }
 
 .seduce {
-  z-index: 9;
+  z-index: 100;
   position: absolute;
-  top: 0;
-  animation: verticalWave 0.5s ease-in-out infinite,
-    horizontalMove 3s linear infinite;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  row-gap: 20px;
 
   &.enemy {
-    top: 100%;
-    animation: verticalWave 0.5s ease-in-out infinite,
-      horizontalMoveEnemy 3s linear infinite;
+    // 적이 나로부터 유혹당할 때 (아래에서 위로)
+    bottom: -200px;
+    animation: fly-up 1.5s ease-in forwards;
   }
 
-  @keyframes verticalWave {
-    0%,
-    100% {
-      transform: translateY(0);
+  &.me {
+    // 내가 적으로부터 유혹당할 때 (위에서 아래로)
+    top: -200px;
+    animation: fly-down 1.5s ease-in forwards;
+  }
+
+  .heart {
+    position: relative;
+    width: 20px;
+    height: 20px;
+    background-color: #ff608c;
+    transform: rotate(45deg);
+    filter: drop-shadow(0 0 10px rgba(255, 96, 140, 0.5));
+
+    &::before,
+    &::after {
+      content: "";
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background-color: #ff608c;
+      border-radius: 50%;
     }
-    50% {
-      transform: translateY(-20px);
+
+    &::before {
+      left: -10px;
+    }
+    &::after {
+      top: -10px;
+    }
+
+    @for $i from 1 through 3 {
+      &:nth-child(#{$i}) {
+        animation: heart-pulse 0.6s infinite ease-in-out alternate;
+        margin-left: ($i - 2) * 30px;
+        opacity: 0;
+        animation-delay: ($i - 1) * 0.2s;
+
+        // 등장시 페이드인
+        animation: heart-appear 0.5s forwards;
+        animation-delay: ($i - 1) * 0.2s;
+      }
     }
   }
 
-  @keyframes horizontalMove {
+  @keyframes fly-up {
     0% {
-      left: 100%;
+      transform: translate(-50%, 0);
+      opacity: 0;
+    }
+    20% {
+      opacity: 1;
     }
     100% {
-      left: 85vw;
+      transform: translate(-50%, -400px);
+      opacity: 0;
     }
   }
 
-  @keyframes horizontalMoveEnemy {
+  @keyframes fly-down {
     0% {
-      left: 0;
+      transform: translate(-50%, 0);
+      opacity: 0;
+    }
+    20% {
+      opacity: 1;
     }
     100% {
-      left: -60vh;
+      transform: translate(-50%, 400px);
+      opacity: 0;
+    }
+  }
+
+  @keyframes heart-appear {
+    from {
+      opacity: 0;
+      transform: rotate(45deg) scale(0);
+    }
+    to {
+      opacity: 1;
+      transform: rotate(45deg) scale(1.2);
+    }
+  }
+
+  @keyframes heart-pulse {
+    from {
+      transform: rotate(45deg) scale(1);
+    }
+    to {
+      transform: rotate(45deg) scale(1.3);
     }
   }
 }

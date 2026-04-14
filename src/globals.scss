@@ -294,43 +294,55 @@ input {
     animation: walk-bounce $walk-duration ease-in-out infinite alternate;
   }
 
-  // 내 고양이 위치 화살표
+  // 내 고양이 위치 화살표 (2D Cat Paw Arrow)
   .arrow-3d-wrapper {
     z-index: 99;
     position: absolute;
-    top: -30px;
+    top: -55px;
     left: 50%;
-    transform: translateX(-5px);
-
-    // 3D 효과를 위한 원근감 설정 (값이 작을수록 왜곡이 심해짐)
-    perspective: 500px;
-    width: 40px;
-    height: 40px;
+    transform: translateX(-50%);
+    width: 34px;
+    height: 45px;
+    animation: floating-arrow 1.5s ease-in-out infinite;
 
     .arrow-3d {
-      width: 0;
-      height: 0;
-      border-left: 10px solid transparent;
-      border-right: 10px solid transparent;
-      border-top: 25px solid rgb(0, 235, 90);
-      // 뒷면이 보일 때 뒤집히는 것을 방지하거나 처리하고 싶을 때 사용
-      backface-visibility: visible;
-      animation: rotate-3d 1.5s ease infinite;
-    }
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
 
-    @keyframes rotate-3d {
-      0% {
-        transform: rotateY(0deg) translateY(0);
-        filter: brightness(1);
+      // 심플한 삼각형 화살표 (이전 버전 복구)
+      &::before {
+        content: "";
+        position: absolute;
+        bottom: 5px;
+        width: 0;
+        height: 0;
+        border-left: 15px solid transparent;
+        border-right: 15px solid transparent;
+        border-top: 25px solid var(--orange-1);
+        filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2));
       }
-      50% {
-        transform: rotateY(180deg) translateY(-5px);
-        filter: brightness(0.5);
-      } // 뒷면일 때 어둡게
-      100% {
-        transform: rotateY(360deg) translateY(0);
-        filter: brightness(1);
+
+      &::after {
+        display: none;
       }
+
+      .tip {
+        display: none;
+      }
+    }
+  }
+
+  @keyframes floating-arrow {
+    0%,
+    100% {
+      transform: translateX(-50%) translateY(0);
+    }
+    50% {
+      transform: translateX(-50%) translateY(-8px);
     }
   }
 
@@ -398,84 +410,89 @@ input {
 
 .papyrus-explosion {
   // 변수 설정
-  $piece-count: 8;
-  $explosion-radius: 60px; // 퍼져나가는 거리
-  $duration: 1.5s; // 애니메이션 속도
-  $piece-size: 8px; // 종이 조각 크기
+  $piece-count: 30;
+  $explosion-radius: 120px;
+  $duration: 3s;
+  $piece-size: 6px;
 
-  // 종이 조각들의 색상 리스트 (무작위 느낌)
   $fragment-colors: (
-    #ff7b00,
+    #ff3d00,
     #ff0000,
     #ffae00,
     #5500ff,
     #0073ff,
     #00ffff,
     #02ee29,
-    #ea00ff
+    #ea00ff,
+    #ffe100,
+    #ffffff,
+    #ff6b6b,
+    #48dbfb
   );
 
   position: absolute;
-  top: 50%; // 부모(고양이)의 중앙에 위치
+  top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   width: 0;
-  height: 0; // 컨테이너 자체는 크기가 없음
-  z-index: 99; // 고양이보다 위에 표시
+  height: 0;
+  z-index: 999;
 
   .piece {
     position: absolute;
     width: $piece-size;
-    height: $piece-size * 1.5; // 약간 긴 직사각형
-    background-color: #fff; // 기본색
+    height: $piece-size * 1.5;
+    background-color: #fff;
     border-radius: 2px;
-    opacity: 0; // 처음에는 안 보임
+    opacity: 0;
 
-    // 퍼져나가면서 회전하고 사라지는 애니메이션
-    animation: papyrus-scatter $duration ease-out;
+    animation: papyrus-scatter $duration cubic-bezier(0.1, 0.7, 0.3, 1) forwards;
     will-change: transform, opacity;
 
-    // SCSS 반복문으로 8방향 좌표 및 색상 설정
     @for $i from 1 through $piece-count {
       &:nth-child(#{$i}) {
-        // 각도 계산 (360도 / 8 = 45도씩)
         $angle: calc(360deg / $piece-count) * ($i - 1);
+        $random-r: $explosion-radius + math.random(60); // 불균일한 궤적
 
-        // 삼각함수로 도착 좌표 계산
-        $qx: cos($angle) * $explosion-radius;
-        $qy: sin($angle) * $explosion-radius;
+        $qx: cos($angle) * $random-r;
+        $qy: sin($angle) * $random-r;
 
-        // 변수 전달 (CSS Variable 사용)
         --qx: #{$qx};
         --qy: #{$qy};
+        --rot: #{math.random(720)}deg;
 
-        // 무작위 회전값 (입체감)
-        --rot: #{math.random(360)}deg;
+        $color: list.nth(
+          $fragment-colors,
+          (math.random(list.length($fragment-colors)))
+        );
+        background-color: $color;
+        box-shadow: 0 0 $piece-size $color; // 빛나는 효과
 
-        // 색상 배정
-        background-color: list.nth($fragment-colors, $i);
-
-        // 애니메이션 딜레이 (살짝 엇박자로 터지게)
-        animation-delay: #{math.random(10) * 0.02s};
+        animation-delay: #{math.random(20) * 0.05s};
       }
     }
   }
 
-  // --- 폭발 애니메이션 Keyframes ---
   @keyframes papyrus-scatter {
     0% {
       transform: translate(-50%, -50%) rotate(0deg) scale(0);
       opacity: 0;
     }
-    10%,
-    60% {
-      opacity: 1; // 팍! 하고 나타남
+    5% {
+      opacity: 1;
+      transform: translate(-50%, -50%) rotate(0deg) scale(1.5);
+    }
+    30% {
+      opacity: 1;
     }
     100% {
-      // 저장해둔 도착 좌표(--qx, --qy)로 이동하며 회전
-      transform: translate(calc(-50% + var(--qx)), calc(-50% + var(--qy)))
-        rotate(var(--rot)) scale(1);
-      opacity: 0; // 서서히 사라짐
+      // 중력 효과 시뮬레이션: qy(Y좌표)를 살짝 아래로 더함
+      transform: translate(
+          calc(-50% + var(--qx)),
+          calc(-50% + var(--qy) + 60px)
+        )
+        rotate(var(--rot)) scale(0.5);
+      opacity: 0;
     }
   }
 }
@@ -483,7 +500,6 @@ input {
 .location-spread-out {
   z-index: -1;
   position: relative;
-  background-color: #ff4757;
   border-radius: 50%;
 
   // 가상 요소를 사용하여 퍼지는 원 구현
@@ -497,7 +513,7 @@ input {
     width: 400px;
     height: 400px;
 
-    background-color: #00ff9d;
+    background-color: #ff9e43;
     border-radius: 50%;
 
     // 애니메이션 설정: 2초 동안, 부드럽게 끝남, 무한 반복
