@@ -41,8 +41,8 @@
   .close-button {
     z-index: 20;
     position: absolute;
-    top: 14px;
-    right: 14px;
+    top: 0;
+    right: 10px;
     min-width: unset; // 자동 너비 해제
     line-height: 1;
   }

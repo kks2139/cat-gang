@@ -2,7 +2,6 @@ import classNames from "classnames/bind";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import ImgCatGuide from "@/assets/img/cat_guide.png";
 import ImgCatMe from "@/assets/img/cat_me.png";
 import { useCatStore } from "@/store/cat";
 import { catCharacters } from "@/utils/cats";
@@ -318,7 +317,10 @@ export default function Map({
   return (
     <>
       <div className={cn("Map", className)}>
-        <div ref={mapContainerRef} className={cn("map-content")}></div>
+        <div
+          ref={mapContainerRef}
+          className={cn("map-content", { skeleton: !mapContainerRef.current })}
+        ></div>
 
         <AnimatePresence>
           {isInitLoading && (
@@ -329,28 +331,19 @@ export default function Map({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.1 }}
             >
-              <img src={ImgCatGuide} alt="" width={50} height={50} />
-              {["찾", "는", "중", ".", ".", "."].map((ch, i) => (
-                <span key={i}>{ch}</span>
-              ))}
+              <div className={cn("paw-animation")}>
+                <div className={cn("paw")} />
+                <div className={cn("paw")} />
+                <div className={cn("paw")} />
+              </div>
+              <div className={cn("loading-text")}>
+                {["찾", "는", "중", ".", ".", "."].map((ch, i) => (
+                  <span key={i}>{ch}</span>
+                ))}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
-
-        <div className={cn("buttons")}>
-          {/* <Button
-            size="small"
-            onClick={() => {
-              if (isInitLoading) {
-                return;
-              }
-
-              drawMe();
-            }}
-          >
-            내 위치
-          </Button> */}
-        </div>
       </div>
     </>
   );

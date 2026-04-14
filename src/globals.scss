@@ -173,64 +173,86 @@ input {
   }
 
   .flag-wrapper {
-    $flag-color: #f8f9fa;
-    $pole-color: #969696;
-    $waving-speed: 1.5s;
+    $flag-color: #ffde37;
+    $pole-color: #8b572a;
+    $waving-speed: 1.8s;
 
     position: relative;
     display: inline-block;
-    width: 40px;
-    height: 30px;
+    width: 45px;
+    height: 50px;
     margin-bottom: 5px;
 
-    // 생성될때 모션션
-    animation: appear 1s forwards;
+    // 생성될때 모션
+    animation: appear 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 
     // 1. 깃대 (Pole)
     .pole {
       position: absolute;
       bottom: 0;
-      left: 10px; // 깃발이 붙을 위치
-      width: 2px;
+      left: 8px;
+      width: 3px;
       height: 100%;
-      background-color: $pole-color;
-      border-radius: 2px;
+      background: linear-gradient(to right, #8b572a, #a26b3e);
+      border-radius: 4px;
       z-index: 2;
 
-      // 깃대 꼭대기 장식 (선택 사항)
+      // 깃대 꼭대기 장식 (귀여운 방울)
       &::after {
         content: "";
         position: absolute;
-        top: -2px;
+        top: -4px;
         left: -2px;
-        width: 5px;
-        height: 5px;
-        background-color: #b1b1b1;
+        width: 7px;
+        height: 7px;
+        background-color: #ffce00;
+        border: 1px solid #d4a017;
         border-radius: 50%;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
       }
     }
 
     // 2. 깃발 (Flag)
     .flag {
       position: absolute;
-      top: 3px;
-      left: 13px; // 깃대 바로 옆에 부착
-      width: 20px;
-      height: 15px;
+      top: 4px;
+      left: 11px;
+      width: 40px;
+      height: 30px;
       background-color: $flag-color;
-      border: 1px solid #ddd;
-      border-left: none; // 깃대와 붙는 부분은 선을 없앰
+      border-radius: 0 8px 8px 0;
+      border: 1.5px solid #d4a017;
+      border-left: none;
 
-      // 왼쪽(깃대쪽)을 기준으로 휘날리게 설정 (핵심!)
       transform-origin: left center;
       animation: flag-wave $waving-speed ease-in-out infinite;
 
-      // 깃발 안의 주름 효과
-      background: linear-gradient(
+      // 깃발 안의 단일 발바닥 무늬 (Cuter Single Cat Paw)
+      &::after {
+        content: "";
+        position: absolute;
+        top: 55%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 7px;
+        height: 7px;
+        background-color: #8b572a;
+        border-radius: 50% 50% 45% 45%;
+        opacity: 0.7;
+
+        // 발가락 3개 구현 (사이즈 업)
+        box-shadow:
+          -5px -6px 0 -1px #8b572a,
+          0.5px -8px 0 -1px #8b572a,
+          6px -6px 0 -1px #8b572a;
+      }
+
+      // 주름 효과
+      background-image: linear-gradient(
         -45deg,
-        rgba(255, 255, 255, 1) 0%,
-        rgba(240, 240, 240, 1) 50%,
-        rgba(220, 220, 220, 1) 100%
+        rgba(255, 255, 255, 0.4) 0%,
+        transparent 50%,
+        rgba(0, 0, 0, 0.05) 100%
       );
     }
 

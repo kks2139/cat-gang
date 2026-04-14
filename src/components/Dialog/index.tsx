@@ -31,9 +31,11 @@ export default function Dialog({
           exit={{ opacity: 0, transition: { duration: 0.1 } }}
         >
           <div className={cn("content")}>
-            <h3 className={cn("title")}>{title}</h3>
-            <h5 className={cn("sub-title")}>{subTitle}</h5>
-            <Button onClick={onButtonClick}>{buttonLable}</Button>
+            <div className={cn("wrapper")}>
+              <h3 className={cn("title")}>{title}</h3>
+              <h5 className={cn("sub-title")}>{subTitle}</h5>
+              <Button onClick={onButtonClick}>{buttonLable}</Button>
+            </div>
           </div>
         </motion.div>
       )}
