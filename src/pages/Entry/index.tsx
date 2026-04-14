@@ -19,37 +19,60 @@ export default function Entry() {
 
   return (
     <main className={cn("Entry")}>
-      <div className={cn("menu")}>
-        <Button
-          className={cn("start")}
-          onClick={() => {
-            navigate("/find-cat");
-          }}
-        >
-          시작하기
-        </Button>
-        <Button
-          className={cn("purpose")}
-          onClick={() => {
-            // TODO: 사용자별 모은 냥아치, 레벨 순위화면
+      <div className={cn("background-sunset")}>
+        <div className={cn("sky")}>
+          {/* 태양 뒤쪽 구름 */}
+          <div className={cn("cloud", "large")} />
+          <div className={cn("cloud", "small")} />
 
-            addToastMessage({ message: "개발중" });
-          }}
-        >
-          랭킹
-        </Button>
-        <Button
-          disabled={isFetching}
-          onClick={async () => {
-            const { data } = await refetch();
+          <div className={cn("sun-wrapper")}>
+            <div className={cn("heat-haze")} />
+            <div className={cn("sun")}>
+              <div className={cn("sun-core")} />
+              <div className={cn("sun-flame")} />
+            </div>
+          </div>
 
-            addToastMessage({
-              message: `name : ${data?.name}`,
-            });
-          }}
-        >
-          유저정보
-        </Button>
+          {/* 태양 앞쪽 구름 (더 많이 가림) */}
+          <div className={cn("cloud", "large", "front")} />
+          <div className={cn("cloud", "medium", "front", "pos-1")} />
+          <div className={cn("cloud", "medium", "front", "pos-2")} />
+          <div className={cn("cloud", "small", "front")} />
+        </div>
+      </div>
+
+      <div className={cn("content")}>
+        <h1 className={cn("title")}>CAT GANG</h1>
+        <div className={cn("menu")}>
+          <Button
+            className={cn("start")}
+            onClick={() => {
+              navigate("/find-cat");
+            }}
+          >
+            시작하기
+          </Button>
+          <Button
+            className={cn("purpose")}
+            onClick={() => {
+              addToastMessage({ message: "개발중" });
+            }}
+          >
+            랭킹
+          </Button>
+          <Button
+            disabled={isFetching}
+            onClick={async () => {
+              const { data } = await refetch();
+
+              addToastMessage({
+                message: `name : ${data?.name}`,
+              });
+            }}
+          >
+            유저정보
+          </Button>
+        </div>
       </div>
     </main>
   );

@@ -1,21 +1,226 @@
 .Entry {
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   height: 100vh;
   padding: 20px;
+  overflow: hidden;
+  background-color: #2c3e50; 
 
-  background-image: url("@/assets/img/cat_gang.png");
-  background-size: cover; /* 이미지가 비율을 유지하며 화면을 가득 채움 */
-  background-position: center; /* 이미지를 중앙에 배치 */
-  background-repeat: no-repeat; /* 이미지 반복 안 함 */
-  background-attachment: fixed; /* 스크롤 해도 배경은 고정 (선택 사항) */
+  .background-sunset {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    background: linear-gradient(180deg, #a18cd1 0%, #fbc2eb 40%, #ffecd2 100%);
 
-  .menu {
+    .sky {
+      height: 100%;
+      position: relative;
+
+      .cloud {
+        position: absolute;
+        background: linear-gradient(to bottom, #ffffff 0%, #fff5f5 100%);
+        border-radius: 50px;
+        box-shadow: inset 0 -2px 5px rgba(255, 255, 255, 0.5), 0 5px 15px rgba(0, 0, 0, 0.03);
+        opacity: 0.6;
+        z-index: 2;
+        
+        &::before,
+        &::after {
+          content: "";
+          position: absolute;
+          background: inherit;
+          border-radius: 50%;
+          box-shadow: inherit;
+        }
+
+        &.front {
+          z-index: 10;
+          opacity: 0.85;
+          filter: blur(2px);
+          
+          &.pos-1 { bottom: 15%; left: 35%; animation-duration: 30s; }
+          &.pos-2 { bottom: 10%; right: 30%; animation-duration: 40s; }
+        }
+
+        &.large {
+          width: 180px; // 더 크게
+          height: 60px;
+          top: 15%;
+          animation: cloud-move 45s linear infinite;
+          &::before { width: 90px; height: 90px; top: -40px; left: 30px; }
+          &::after { width: 80px; height: 80px; top: -30px; right: 30px; }
+          
+          &.front { top: auto; bottom: 8%; left: 45%; }
+        }
+
+        &.medium {
+          width: 120px;
+          height: 40px;
+          top: 40%;
+          animation: cloud-move 35s linear infinite reverse;
+          &::before { width: 60px; height: 60px; top: -25px; left: 20px; }
+          &::after { width: 50px; height: 50px; top: -15px; right: 20px; }
+          
+          &.front { top: auto; }
+        }
+
+        &.small {
+          width: 80px;
+          height: 30px;
+          top: 10%;
+          opacity: 0.4;
+          animation: cloud-move 80s linear infinite;
+          
+          &.front { top: auto; bottom: 20%; right: 40%; opacity: 0.7; }
+        }
+      }
+    }
+
+    .sun-wrapper {
+      position: absolute;
+      bottom: 5%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 220px;
+      height: 220px;
+      z-index: 5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      .heat-haze {
+        position: absolute;
+        inset: -40px;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+        filter: blur(15px);
+        z-index: 3;
+        animation: heat-haze-warp 3s ease-in-out infinite;
+        pointer-events: none;
+      }
+
+      .sun {
+        position: relative;
+        width: 180px;
+        height: 180px;
+
+        .sun-core {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to top, #ff9a9e 0%, #ff6b6b 100%);
+          border-radius: 50%;
+          box-shadow: 0 0 60px rgba(255, 107, 107, 0.8);
+          z-index: 2;
+          animation: sun-burn-core 4s ease-in-out infinite alternate;
+        }
+
+        .sun-flame {
+          position: absolute;
+          inset: -30px;
+          background: radial-gradient(circle, rgba(255,107,107,0.9) 0%, transparent 75%);
+          border-radius: 50%;
+          filter: blur(12px);
+          z-index: 1;
+          animation: sun-burn-flame 2.5s linear infinite;
+          
+          &::before, &::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: inherit;
+            border-radius: 40% 65% 70% 35% / 40% 55% 65% 55%;
+            animation: flame-rotate 4s linear infinite;
+          }
+          &::after {
+            animation-duration: 6s;
+            animation-direction: reverse;
+            opacity: 0.7;
+          }
+        }
+      }
+    }
+  }
+
+  .content {
+    position: relative;
+    z-index: 20;
     display: flex;
     flex-direction: column;
-    row-gap: 5px;
-    transform: translateY(50px);
+    align-items: center;
+    gap: 40px;
+
+    .title {
+      font-family: "Fredoka", sans-serif;
+      font-size: 85px;
+      font-weight: 700;
+      color: #fff;
+      text-align: center;
+      letter-spacing: 2px;
+      margin: 0;
+      position: relative;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      animation: title-float 4s ease-in-out infinite;
+      
+      &::before {
+        content: "▼";
+        position: absolute;
+        top: -25px;
+        left: 30px;
+        font-size: 30px;
+        color: #ff9f43;
+        transform: rotate(-15deg);
+      }
+      &::after {
+        content: "▼";
+        position: absolute;
+        top: -25px;
+        right: 30px;
+        font-size: 30px;
+        color: #ff9f43;
+        transform: rotate(15deg);
+      }
+    }
+
+    .menu {
+      display: flex;
+      flex-direction: column;
+      row-gap: 15px;
+      width: 240px;
+    }
+  }
+
+  @keyframes cloud-move {
+    from { transform: translateX(-150%); }
+    to { transform: translateX(500%); }
+  }
+
+  @keyframes title-float {
+    0%, 100% { transform: translateY(0) rotate(-0.5deg); }
+    50% { transform: translateY(-10px) rotate(0.5deg); }
+  }
+
+  @keyframes heat-haze-warp {
+    0%, 100% { transform: scale(1) skew(0deg); opacity: 0.4; }
+    50% { transform: scale(1.1) skew(2deg); opacity: 0.7; }
+  }
+
+  @keyframes sun-burn-core {
+    from { transform: scale(1); filter: brightness(1); }
+    to { transform: scale(1.08); filter: brightness(1.3); }
+  }
+
+  @keyframes sun-burn-flame {
+    0%, 100% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.25); opacity: 0.9; }
+  }
+
+  @keyframes flame-rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
   }
 }
