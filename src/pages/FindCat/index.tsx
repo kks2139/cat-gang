@@ -167,7 +167,7 @@ export default function FindCat() {
             <img src={selectedOwnCat?.img} alt="" />
 
             <div className={cn("info")}>
-              <div className={cn("label")}>쓰러뜨린 날</div>
+              <div className={cn("label")}>잡은 날</div>
               {ownCatInfo?.createdAt && (
                 <div className={cn("created-at")}>
                   {format(ownCatInfo.createdAt, "yyyy년 M월 d일 (eee)", {

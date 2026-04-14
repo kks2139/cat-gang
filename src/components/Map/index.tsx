@@ -17,6 +17,7 @@ import styles from "./index.module.scss";
 
 const cn = classNames.bind(styles);
 
+const MAX_ZOOM_LEVEL = 3;
 const BOUNDARY_METER_OF_ME = 50;
 const POLLING_MS = 3000;
 
@@ -201,22 +202,26 @@ export default function Map({
     });
   }, [onClickOwnCat, ownCats]);
 
+  const createMeAndCats = useCallback(async () => {
+    const result = await drawMe();
+    drawCats();
+
+    // 고양이들 그린 후 내위치 기록
+    prevPosition.current = result?.coords;
+  }, [drawCats, drawMe]);
+
   const pollCurrentPosition = useCallback(() => {
     if (currentPositionTimer.current) {
       clearTimeout(currentPositionTimer.current);
     }
 
     currentPositionTimer.current = setTimeout(async () => {
-      const result = await drawMe();
-      drawCats();
-
-      // 고양이들 그린 후 내위치 기록
-      prevPosition.current = result?.coords;
+      await createMeAndCats();
 
       // eslint-disable-next-line react-hooks/immutability
       pollCurrentPosition();
     }, POLLING_MS);
-  }, [drawCats, drawMe]);
+  }, [createMeAndCats]);
 
   const initMap = useCallback(() => {
     const initialize = async () => {
@@ -233,12 +238,13 @@ export default function Map({
 
       // 줌 가능 단계 세팅
       map.setZoomable(true);
-      map.setMaxLevel(2);
+      map.setMaxLevel(MAX_ZOOM_LEVEL);
       map.setMinLevel(1);
 
       mapRef.current = map;
       setKakaoMap(map);
 
+      await createMeAndCats();
       // 맵생성 후 나, 고양이 오버레이 위치 폴링
       pollCurrentPosition();
 
@@ -259,7 +265,7 @@ export default function Map({
 
       setIsInitLoading(false);
     });
-  }, [pollCurrentPosition]);
+  }, [createMeAndCats, pollCurrentPosition]);
 
   useEffect(() => {
     if (mapRef.current || isRendered.current) {
