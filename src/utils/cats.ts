@@ -16,6 +16,7 @@ import ImgCatMe from "@/assets/img/cat_me.png";
 // import ImgCatTest from "@/assets/svg/cat_test.svg";
 
 export interface CatInfo {
+  rarity: "common" | "rare" | "unique"; // 희귀함 정도
   name: string;
   crying: string;
   img: string;
@@ -25,6 +26,7 @@ export interface CatInfo {
   overlayContent?: HTMLDivElement;
   // 상황별 대사
   dialog: {
+    chat?: string;
     meet: string[]; // 시작
     win: string; // 승리
     lose: string[]; // 패배
@@ -36,6 +38,7 @@ export interface CatInfo {
 }
 
 export const myCat: CatInfo = {
+  rarity: "common",
   name: "나비",
   crying: "냐아앙! (끝까지 간다!)",
   img: ImgCatMe,
@@ -68,8 +71,9 @@ export const myCat: CatInfo = {
   },
 };
 
-export const catCharacters = [
+export const catCharacters: CatInfo[] = [
   {
+    rarity: "rare",
     name: "김두한",
     crying: "야옹! (4달라!!)",
     img: ImgCat1,
@@ -103,6 +107,7 @@ export const catCharacters = [
     },
   },
   {
+    rarity: "unique",
     name: "시라소니",
     crying: "애오오오옹~ (이 간나새끼야!)",
     img: ImgCat2,
@@ -136,6 +141,7 @@ export const catCharacters = [
     },
   },
   {
+    rarity: "rare",
     name: "마동석",
     crying: "끄응.. (진실의 방으로..)",
     img: ImgCat3,
@@ -169,6 +175,7 @@ export const catCharacters = [
     },
   },
   {
+    rarity: "common",
     name: "가오가이",
     crying: "가오! 가오오옹!",
     img: ImgCat4,
@@ -202,6 +209,7 @@ export const catCharacters = [
     },
   },
   {
+    rarity: "common",
     name: "개코",
     crying: " rrr... 왈라왈라!",
     img: ImgCat5,
@@ -235,6 +243,7 @@ export const catCharacters = [
     },
   },
   {
+    rarity: "common",
     name: "비너스",
     crying: "크어어어- 냥!",
     img: ImgCat6,
@@ -268,6 +277,7 @@ export const catCharacters = [
     },
   },
   {
+    rarity: "common",
     name: "너구리형사",
     crying: "크르릉.. (곽철용이 죽었어.. 아주 처참하게..)",
     img: ImgCat7,
@@ -301,6 +311,7 @@ export const catCharacters = [
     },
   },
   {
+    rarity: "rare",
     name: "구마적",
     crying: "끄아아아앙! (우미관!)",
     img: ImgCat8,
@@ -334,6 +345,7 @@ export const catCharacters = [
     },
   },
   {
+    rarity: "common",
     name: "소시지",
     crying: "뇸뇸뇸뇸!",
     img: ImgCat9,
@@ -367,6 +379,7 @@ export const catCharacters = [
     },
   },
   {
+    rarity: "unique",
     name: "뭉치",
     crying: "불-쉿! 냥!",
     img: ImgCat10,
@@ -400,6 +413,7 @@ export const catCharacters = [
     },
   },
   {
+    rarity: "common",
     name: "킬라그램",
     crying: "푸르르르 갓-댐!",
     img: ImgCat11,
@@ -433,6 +447,7 @@ export const catCharacters = [
     },
   },
   {
+    rarity: "common",
     name: "내란 우두머리",
     crying: "애애오오옹! (일어서라!)",
     img: ImgCat12,
@@ -466,6 +481,7 @@ export const catCharacters = [
     },
   },
   {
+    rarity: "common",
     name: "소금빵",
     crying: "바삭- 냥!",
     img: ImgCat13,
@@ -499,6 +515,7 @@ export const catCharacters = [
     },
   },
   {
+    rarity: "common",
     name: "창모",
     crying: "메-에스트로 냐앙~",
     img: ImgCat14,

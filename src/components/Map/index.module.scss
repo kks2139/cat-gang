@@ -1,5 +1,24 @@
 .Map {
   position: relative;
+  background-color: var(--orange-map-border);
+  padding: 8px; // 테두리 두께
+  border-radius: 5px 5px 24px 24px;
+  box-shadow: 0 4px 0 var(--orange-map-shadow);
+  overflow: hidden;
+
+  // 봉제선 (Stitch line)
+  &::after {
+    content: "";
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
+    border: 2px dashed rgba(255, 255, 255, 0.4);
+    border-radius: 20px;
+    pointer-events: none;
+    z-index: 10;
+  }
 
   .loading {
     position: absolute;
@@ -12,17 +31,10 @@
     width: 160px;
     height: 55px;
 
-    box-shadow: 0 0 0 1px red;
-
     background-color: white;
     /* 가로 마스크와 세로 마스크를 동시에 적용 */
-    mask-image: linear-gradient(
-        to right,
-        transparent,
-        black 20%,
-        black 80%,
-        transparent
-      ),
+    mask-image:
+      linear-gradient(to right, transparent, black 20%, black 80%, transparent),
       linear-gradient(to bottom, transparent, black 30%, black 70%, transparent);
     /* 두 마스크가 겹치는 부분만 보여줌 */
     -webkit-mask-composite: source-in;
@@ -61,6 +73,8 @@
   .map-content {
     width: 100%;
     height: 100%;
+    border-radius: 18px; // 내부 모서리 둥글게
+    overflow: hidden;
   }
 
   .buttons {

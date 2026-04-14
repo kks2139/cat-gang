@@ -5,7 +5,7 @@ export const wait = (delay: number) =>
 
 export const getPostposition = (
   word = "",
-  type: "obj" | "sub" | "topic" | "with"
+  type: "obj" | "sub" | "topic" | "with",
 ) => {
   // 마지막 글자의 유니코드 확인
   const lastChar = word.charCodeAt(word.length - 1);
@@ -29,7 +29,7 @@ export const getPostposition = (
 export const getRandomLocationInCircle = (
   lat: number,
   lng: number,
-  radiusInMeters: number
+  radiusInMeters: number,
 ): kakao.maps.LatLng => {
   // 1. 0 ~ radiusInMeters 사이의 랜덤한 거리 생성
   // (중심에 몰리지 않게 하기 위해 Math.sqrt 사용)
@@ -78,7 +78,7 @@ export const getCurrentPosition = () => {
       {
         enableHighAccuracy: false,
         maximumAge: 0,
-      }
+      },
     );
   });
 };
@@ -98,8 +98,12 @@ export const createCustomOverlay = ({
   imgUrl,
   type,
   map,
-  catName,
+  catName = "",
 }: CreateOverlayOptions) => {
+  const cat = getCat(catName);
+  const isRare = cat?.rarity === "rare";
+  const isUnique = cat?.rarity === "unique";
+
   // 최상위 컨테이너
   const container = document.createElement("div");
   container.dataset.cat = "true";
@@ -159,10 +163,22 @@ export const createCustomOverlay = ({
     const wrapper = document.createElement("div");
     wrapper.className = "chat";
 
-    const cat = getCat(catName || "");
-
-    if (cat) {
+    if (cat?.dialog.chat) {
       wrapper.textContent = cat.dialog.chat;
+    }
+
+    // 희귀함 효과 적용
+    if (isRare || isUnique) {
+      container.classList.add("no-shadow");
+
+      const effect = document.createElement("div");
+      effect.classList.add("rarity-effect", isRare ? "rare" : "unique");
+
+      const glowFloor = document.createElement("div");
+      glowFloor.className = "glow-floor";
+
+      effect.appendChild(glowFloor);
+      container.appendChild(effect);
     }
 
     wrapper.style.animationDelay = `${getRandomNumber(10)}s`;
@@ -196,7 +212,7 @@ type Coords = Pick<GeolocationCoordinates, "latitude" | "longitude">;
 export const calculateDistanceOverMeters = (
   prev?: Coords,
   curr?: Coords,
-  diffMeter = 20
+  diffMeter = 20,
 ) => {
   if (!prev || !curr) return true;
 

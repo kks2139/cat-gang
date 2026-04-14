@@ -1,32 +1,69 @@
 .Button {
-  padding: 10px 20px;
-  border-radius: 16px;
-  font-size: 18px;
-  font-weight: bold;
-  background-color: white;
-  color: black;
-  border: 2px dashed black;
-  outline: 1px solid;
-  outline-offset: -5px;
+  position: relative;
+  padding: 12px 28px;
+  border-radius: 20px; // 더 뭉툭하고 부드러운 느낌
+  font-size: 16px;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--orange-1) 0%, var(--orange-2) 100%);
+  color: #fff;
+  border: 3px solid var(--orange-border); // 더 진한 외곽선
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 0 var(--orange-shadow); // 더 어두운 그림자로 대비 강화
   text-align: center;
-  transition: 0.1s;
+  transition:
+    transform 0.1s,
+    box-shadow 0.1s;
+  overflow: hidden;
+
+  // 봉제선 (Stitch line)
+  &::after {
+    content: "";
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
+    border: 2px dashed rgba(255, 255, 255, 0.6); // 하얀 실선
+    border-radius: 16px;
+    pointer-events: none;
+  }
 
   &.small {
-    padding: 6px 10px;
+    padding: 6px 16px;
     font-size: 13px;
+    border-radius: 14px;
+    border-width: 2px;
+    box-shadow: 0 3px 0 var(--orange-shadow);
+
+    &::after {
+      top: 3px;
+      left: 3px;
+      right: 3px;
+      bottom: 3px;
+      border-radius: 10px;
+    }
   }
 
   &.large {
     width: 100%;
-    font-size: 20px;
+    font-size: 18px;
+    padding: 16px 28px;
   }
 
   &:disabled {
-    background-color: rgb(192, 192, 192);
+    background: #f0f0f0;
+    border-color: #ccc;
+    box-shadow: 0 4px 0 #bbb;
+    color: #aaa;
+    &::after {
+      border-color: rgba(0, 0, 0, 0.1);
+    }
   }
 
-  &:active {
-    background-color: rgb(192, 192, 192);
-    transform: scaleX(0.97);
+  // 모바일 터치(Active) 시 꾹 눌리는 인형 느낌
+  &:active:not(:disabled) {
+    transform: translateY(3px); // 그림자 두께만큼 내려감
+    box-shadow: 0 1px 0 var(--orange-shadow);
+    filter: brightness(0.95);
   }
 }

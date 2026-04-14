@@ -11,6 +11,7 @@ import {
   createCustomOverlay,
   getCurrentPosition,
   getRandomLocationInCircle,
+  getRandomNumber,
 } from "@/utils/helper";
 
 import styles from "./index.module.scss";
@@ -114,7 +115,7 @@ export default function Map({
         coords,
       };
     },
-    [drawSpreadOut]
+    [drawSpreadOut],
   );
 
   const drawCats = useCallback(() => {
@@ -140,11 +141,24 @@ export default function Map({
     });
     catOverlaysRef.current = [];
 
-    catCharacters.forEach((cat) => {
+    const filteredCats = catCharacters.filter(({ rarity }) => {
+      const num = getRandomNumber(100);
+
+      switch (rarity) {
+        case "rare":
+          return num < 30; // 그릴 확률
+        case "unique":
+          return num < 10; //
+        default:
+          return num < 60;
+      }
+    });
+
+    filteredCats.forEach((cat) => {
       const randomLatLng = getRandomLocationInCircle(
         myPosition.getLat(),
         myPosition.getLng(),
-        BOUNDARY_METER_OF_ME
+        BOUNDARY_METER_OF_ME,
       );
 
       const { overlay, container } = createCustomOverlay({

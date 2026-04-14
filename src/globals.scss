@@ -63,6 +63,12 @@ input {
   --yellow-2: rgb(199, 166, 0);
   --blue-1: rgb(0, 110, 255);
   --green-1: rgb(73, 255, 112);
+  --orange-1: #ff8c61;
+  --orange-2: #ff5c2e;
+  --orange-border: #e65c2e;
+  --orange-shadow: #b33f1a;
+  --orange-map-border: #ff9b7a;
+  --orange-map-shadow: #ff855d;
 }
 
 .my-overlay {
@@ -259,6 +265,7 @@ input {
 
   // 고양이 이미지지
   img {
+    z-index: 1;
     position: relative;
     width: 50px;
     height: 50px;
@@ -313,7 +320,7 @@ input {
     left: 50%;
     width: 40px;
     height: 8px;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.3);
     border-radius: 50%;
     animation: shadow-pulse $walk-duration ease-in-out infinite alternate;
   }
@@ -358,11 +365,11 @@ input {
   @keyframes shadow-pulse {
     from {
       transform: translateX(-50%) scale(1);
-      opacity: 0.6;
+      opacity: 1;
     }
     to {
       transform: translateX(-50%) scale(0.95);
-      opacity: 1;
+      opacity: 0.6;
     }
   }
 }
@@ -491,6 +498,183 @@ input {
     }
     100% {
       opacity: 0;
+    }
+  }
+}
+
+// 희귀함 정도에 따른 부수 효과
+.rarity-effect {
+  z-index: -1;
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 60px;
+  pointer-events: none;
+  z-index: 0;
+
+  &.rare {
+    .glow-floor {
+      &::before {
+        display: none;
+      }
+    }
+  }
+
+  &.unique {
+    .glow-floor {
+      background: radial-gradient(
+        ellipse at center,
+        rgba(240, 220, 255, 1) 0%,
+        rgba(200, 100, 255, 1) 20%,
+        rgba(160, 40, 255, 0.9) 50%,
+        rgba(100, 0, 200, 0.4) 75%,
+        rgba(60, 0, 120, 0) 100%
+      );
+      box-shadow:
+        0 0 4px 2px rgba(220, 180, 255, 1),
+        0 0 12px 6px rgba(180, 80, 255, 0.95),
+        0 0 26px 12px rgba(130, 0, 255, 0.65),
+        0 0 46px 20px rgba(80, 0, 180, 0.3);
+
+      &::before {
+        background: radial-gradient(
+          ellipse at 50% 85%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(220, 150, 255, 0.95) 18%,
+          rgba(170, 50, 255, 0.85) 40%,
+          rgba(100, 0, 200, 0.5) 70%,
+          transparent 100%
+        );
+      }
+    }
+  }
+
+  // ─── 바닥 황금빛 풀 ──────────────────────────────
+  .glow-floor {
+    z-index: -1;
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 10px;
+    border-radius: 50%;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(255, 255, 220, 1) 0%,
+      rgba(255, 240, 30, 1) 20%,
+      rgba(255, 200, 0, 0.9) 50%,
+      rgba(255, 120, 0, 0.4) 75%,
+      rgba(255, 60, 0, 0) 100%
+    );
+    box-shadow:
+      0 0 4px 2px rgba(255, 255, 150, 1),
+      0 0 12px 6px rgba(255, 230, 0, 0.95),
+      0 0 26px 12px rgba(255, 170, 0, 0.65),
+      0 0 46px 20px rgba(255, 100, 0, 0.3);
+    animation: saiyan-ki 0.12s steps(1, end) infinite;
+
+    // ─── 중앙 메인 불꽃 혀 (가장 크고 높음) ──────────
+    &::before {
+      content: "";
+      position: absolute;
+      bottom: 90%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 50px;
+      height: 50px;
+      border-radius: 50% 50% 25% 25% / 85% 85% 15% 15%;
+      transform-origin: center bottom;
+      // background: radial-gradient(
+      //   ellipse at 50% 85%,
+      //   rgba(255, 255, 255, 1) 0%,
+      //   rgba(255, 255, 100, 0.95) 18%,
+      //   rgba(255, 220, 0, 0.85) 40%,
+      //   rgba(255, 140, 0, 0.5) 70%,
+      //   transparent 100%
+      // );
+      filter: blur(0.8px);
+      animation: flame-center 0.26s ease-in-out infinite alternate;
+    }
+  }
+
+  // ─── 애니메이션 ──────────────────────────────────
+
+  // 바닥 에너지 고동 (불규칙 진동)
+  @keyframes saiyan-ki {
+    0% {
+      opacity: 1;
+      transform: translateX(-50%) scaleX(1) scaleY(1);
+    }
+    12% {
+      opacity: 0.85;
+      transform: translateX(-50%) scaleX(1.1) scaleY(0.88);
+    }
+    25% {
+      opacity: 1;
+      transform: translateX(-50%) scaleX(0.95) scaleY(1.1);
+    }
+    37% {
+      opacity: 0.9;
+      transform: translateX(-50%) scaleX(1.12) scaleY(0.9);
+    }
+    50% {
+      opacity: 0.82;
+      transform: translateX(-50%) scaleX(1.06) scaleY(0.85);
+    }
+    62% {
+      opacity: 1;
+      transform: translateX(-50%) scaleX(0.93) scaleY(1.1);
+    }
+    75% {
+      opacity: 0.88;
+      transform: translateX(-50%) scaleX(1.08) scaleY(0.94);
+    }
+    87% {
+      opacity: 1;
+      transform: translateX(-50%) scaleX(0.97) scaleY(1.06);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(-50%) scaleX(1) scaleY(1);
+    }
+  }
+
+  // 중앙 불꽃 — 비틀리며 위로 솟구침
+  @keyframes flame-center {
+    from {
+      transform: translateX(-50%) scaleX(1) scaleY(1) rotate(-4deg);
+      opacity: 0.85;
+    }
+    to {
+      transform: translateX(-50%) scaleX(0.75) scaleY(1.22) rotate(4deg);
+      opacity: 1;
+    }
+  }
+
+  // 좌측 불꽃 — 바깥쪽으로 기울며 흔들림
+  @keyframes flame-sway-l {
+    from {
+      transform: scaleX(1) scaleY(1) rotate(-10deg);
+      opacity: 0.7;
+    }
+    to {
+      transform: scaleX(0.82) scaleY(1.28) rotate(5deg);
+      opacity: 0.95;
+    }
+  }
+
+  // 우측 불꽃 — 반대 방향으로 흔들림
+  @keyframes flame-sway-r {
+    from {
+      transform: scaleX(1) scaleY(1) rotate(10deg);
+      opacity: 0.65;
+    }
+    to {
+      transform: scaleX(0.8) scaleY(1.24) rotate(-6deg);
+      opacity: 0.92;
     }
   }
 }

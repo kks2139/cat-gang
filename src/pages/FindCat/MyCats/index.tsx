@@ -1,5 +1,6 @@
 import classNames from "classnames/bind";
 
+import Button from "@/components/Button";
 import Skeleton from "@/components/Skeleton";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
 import { catCharacters, type CatInfo, getCat } from "@/utils/cats";
@@ -34,15 +35,15 @@ export default function MyCats({ onClose }: Props) {
 
   return (
     <div className={cn("MyCats")}>
-      <button
+      <Button
+        size="small"
         className={cn("close-button")}
-        type="button"
         onClick={() => {
           onClose();
         }}
       >
-        닫기
-      </button>
+        ×
+      </Button>
 
       <div className={cn("wrapper")}>
         {myCats?.length ? (
@@ -56,7 +57,7 @@ export default function MyCats({ onClose }: Props) {
             ))}
           </ul>
         ) : (
-          <div className={cn("empty")}>크흡.. 부하가 하나도 없다니</div>
+          <div className={cn("empty")}>크흠.. 아무도 없군..</div>
         )}
       </div>
     </div>
