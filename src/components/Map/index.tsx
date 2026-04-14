@@ -7,6 +7,7 @@ import ImgCatMe from "@/assets/img/cat_me.png";
 import { useCatStore } from "@/store/cat";
 import { catCharacters } from "@/utils/cats";
 import {
+  calculateDistanceOverMeters,
   createCustomOverlay,
   getCurrentPosition,
   getRandomLocationInCircle,
@@ -46,6 +47,7 @@ export default function Map({
   const isRendered = useRef(false);
   const currentPositionTimer = useRef(0);
   const zoomLevel = useRef<1 | 2>(1);
+  const prevPosition = useRef<GeolocationCoordinates>(undefined);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<kakao.maps.Map>(null);
@@ -106,6 +108,10 @@ export default function Map({
 
       // 내 위치 표시 overlay
       drawSpreadOut(position);
+
+      return {
+        coords,
+      };
     },
     [drawSpreadOut]
   );
@@ -116,6 +122,16 @@ export default function Map({
     }
 
     const myPosition = myCatOverlayRef.current.getPosition();
+
+    // 내 고양이 이전좌표랑 20m 이상 차이날때만 cats 새로 그린다
+    const needToDraw = calculateDistanceOverMeters(prevPosition.current, {
+      latitude: myPosition.getLat(),
+      longitude: myPosition.getLng(),
+    });
+
+    if (!needToDraw) {
+      return;
+    }
 
     // 이전에 생성한 랜덤 마커들 해제
     catOverlaysRef.current.forEach((overlay) => {
@@ -191,12 +207,16 @@ export default function Map({
     }
 
     currentPositionTimer.current = setTimeout(async () => {
-      await drawMe(false);
+      const result = await drawMe();
+      drawCats();
+
+      // 고양이들 그린 후 내위치 기록
+      prevPosition.current = result?.coords;
 
       // eslint-disable-next-line react-hooks/immutability
       pollCurrentPosition();
     }, POLLING_MS);
-  }, [drawMe]);
+  }, [drawCats, drawMe]);
 
   const initMap = useCallback(() => {
     const initialize = async () => {
@@ -219,9 +239,7 @@ export default function Map({
       mapRef.current = map;
       setKakaoMap(map);
 
-      // 맵생성 후 세팅
-      await drawMe();
-      drawCats();
+      // 맵생성 후 나, 고양이 오버레이 위치 폴링
       pollCurrentPosition();
 
       // 맵 이벤트 등록
@@ -241,7 +259,7 @@ export default function Map({
 
       setIsInitLoading(false);
     });
-  }, [drawCats, drawMe, pollCurrentPosition]);
+  }, [pollCurrentPosition]);
 
   useEffect(() => {
     if (mapRef.current || isRendered.current) {
