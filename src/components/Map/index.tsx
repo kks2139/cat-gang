@@ -53,10 +53,11 @@ export default function Map({
 
   const isRendered = useRef(false);
   const currentPositionTimer = useRef(0);
-  const zoomLevel = useRef<1 | 2>(1);
+  const zoomLevelRef = useRef(2);
   const prevPosition = useRef<GeolocationCoordinates>(undefined);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const skyDecorationRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<kakao.maps.Map>(null);
 
   const myCatOverlayRef = useRef<kakao.maps.CustomOverlay>(null);
@@ -216,6 +217,20 @@ export default function Map({
     }, POLLING_MS);
   }, [createMeAndCats]);
 
+  const updateCloudZoom = useCallback((level: number) => {
+    if (!skyDecorationRef.current) {
+      return;
+    }
+
+    const zoomClass =
+      level <= 1
+        ? styles["z-low"]
+        : level <= 2
+          ? styles["z-mid"]
+          : styles["z-high"];
+    skyDecorationRef.current.className = `${styles["sky-decoration"]} ${zoomClass}`;
+  }, []);
+
   const initMap = useCallback(() => {
     const initialize = async () => {
       if (!mapContainerRef.current) {
@@ -225,7 +240,7 @@ export default function Map({
       // 지도를 생성합니다
       const map = new kakao.maps.Map(mapContainerRef.current, {
         center: new kakao.maps.LatLng(37.566826, 126.9786567),
-        level: zoomLevel.current,
+        level: zoomLevelRef.current,
         draggable: false,
       });
 
@@ -242,6 +257,9 @@ export default function Map({
       }
 
       setKakaoMap(map);
+      const level = map.getLevel();
+      zoomLevelRef.current = level;
+      updateCloudZoom(level);
 
       await createMeAndCats();
       // 맵생성 후 나, 고양이 오버레이 위치 폴링
@@ -249,6 +267,10 @@ export default function Map({
 
       // 맵 이벤트 등록
       kakao.maps.event.addListener(map, "zoom_changed", () => {
+        const level = map.getLevel();
+        zoomLevelRef.current = level;
+        updateCloudZoom(level);
+
         const pos = myCatOverlayRef.current?.getPosition();
 
         if (pos) {
@@ -264,7 +286,7 @@ export default function Map({
 
       setIsInitLoading(false);
     });
-  }, [createMeAndCats, pollCurrentPosition]);
+  }, [createMeAndCats, pollCurrentPosition, updateCloudZoom]);
 
   useEffect(() => {
     if (mapRef.current || isRendered.current) {
@@ -303,7 +325,7 @@ export default function Map({
   return (
     <>
       <div className={cn("Map", className)}>
-        <div className={cn("sky-decoration")}>
+        <div ref={skyDecorationRef} className={cn("sky-decoration")}>
           <div className={cn("cloud", "c1")} />
           <div className={cn("cloud", "c2")} />
           <div className={cn("cloud", "c3")} />
