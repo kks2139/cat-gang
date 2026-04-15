@@ -94,15 +94,19 @@
   row-gap: 20px;
 
   &.enemy {
-    // 적이 나로부터 유혹당할 때 (아래에서 위로)
+    // 적이 나로부터 유혹당할 때 (내 쪽인 좌측하단에서 적 쪽으로 올라옴)
+    left: -200px;
     bottom: -200px;
-    animation: fly-up 1.5s ease-in forwards;
+    transform: none;
+    animation: seduce-enemy-fly 1.5s ease-out forwards;
   }
 
   &.me {
-    // 내가 적으로부터 유혹당할 때 (위에서 아래로)
+    // 내가 적으로부터 유혹당할 때 (적 쪽인 우측상단에서 내 쪽으로 내려옴)
+    right: -200px;
     top: -200px;
-    animation: fly-down 1.5s ease-in forwards;
+    transform: none;
+    animation: seduce-me-fly 1.5s ease-out forwards;
   }
 
   .heart {
@@ -144,30 +148,32 @@
     }
   }
 
-  @keyframes fly-up {
+  @keyframes seduce-enemy-fly {
     0% {
-      transform: translate(-50%, 0);
+      transform: translate(0, 0);
       opacity: 0;
     }
-    20% {
+    10%,
+    70% {
       opacity: 1;
     }
     100% {
-      transform: translate(-50%, -400px);
+      transform: translate(160px, -180px);
       opacity: 0;
     }
   }
 
-  @keyframes fly-down {
+  @keyframes seduce-me-fly {
     0% {
-      transform: translate(-50%, 0);
+      transform: translate(0, 0);
       opacity: 0;
     }
-    20% {
+    10%,
+    70% {
       opacity: 1;
     }
     100% {
-      transform: translate(-50%, 400px);
+      transform: translate(-160px, 180px);
       opacity: 0;
     }
   }

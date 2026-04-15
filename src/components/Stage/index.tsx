@@ -60,24 +60,24 @@ export default function Stage({ onClose, onWin }: Props) {
     winner === "me"
       ? "lose"
       : provokedBy === "me"
-      ? "provoke"
-      : seducedBy === "me"
-      ? "seduce"
-      : punchedBy === "me"
-      ? "punch"
-      : undefined;
+        ? "provoke"
+        : seducedBy === "enemy"
+          ? "seduce"
+          : punchedBy === "me"
+            ? "punch"
+            : undefined;
 
   const myEffect: EffectType | undefined = isRun
     ? "run"
     : winner === "enemy"
-    ? "lose"
-    : provokedBy === "enemy"
-    ? "provoke"
-    : seducedBy === "enemy"
-    ? "seduce"
-    : punchedBy === "enemy"
-    ? "punch"
-    : undefined;
+      ? "lose"
+      : provokedBy === "enemy"
+        ? "provoke"
+        : seducedBy === "me"
+          ? "seduce"
+          : punchedBy === "enemy"
+            ? "punch"
+            : undefined;
 
   // return: 승리한 사이드
   const punch = async (side: Side): Promise<Side | void> => {
@@ -186,9 +186,11 @@ export default function Stage({ onClose, onWin }: Props) {
   useEffect(() => {
     setTimeout(
       () => setIsShowControl(true),
-      (MY_MOTION_DURATION + MY_MOTION_DELAY + 0.3) * 1000
+      (MY_MOTION_DURATION + MY_MOTION_DELAY + 0.3) * 1000,
     );
   }, []);
+
+  console.log(enemyEffect, myEffect);
 
   return (
     <div className={cn("Stage")}>

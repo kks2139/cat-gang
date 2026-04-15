@@ -42,7 +42,7 @@ export const myCat: CatInfo = {
   name: "나비",
   crying: "냐아앙! (끝까지 간다!)",
   img: ImgCatMe,
-  hp: 5,
+  hp: 15,
   punchPower: 3,
   dialog: {
     meet: [
