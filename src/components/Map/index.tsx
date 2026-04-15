@@ -322,6 +322,10 @@ export default function Map({
     }
   }, [drawOwnCats, kakaoMap, ownCats]);
 
+  useEffect(() => {
+    return () => clearTimeout(currentPositionTimer.current);
+  }, []);
+
   return (
     <>
       <div className={cn("Map", className)}>
