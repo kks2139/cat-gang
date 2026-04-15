@@ -162,14 +162,15 @@ export default function Stage({ onClose, onWin }: Props) {
           text: selectedCat!.dialog.punch,
         });
         break;
-      case 6: // 도발
-        setDialogInfo({
-          side,
-          type: "provoke",
-          speaker: selectedCat!.name,
-          text: selectedCat!.dialog.provoke,
-        });
-        break;
+      // case 6: // 도발
+      //   setDialogInfo({
+      //     side,
+      //     type: "provoke",
+      //     speaker: selectedCat!.name,
+      //     text: selectedCat!.dialog.provoke,
+      //   });
+      //   break;
+      case 6:
       case 7: // 유혹
         setDialogInfo({
           side,

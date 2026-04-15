@@ -1,83 +1,142 @@
 .punch {
   z-index: 100;
   position: absolute;
-  left: 20%;
+  left: 30%;
   top: 30%;
   pointer-events: none;
 
-  &.me {
-    // 플레이어가 맞을 때
-  }
-
-  &.enemy {
-    // 적 부근
+  &.second {
+    .paw-stamp,
+    .paw-stamp::before,
+    .paw-stamp::after {
+      animation-delay: 0.15s;
+    }
   }
 
   .paw-stamp {
     position: relative;
-    width: 50px;
-    height: 40px;
+    width: 60px;
+    height: 50px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15));
+    filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.4));
+    animation: punch-slam 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
 
     .pad {
-      width: 40px;
-      height: 35px;
-      background-color: rgb(255, 139, 30);
+      width: 45px;
+      height: 40px;
+      background-color: rgb(255, 115, 0);
       border-radius: 50% 50% 45% 45%;
-      box-shadow: 0 0 10px 0 gray;
+      box-shadow:
+        inset 0 -3px 8px rgba(0, 0, 0, 0.3),
+        0 0 15px 5px rgba(255, 139, 30, 0.6);
+      position: relative;
+      z-index: 2;
     }
 
     .toe {
       position: absolute;
-      width: 15px;
-      height: 13px;
-      background-color: rgb(255, 139, 30);
+      width: 18px;
+      height: 15px;
+      background-color: rgb(255, 115, 0);
       border-radius: 50%;
-      top: -10px;
-      box-shadow: 0 0 10px 0 gray;
+      top: -12px;
+      box-shadow:
+        inset 0 -2px 5px rgba(0, 0, 0, 0.3),
+        0 0 10px 3px rgba(255, 139, 30, 0.6);
+      z-index: 2;
 
       @for $i from 1 through 3 {
         &:nth-child(#{$i}) {
           @if $i == 1 {
-            left: 0;
-            transform: rotate(-20deg);
+            left: -5px;
+            transform: rotate(-25deg);
           }
           @if $i == 2 {
             left: 50%;
-            transform: translateX(-50%) translateY(-5px);
+            transform: translateX(-50%) translateY(-8px);
           }
           @if $i == 3 {
-            right: 0;
-            transform: rotate(20deg);
+            right: -5px;
+            transform: rotate(25deg);
           }
         }
       }
     }
 
-    // 타격 충격파 효과
+    // 타격 충격파 효과 1 (빠르게 퍼지는 외곽선)
     &::before {
+      content: "";
+      position: absolute;
+      width: 150%;
+      height: 150%;
+      top: -25%;
+      left: -25%;
+      border: 6px solid var(--orange-map-border, rgb(255, 166, 0));
+      border-radius: 50%;
+      animation: punch-shock 0.4s cubic-bezier(0.1, 0.8, 0.3, 1) both;
+      z-index: 1;
+    }
+
+    // 타격 충격파 효과 2 (번쩍이는 빛)
+    &::after {
       content: "";
       position: absolute;
       width: 100%;
       height: 100%;
-      border: 3px solid var(--orange-map-border);
+      background: radial-gradient(
+        circle,
+        rgba(255, 255, 255, 1) 0%,
+        rgba(255, 200, 0, 0.8) 40%,
+        rgba(255, 100, 0, 0) 80%
+      );
       border-radius: 50%;
-      animation: punch-shock 0.4s ease-out forwards;
+      top: 0;
+      left: 0;
+      animation: punch-flash 0.4s ease-out both;
+      z-index: 0;
+    }
+  }
+
+  @keyframes punch-slam {
+    0% {
+      transform: scale(3.5) rotate(25deg);
       opacity: 0;
-      z-index: -1;
+    }
+    30% {
+      transform: scale(0.8) rotate(-10deg);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.1) rotate(5deg);
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+      opacity: 1;
     }
   }
 
   @keyframes punch-shock {
     0% {
+      transform: scale(0.3);
+      border-width: 15px;
+      opacity: 1;
+    }
+    100% {
+      transform: scale(2.8);
+      border-width: 0px;
+      opacity: 0;
+    }
+  }
+
+  @keyframes punch-flash {
+    0% {
       transform: scale(0.5);
       opacity: 1;
     }
     100% {
-      transform: scale(2.5);
+      transform: scale(4);
       opacity: 0;
     }
   }
@@ -103,8 +162,8 @@
 
   &.me {
     // 내가 적으로부터 유혹당할 때 (적 쪽인 우측상단에서 내 쪽으로 내려옴)
-    right: -200px;
-    top: -200px;
+    right: -360px;
+    top: -180px;
     transform: none;
     animation: seduce-me-fly 1.5s ease-out forwards;
   }

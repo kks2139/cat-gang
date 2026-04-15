@@ -30,24 +30,18 @@ export default function Effects({
 
           return (
             <motion.div
-              className={cn("punch", { [target]: true })}
+              className={cn("punch", { [target]: true, second: !isFirst })}
               key={i}
+              style={{ "--punch-duration": `${punchDuration}s` } as React.CSSProperties}
               initial={{
-                opacity: 0,
-                scale: 2,
-                rotate: isFirst ? -30 : 30,
-                x: isFirst ? -80 : 80,
+                x: isFirst ? -30 : 20,
+                y: isFirst ? -10 : 30,
+                rotate: isFirst ? -15 : 15,
               }}
               animate={{
-                opacity: 1,
-                scale: 0.8,
-                rotate: isFirst ? -10 : 10,
-                x: isFirst ? -22 : 22,
-              }}
-              transition={{
-                duration: punchDuration * 0.4,
-                delay: isFirst ? 0 : 0.05,
-                ease: "circOut",
+                x: isFirst ? -30 : 20,
+                y: isFirst ? -10 : 30,
+                rotate: isFirst ? -15 : 15,
               }}
             >
               <div className={cn("paw-stamp")}>

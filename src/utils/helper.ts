@@ -76,7 +76,7 @@ export const getCurrentPosition = () => {
       ({ coords }) => res(coords),
       () => res(undefined),
       {
-        enableHighAccuracy: false,
+        enableHighAccuracy: true,
         maximumAge: 0,
       },
     );
