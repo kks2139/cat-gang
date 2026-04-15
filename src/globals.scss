@@ -459,10 +459,10 @@ input {
     35% {
       transform: translateY(0) scaleY(0.9);
     } // 착지
-    
+
     65% {
       transform: translateY(0) scaleY(0.95);
-    } 
+    }
     67.5% {
       transform: translateY(-10px) scaleY(1.02);
     } // 작은 점프 (높이 하향)
@@ -523,10 +523,10 @@ input {
 
 .papyrus-explosion {
   // 변수 설정
-  $piece-count: 30;
+  $piece-count: 40;
   $explosion-radius: 120px;
   $duration: 3s;
-  $piece-size: 6px;
+  $piece-size: 12px;
 
   $fragment-colors: (
     #ff3d00,
@@ -551,7 +551,34 @@ input {
   height: 0;
   z-index: 999;
 
+  .central-flash {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: radial-gradient(circle, #fff 0%, rgba(255, 255, 255, 0) 70%);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    animation: flash-burst 0.5s ease-out forwards;
+  }
+
+  @keyframes flash-burst {
+    0% {
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 1;
+      filter: brightness(2);
+    }
+    50% {
+      transform: translate(-50%, -50%) scale(15);
+      opacity: 0.8;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(25);
+      opacity: 0;
+    }
+  }
+
   .piece {
+    z-index: 999;
     position: absolute;
     width: $piece-size;
     height: $piece-size * 1.5;
@@ -559,29 +586,32 @@ input {
     border-radius: 2px;
     opacity: 0;
 
-    animation: papyrus-scatter $duration cubic-bezier(0.1, 0.7, 0.3, 1) forwards;
+    animation: papyrus-scatter $duration cubic-bezier(0.075, 0.82, 0.165, 1)
+      forwards;
     will-change: transform, opacity;
 
     @for $i from 1 through $piece-count {
       &:nth-child(#{$i}) {
-        $angle: calc(360deg / $piece-count) * ($i - 1);
-        $random-r: $explosion-radius + math.random(60); // 불균일한 궤적
+        $angle: calc(360deg / $piece-count) *
+          ($i - 1) +
+          (math.random(20) - 10deg);
+        $random-r: $explosion-radius + math.random(100);
 
         $qx: cos($angle) * $random-r;
         $qy: sin($angle) * $random-r;
 
         --qx: #{$qx};
-        --qy: #{$qy};
-        --rot: #{math.random(720)}deg;
+        --qy: #{$qy} - 20px; // 위로 살짝 솟구치게
+        --rot: #{(math.random(1000) - 500)}deg;
 
         $color: list.nth(
           $fragment-colors,
           (math.random(list.length($fragment-colors)))
         );
         background-color: $color;
-        box-shadow: 0 0 $piece-size $color; // 빛나는 효과
+        box-shadow: 0 0 ($piece-size * 1.5) $color;
 
-        animation-delay: #{math.random(20) * 0.05s};
+        animation-delay: #{math.random(15) * 0.02s};
       }
     }
   }
@@ -590,21 +620,19 @@ input {
     0% {
       transform: translate(-50%, -50%) rotate(0deg) scale(0);
       opacity: 0;
+      filter: blur(5px) brightness(2);
     }
-    5% {
+    10% {
       opacity: 1;
-      transform: translate(-50%, -50%) rotate(0deg) scale(1.5);
-    }
-    30% {
-      opacity: 1;
+      transform: translate(-50%, -50%) rotate(20deg) scale(2.5);
+      filter: blur(0) brightness(1.5);
     }
     100% {
-      // 중력 효과 시뮬레이션: qy(Y좌표)를 살짝 아래로 더함
       transform: translate(
           calc(-50% + var(--qx)),
-          calc(-50% + var(--qy) + 60px)
+          calc(-50% + var(--qy) + 120px) // 중력 효과 강화
         )
-        rotate(var(--rot)) scale(0.5);
+        rotate(var(--rot)) scale(0.2);
       opacity: 0;
     }
   }

@@ -149,13 +149,11 @@ export default function FindCat() {
         title="승리"
         subTitle={
           <>
-            <strong>{getPostposition(catchedCat?.name, "obj")}</strong> 손에
-            넣었습니다.{"\n"}
-            이제 <strong>
-              {getPostposition(catchedCat?.name, "with")}
-            </strong>{" "}
-            그의 영역은{"\n"}
-            당신이 가지게 됩니다.
+            <strong>{getPostposition(catchedCat?.name, "sub")}</strong>{" "}
+            굴복했습니다.{"\n"}
+            이제 <strong>{getPostposition(catchedCat?.name, "topic")}</strong>
+            {"\n"}
+            당신의 것입니다.
           </>
         }
         buttonLable="확인"

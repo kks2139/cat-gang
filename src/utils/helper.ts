@@ -54,8 +54,13 @@ export const getFireworkElement = () => {
   const explosion = document.createElement("div");
   explosion.className = "papyrus-explosion";
 
-  // 2. 30개의 조각 생성 및 조립 (화려하게 증량)
-  for (let i = 0; i < 30; i++) {
+  // 1-1. 중앙 섬광 효과 추가
+  const flash = document.createElement("div");
+  flash.className = "central-flash";
+  explosion.appendChild(flash);
+
+  // 2. 50개의 조각 생성 및 조립 (화려하게 증량)
+  for (let i = 0; i < 40; i++) {
     const piece = document.createElement("div");
     piece.className = "piece";
     explosion.appendChild(piece);
