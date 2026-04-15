@@ -19,7 +19,7 @@ const cn = classNames.bind(styles);
 
 const MAX_ZOOM_LEVEL = 3;
 const BOUNDARY_METER_OF_ME = 50;
-const POLLING_MS = 3000;
+const POLLING_MS = 4000;
 
 export interface OwnCat {
   name: string;

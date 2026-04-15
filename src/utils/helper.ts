@@ -69,8 +69,39 @@ export const getFireworkElement = () => {
   return explosion;
 };
 
+// 기기 위치 권한 및 상태 확인
+export const checkLocationStatus = async () => {
+  if (!navigator.geolocation) {
+    alert("이 기기는 위치 서비스를 지원하지 않습니다.");
+    return false;
+  }
+
+  // Permissions API가 지원되는 경우 권한 상태 확인
+  if (navigator.permissions && navigator.permissions.query) {
+    try {
+      const result = await navigator.permissions.query({ name: "geolocation" });
+      if (result.state === "denied") {
+        alert(
+          "위치 권한이 거부되었습니다.\n설정에서 위치 권한을 허용해주세요.",
+        );
+        return false;
+      }
+    } catch (e) {
+      console.error("Permissions API error:", e);
+    }
+  }
+
+  return true;
+};
+
 // 기기 위치 반환
-export const getCurrentPosition = () => {
+export const getCurrentPosition = async () => {
+  const isOk = await checkLocationStatus();
+
+  if (!isOk) {
+    return undefined;
+  }
+
   return new Promise<GeolocationCoordinates | undefined>((res) => {
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => res(coords),
