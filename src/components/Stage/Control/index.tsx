@@ -46,7 +46,7 @@ const Typing = ({ text, speed = 60 }: { text: string; speed?: number }) => {
   );
 };
 
-type DialogType = keyof CatInfo["dialog"];
+type DialogType = keyof CatInfo["dialog"] | "system";
 
 export type Side = "me" | "enemy";
 
@@ -70,7 +70,7 @@ interface Props {
 export default function Control({
   isShow,
   onPunch,
-  onProvoke,
+  // onProvoke,
   onSeduce,
   onRun,
   dialogInfo,
@@ -137,7 +137,7 @@ export default function Control({
                       유혹
                     </Button>
                   </li>
-                  <li>
+                  {/* <li>
                     <Button
                       size="large"
                       onClick={() => {
@@ -146,7 +146,7 @@ export default function Control({
                     >
                       도발
                     </Button>
-                  </li>
+                  </li> */}
                   <li>
                     <Button
                       size="large"

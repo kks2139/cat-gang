@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 import { useCatStore } from "@/store/cat";
 import { type CatInfo, myCat } from "@/utils/cats";
-import { getRandomNumber, wait } from "@/utils/helper";
+import { getPostposition, getRandomNumber, wait } from "@/utils/helper";
 
 import Dialog from "../Dialog";
 import Control, { type DialogInfo, type Side } from "./Control";
@@ -190,8 +190,6 @@ export default function Stage({ onClose, onWin }: Props) {
     );
   }, []);
 
-  console.log(enemyEffect, myEffect);
-
   return (
     <div className={cn("Stage")}>
       <div className={cn("view")}>
@@ -304,6 +302,10 @@ export default function Stage({ onClose, onWin }: Props) {
 
             if (causedBy === "me") {
               switch (type) {
+                case "system":
+                  enemyAction();
+
+                  break;
                 case "punch": {
                   const winner = await punch("me");
 
@@ -327,7 +329,11 @@ export default function Stage({ onClose, onWin }: Props) {
                 case "seduce":
                   await seduce("me");
 
-                  enemyAction();
+                  setDialogInfo({
+                    type: "system",
+                    speaker: "",
+                    text: `${getPostposition(selectedCat?.name, "sub")} 유혹에 넘어갔다!`,
+                  });
 
                   break;
                 case "win":
