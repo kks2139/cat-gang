@@ -119,11 +119,11 @@ export default function Map({
 
       switch (rarity) {
         case "rare":
-          return num < 30; // 그릴 확률
+          return num < 40; // 그릴 확률
         case "unique":
-          return num < 10; //
+          return num < 30; //
         default:
-          return num < 60;
+          return num < 50;
       }
     });
 
