@@ -3,8 +3,7 @@
 .Map {
   position: relative;
   background-color: var(--orange-border);
-  padding: 8px; // 테두리 두께
-  border-radius: 5px 5px 24px 24px;
+  padding: 8px 0; // 위 아래 테두리만 남김
   box-shadow: 0 4px 0 var(--orange-shadow);
   overflow: hidden;
 
@@ -264,7 +263,11 @@
   }
 
   // 봉제선 (Stitch line)
-  @include plush-stitch(4px, 20px, 0.4, 10);
+  @include plush-stitch(4px, 0, 0.4, 10);
+  &::after {
+    border-left: none;
+    border-right: none;
+  }
 
   .loading {
     position: absolute;
@@ -361,7 +364,7 @@
     position: relative;
     width: 100%;
     height: 100%;
-    border-radius: 18px; // 내부 모서리 둥글게
+    border-radius: 0;
     overflow: hidden;
     background-color: #eee;
     transition: filter 1s ease; // 밤낮 전환 시 부드럽게
