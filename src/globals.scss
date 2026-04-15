@@ -499,49 +499,6 @@ input {
   }
 }
 
-.location-spread-out {
-  z-index: -1;
-  position: relative;
-  border-radius: 50%;
-
-  // 가상 요소를 사용하여 퍼지는 원 구현
-  &::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-
-    // 최종적으로 퍼질 원의 지름
-    width: 400px;
-    height: 400px;
-
-    background-color: #ff9e43;
-    border-radius: 50%;
-
-    // 애니메이션 설정: 2초 동안, 부드럽게 끝남, 무한 반복
-    animation: ripple 4s linear infinite;
-
-    // 렌더링 최적화
-    will-change: transform, opacity;
-  }
-
-  // 1. 퍼져나가는 애니메이션 정의
-  @keyframes ripple {
-    0% {
-      transform: translate(-50%, -50%) scale(0.1);
-      opacity: 0.4;
-    }
-    50% {
-      // scale(1)이 되면 설정한 width/height만큼 커집니다.
-      transform: translate(-50%, -50%) scale(1);
-      opacity: 0; // 완전히 투명해짐
-    }
-    100% {
-      opacity: 0;
-    }
-  }
-}
-
 // 희귀함 정도에 따른 부수 효과
 .rarity-effect {
   z-index: -1;

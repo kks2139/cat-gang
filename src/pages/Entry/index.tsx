@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 
 import Button from "@/components/Button";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
-import { useUsersQuery } from "@/queries/useUsersQuery";
 import { useViewStore } from "@/store/view";
 
 import styles from "./index.module.scss";
@@ -14,7 +13,7 @@ export default function Entry() {
   const { addToastMessage } = useViewStore((s) => s.actions);
   const navigate = useNavigate();
 
-  const { refetch, isFetching } = useUsersQuery();
+  // const { refetch, isFetching } = useUsersQuery();
   useMyCatsQuery();
 
   return (
@@ -60,7 +59,7 @@ export default function Entry() {
           >
             랭킹
           </Button>
-          <Button
+          {/* <Button
             disabled={isFetching}
             onClick={async () => {
               const { data } = await refetch();
@@ -71,7 +70,7 @@ export default function Entry() {
             }}
           >
             유저정보
-          </Button>
+          </Button> */}
         </div>
       </div>
     </main>

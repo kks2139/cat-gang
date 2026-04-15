@@ -54,68 +54,42 @@ export default function Map({
   const mapRef = useRef<kakao.maps.Map>(null);
 
   const myCatOverlayRef = useRef<kakao.maps.CustomOverlay>(null);
-  const spreadOutOverlayRef = useRef<kakao.maps.CustomOverlay>(null);
   const catOverlaysRef = useRef<kakao.maps.CustomOverlay[]>([]);
   const ownCatOverlaysRef = useRef<kakao.maps.CustomOverlay[]>([]);
 
-  const drawSpreadOut = useCallback((position: kakao.maps.LatLng) => {
-    if (!mapRef.current) {
+  const drawMe = useCallback(async (usePanTo = true) => {
+    if (!mapRef.current || !navigator.geolocation) {
+      return;
+    }
+    const coords = await getCurrentPosition();
+
+    if (!coords) {
       return;
     }
 
-    // 내 위치 표시 overlay
+    const { latitude, longitude } = coords;
+    const position = new kakao.maps.LatLng(latitude, longitude);
     const { overlay } = createCustomOverlay({
-      type: "loacation-spread-out",
+      type: "me",
       position,
+      imgUrl: ImgCatMe,
       map: mapRef.current,
     });
 
-    if (spreadOutOverlayRef.current) {
-      spreadOutOverlayRef.current.setMap(null);
+    if (myCatOverlayRef.current) {
+      myCatOverlayRef.current.setMap(null);
     }
 
-    spreadOutOverlayRef.current = overlay;
+    myCatOverlayRef.current = overlay;
+
+    if (usePanTo) {
+      mapRef.current!.panTo(overlay.getPosition());
+    }
+
+    return {
+      coords,
+    };
   }, []);
-
-  const drawMe = useCallback(
-    async (usePanTo = true) => {
-      if (!mapRef.current || !navigator.geolocation) {
-        return;
-      }
-      const coords = await getCurrentPosition();
-
-      if (!coords) {
-        return;
-      }
-
-      const { latitude, longitude } = coords;
-      const position = new kakao.maps.LatLng(latitude, longitude);
-      const { overlay } = createCustomOverlay({
-        type: "me",
-        position,
-        imgUrl: ImgCatMe,
-        map: mapRef.current,
-      });
-
-      if (myCatOverlayRef.current) {
-        myCatOverlayRef.current.setMap(null);
-      }
-
-      myCatOverlayRef.current = overlay;
-
-      if (usePanTo) {
-        mapRef.current!.panTo(overlay.getPosition());
-      }
-
-      // 내 위치 표시 overlay
-      drawSpreadOut(position);
-
-      return {
-        coords,
-      };
-    },
-    [drawSpreadOut],
-  );
 
   const drawCats = useCallback(() => {
     if (!myCatOverlayRef.current) {
