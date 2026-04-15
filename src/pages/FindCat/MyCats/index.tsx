@@ -1,6 +1,5 @@
 import classNames from "classnames/bind";
 
-import Button from "@/components/Button";
 import Skeleton from "@/components/Skeleton";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
 import { catCharacters, type CatInfo, getCat } from "@/utils/cats";
@@ -10,10 +9,10 @@ import styles from "./index.module.scss";
 const cn = classNames.bind(styles);
 
 interface Props {
-  onClose: () => void;
+  className?: string;
 }
 
-export default function MyCats({ onClose }: Props) {
+export default function MyCats({ className }: Props) {
   const { data, isLoading } = useMyCatsQuery();
 
   const myCats = data
@@ -35,17 +34,7 @@ export default function MyCats({ onClose }: Props) {
 
   return (
     <div className={cn("MyCats")}>
-      <Button
-        size="small"
-        className={cn("close-button")}
-        onClick={() => {
-          onClose();
-        }}
-      >
-        ×
-      </Button>
-
-      <div className={cn("wrapper")}>
+      <div className={cn("wrapper", className)}>
         {myCats?.length ? (
           <ul>
             {myCats.map(({ name, img, crying }, i) => (

@@ -85,17 +85,25 @@ export default function FindCat() {
             transition={{ duration: 0.2 }}
           >
             <motion.div
-              className={cn("content")}
+              className={cn("wrapper")}
               initial={{ opacity: 0, scale: 0.7 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.7 }}
               transition={{ duration: 0.2 }}
             >
-              <MyCats
-                onClose={() => {
-                  setSelectedMenu(undefined);
-                }}
-              />
+              <div className={cn("content")}>
+                <div className={cn("close-button")}>
+                  <Button
+                    size="small"
+                    onClick={() => {
+                      setSelectedMenu(undefined);
+                    }}
+                  >
+                    ×
+                  </Button>
+                </div>
+                <MyCats className={cn("cats")} />
+              </div>
             </motion.div>
           </motion.div>
         )}
