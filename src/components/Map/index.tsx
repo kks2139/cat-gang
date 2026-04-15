@@ -255,6 +255,12 @@ export default function Map({
       map.setMinLevel(1);
 
       mapRef.current = map;
+      const kakaoLink = mapContainerRef.current.querySelector("a");
+
+      if (kakaoLink) {
+        kakaoLink.style.display = "none";
+      }
+
       setKakaoMap(map);
 
       await createMeAndCats();

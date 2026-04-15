@@ -73,14 +73,22 @@ export default function FindCat() {
             나가기
           </Button>
         </div>
+      </div>
 
-        <AnimatePresence>
-          {!!selectedMenu && (
+      <AnimatePresence>
+        {!!selectedMenu && (
+          <motion.div
+            className={cn("my-cats-modal")}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
             <motion.div
               className={cn("content")}
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0, scale: 0.7 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.7 }}
               transition={{ duration: 0.2 }}
             >
               <MyCats
@@ -89,9 +97,9 @@ export default function FindCat() {
                 }}
               />
             </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {!!isShowStage && (
