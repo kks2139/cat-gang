@@ -45,7 +45,8 @@
 
       &.seduce {
         animation: bewitched 1.5s infinite ease-in-out;
-        filter: sepia(0.5) hue-rotate(-60deg) saturate(2) brightness(1.1) drop-shadow(0 0 10px #ff608c);
+        filter: sepia(0.5) hue-rotate(-60deg) saturate(2) brightness(1.1)
+          drop-shadow(0 0 10px #ff608c);
       }
 
       &.run {
@@ -125,7 +126,8 @@
 }
 
 @keyframes bewitched {
-  0%, 100% {
+  0%,
+  100% {
     transform: rotate(0) scale(1);
   }
   25% {

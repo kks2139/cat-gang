@@ -44,6 +44,12 @@ export default function Map({
 
   const [isInitLoading, setIsInitLoading] = useState(false);
   const [kakaoMap, setKakaoMap] = useState<kakao.maps.Map>();
+  const [isNight, setIsNight] = useState(false);
+
+  useEffect(() => {
+    const hours = new Date().getHours();
+    setIsNight(hours >= 18 || hours < 6);
+  }, []);
 
   const isRendered = useRef(false);
   const currentPositionTimer = useRef(0);
@@ -98,7 +104,7 @@ export default function Map({
 
     const myPosition = myCatOverlayRef.current.getPosition();
 
-    // 내 고양이 이전좌표랑 20m 이상 차이날때만 cats 새로 그린다
+    // 내 고양이 이전좌표랑 일정m 이상 차이날때만 cats 새로 그린다
     const needToDraw = calculateDistanceOverMeters(prevPosition.current, {
       latitude: myPosition.getLat(),
       longitude: myPosition.getLng(),
@@ -297,10 +303,23 @@ export default function Map({
   return (
     <>
       <div className={cn("Map", className)}>
+        <div className={cn("sky-decoration")}>
+          <div className={cn("cloud", "c1")} />
+          <div className={cn("cloud", "c2")} />
+          <div className={cn("cloud", "c3")} />
+          <div className={cn("cloud", "c4")} />
+          <div className={cn("cloud", "c5")} />
+          <div className={cn("cloud", "c6")} />
+          <div className={cn("cloud", "c7")} />
+          <div className={cn("cloud", "c8")} />
+        </div>
+
         <div
           ref={mapContainerRef}
           className={cn("map-content", { skeleton: !mapContainerRef.current })}
-        ></div>
+        >
+          {isNight && !isInitLoading && <div className={cn("night-overlay")} />}
+        </div>
 
         <AnimatePresence>
           {isInitLoading && (

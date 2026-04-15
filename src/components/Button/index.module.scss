@@ -9,7 +9,7 @@
   background: linear-gradient(135deg, var(--orange-1) 0%, var(--orange-2) 100%);
   color: #fff;
   border: 3px solid var(--orange-border); // 더 진한 외곽선
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+  text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.7); // 더 강한 그림자로 텍스트를 확실히 분리
   box-shadow: 0 4px 0 var(--orange-shadow); // 더 어두운 그림자로 대비 강화
   text-align: center;
   transition:

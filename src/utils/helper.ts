@@ -216,8 +216,16 @@ export const createCustomOverlay = ({
       container.appendChild(effect);
     }
 
+    const randomDelay = -getRandomNumber(20); // 음수 딜레이로 즉시 시작하되 지점 랜덤
+    const randomDuration = 15 + getRandomNumber(10); // 15~25초 사이의 다양한 속도
+    const randomScale = 0.8 + Math.random() * 0.4; // 0.8~1.2 사이의 크기 다양함
+
     wrapper.style.animationDelay = `${getRandomNumber(10)}s`;
-    container.style.animationDelay = `-${getRandomNumber(10)}s`;
+    container.style.animationDuration = `${randomDuration}s`;
+    container.style.animationDelay = `${randomDelay}s`;
+    container.style.transform = `scale(${randomScale})`;
+    container.style.setProperty("--jump-delay", `-${getRandomNumber(20)}s`);
+
     container.appendChild(wrapper);
   }
 
@@ -247,7 +255,7 @@ type Coords = Pick<GeolocationCoordinates, "latitude" | "longitude">;
 export const calculateDistanceOverMeters = (
   prev?: Coords,
   curr?: Coords,
-  diffMeter = 20,
+  diffMeter = 30,
 ) => {
   if (!prev || !curr) return true;
 
