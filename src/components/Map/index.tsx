@@ -85,7 +85,7 @@ function MapContent({ onClickCat, ownCats, onClickOwnCat }: Props) {
 
       // 현재 위치로 지도 중심 이동
       if (usePanTo) {
-        map.panTo([coords.latitude, coords.longitude]);
+        map.panTo([coords.latitude, coords.longitude], { duration: 1 });
       } else {
         map.setView([coords.latitude, coords.longitude]);
       }
@@ -313,6 +313,15 @@ function MapContent({ onClickCat, ownCats, onClickOwnCat }: Props) {
 }
 
 export default function Map({ className, ...rest }: Props) {
+  const [isNight, setIsNight] = useState(false);
+
+  useEffect(() => {
+    const hours = new Date().getHours();
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsNight(hours >= 18 || hours < 6);
+  }, []);
+
   return (
     <MapContainer
       className={cn("Map", className)}
@@ -325,14 +334,20 @@ export default function Map({ className, ...rest }: Props) {
       attributionControl={false} // 하단 저작권 표시줄 전체 삭제
       dragging={false}
     >
-      {/* OpenStreetMap 타일 레이어 (무료 지도 소스) */}
       <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png"
+        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
         maxZoom={20}
       />
-
+      <TileLayer
+        url="https://tiles.stadiamaps.com/tiles/stamen_terrain_lines/{z}/{x}/{y}{r}.png"
+        attribution="&copy; Stadia Maps, &copy; Stamen Design"
+        opacity={0.8} // 너무 진하면 배경이 죽으므로 불투명도를 살짝 조절해보세요.
+        maxZoom={20}
+      />
       <MapContent {...rest} />
+
+      {isNight && <div className={cn("night-overlay")} />}
     </MapContainer>
   );
 }

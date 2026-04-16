@@ -8,15 +8,14 @@
   overflow: hidden;
 
   .night-overlay {
-    z-index: -1;
+    z-index: 999; // 타일보다는 위, 오버레이보다는 아래여야 함
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 20, 50, 0.2); // 밤 색감 틴트
+    background-color: rgba(0, 20, 50, 0.1); // 밤 색감 틴트
     pointer-events: none;
-    z-index: 1; // 타일보다는 위, 오버레이보다는 아래여야 함
     animation: fade-in 1s ease-out;
   }
 
@@ -57,9 +56,9 @@
 
     .cloud {
       position: absolute;
-      background-color: rgba(255, 255, 255, 1); // 더 진하고 불투명하게
+      background-color: rgb(241, 241, 241); // 더 진하고 불투명하게
       border-radius: 20px;
-      filter: blur(1.5px);
+      filter: blur(1px);
       opacity: 0; // 시작 시 투명하게 (Fade-in 유도)
 
       &::before,
@@ -266,16 +265,14 @@
     }
   }
 
-  // 봉제선 (Stitch line)
-  @include plush-stitch(4px, 0, 0.4, 10);
   &::after {
     border-left: none;
     border-right: none;
   }
 
   .loading {
+    z-index: 9999;
     position: absolute;
-    z-index: 99;
     bottom: 20px;
     right: 20px;
     display: flex;

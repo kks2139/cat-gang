@@ -302,7 +302,6 @@ export const watchPosition = async (
 
   const watchId = navigator.geolocation.watchPosition(
     (pos) => {
-      console.log(111);
       onSuccess(pos.coords);
     },
     undefined,
