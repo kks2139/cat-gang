@@ -339,12 +339,12 @@ export default function Map({ className, ...rest }: Props) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
         maxZoom={20}
       />
-      <TileLayer
+      {/* <TileLayer
         url="https://tiles.stadiamaps.com/tiles/stamen_terrain_lines/{z}/{x}/{y}{r}.png"
         attribution="&copy; Stadia Maps, &copy; Stamen Design"
         opacity={0.8} // 너무 진하면 배경이 죽으므로 불투명도를 살짝 조절해보세요.
         maxZoom={20}
-      />
+      /> */}
       <MapContent {...rest} />
 
       {isNight && <div className={cn("night-overlay")} />}
