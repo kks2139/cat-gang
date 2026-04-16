@@ -13,7 +13,12 @@ import { useCatchCatMutation } from "@/queries/useCatchCatMutation";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
 import { useCatStore } from "@/store/cat";
 import { type CatInfo, getCat } from "@/utils/cats";
-import { getFireworkElement, getPostposition, wait } from "@/utils/helper";
+import {
+  getFireworkElement,
+  getPostposition,
+  removeMarkerWithMotion,
+  wait,
+} from "@/utils/helper";
 
 import styles from "./index.module.scss";
 import MyCats from "./MyCats";
@@ -32,7 +37,7 @@ export default function FindCat() {
   const [ownCatInfo, setOwnCatInfo] = useState<OwnCat>();
 
   const { mutate: postCatMutate } = useCatchCatMutation();
-  const { data: catList } = useMyCatsQuery();
+  const { data: catList, refetch: fetchMyCats } = useMyCatsQuery();
 
   const ownCats = catList?.map((c) => ({
     name: c.cat_name,
@@ -125,13 +130,14 @@ export default function FindCat() {
               onWin={(cat) => {
                 setIsShowStage(false);
 
-                const { overlay } = cat;
+                const { marker } = cat;
+                const { lat = 0, lng = 0 } = marker?.getLatLng() || {};
 
                 postCatMutate({
                   catName: cat.name,
                   position: {
-                    lat: overlay?.getPosition().getLat() || 0,
-                    lng: overlay?.getPosition().getLng() || 0,
+                    lat,
+                    lng,
                   },
                 });
 
@@ -160,13 +166,17 @@ export default function FindCat() {
         onButtonClick={async () => {
           setIsShowVictoryDialog(false);
 
-          // 폭죽효과
-          catchedCat?.overlayContent?.appendChild(getFireworkElement());
+          if (!catchedCat?.marker) {
+            return;
+          }
 
-          await wait(2000);
+          // 폭죽효과
+          catchedCat.marker.getElement()?.appendChild(getFireworkElement());
+
+          await Promise.all([wait(2000), fetchMyCats()]);
 
           // 잡은 고양이 overlay 지도에서 제거
-          catchedCat?.overlay?.setMap(null);
+          removeMarkerWithMotion(catchedCat.marker);
           setCatchedCat(undefined);
         }}
       />

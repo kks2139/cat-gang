@@ -1,3 +1,5 @@
+import L from "leaflet";
+
 import { getCat } from "./cats";
 
 export const wait = (delay: number) =>
@@ -30,7 +32,7 @@ export const getRandomLocationInCircle = (
   lat: number,
   lng: number,
   radiusInMeters: number,
-): kakao.maps.LatLng => {
+): L.LatLngExpression => {
   // 1. 0 ~ radiusInMeters 사이의 랜덤한 거리 생성
   // (중심에 몰리지 않게 하기 위해 Math.sqrt 사용)
   const r = radiusInMeters * Math.sqrt(Math.random());
@@ -43,7 +45,7 @@ export const getRandomLocationInCircle = (
   const lng_diff =
     (r * Math.sin(theta)) / (111000 * Math.cos(lat * (Math.PI / 180)));
 
-  return new kakao.maps.LatLng(lat + lat_diff, lng + lng_diff);
+  return [lat + lat_diff, lng + lng_diff];
 };
 
 export const getRandomNumber = (maxNum: number) =>
@@ -122,18 +124,18 @@ export const getCurrentPosition = async () => {
 type OverlayType = "me" | "owned" | "enemy" | "loacation-spread-out";
 
 interface CreateOverlayOptions {
-  position: kakao.maps.LatLng;
+  map: L.Map;
+  position: L.LatLngExpression;
   imgUrl?: string;
   type?: OverlayType;
-  map: kakao.maps.Map;
   catName?: string;
 }
 
 export const createCustomOverlay = ({
+  map,
   position,
   imgUrl,
   type,
-  map,
   catName = "",
 }: CreateOverlayOptions) => {
   const cat = getCat(catName);
@@ -234,24 +236,17 @@ export const createCustomOverlay = ({
     container.appendChild(wrapper);
   }
 
-  // overlay 생성
-  const overlay = new kakao.maps.CustomOverlay({
-    position: position,
-    content: container,
-    clickable: true,
+  // 마커 생성
+  const icon = L.divIcon({
+    html: container,
+    className: "",
+    iconSize: [50, 50],
   });
 
-  if (type === "me") {
-    overlay.setZIndex(99);
-  }
+  // 맵에 마커 추가
+  const marker = L.marker(position, { icon }).addTo(map);
 
-  // 지도에 overlay 표시
-  overlay.setMap(map);
-
-  return {
-    overlay,
-    container,
-  };
+  return marker;
 };
 
 type Coords = Pick<GeolocationCoordinates, "latitude" | "longitude">;
@@ -281,4 +276,38 @@ export const calculateDistanceOverMeters = (
   const distance = R * c;
 
   return distance >= diffMeter;
+};
+
+export const removeMarkerWithMotion = (marker: L.Marker, duration = 300) => {
+  const el = marker.getElement();
+
+  if (el) {
+    el.style.transition = `opacity ${duration}ms ease`;
+    el.style.opacity = "0";
+
+    setTimeout(() => marker.remove(), duration);
+  } else {
+    marker.remove();
+  }
+};
+
+export const watchPosition = async (
+  onSuccess: (coords: GeolocationCoordinates) => void,
+) => {
+  const isOk = await checkLocationStatus();
+
+  if (!isOk) {
+    return;
+  }
+
+  const watchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      console.log(111);
+      onSuccess(pos.coords);
+    },
+    undefined,
+    { enableHighAccuracy: true, maximumAge: 0 },
+  );
+
+  return watchId;
 };

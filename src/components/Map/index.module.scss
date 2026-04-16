@@ -2,7 +2,7 @@
 
 .Map {
   position: relative;
-  background-color: var(--orange-border);
+  // background-color: var(--orange-border);
   padding: 8px 0; // 위 아래 테두리만 남김
   box-shadow: 0 4px 0 var(--orange-shadow);
   overflow: hidden;
@@ -39,21 +39,25 @@
     pointer-events: none;
     transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); // 줌 변경 시 부드럽게 크기 변화
 
-    &.z-low {
-      transform: scale(2.5);
-    }
-
-    &.z-mid {
-      transform: scale(1.7);
-    }
-
-    &.z-high {
+    &.z-16 {
       transform: scale(1);
+    }
+
+    &.z-17 {
+      transform: scale(1.5);
+    }
+
+    &.z-18 {
+      transform: scale(2);
+    }
+
+    &.z-19 {
+      transform: scale(2.5);
     }
 
     .cloud {
       position: absolute;
-      background-color: rgba(255, 255, 255, 0.85); // 더 진하고 불투명하게
+      background-color: rgba(255, 255, 255, 1); // 더 진하고 불투명하게
       border-radius: 20px;
       filter: blur(1.5px);
       opacity: 0; // 시작 시 투명하게 (Fade-in 유도)
@@ -361,40 +365,17 @@
   }
 
   .map-content {
-    position: relative;
+    z-index: 1000;
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     border-radius: 0;
     overflow: hidden;
-    background-color: #eee;
+    background-color: transparent;
+    pointer-events: none;
     transition: filter 1s ease; // 밤낮 전환 시 부드럽게
-
-    &.skeleton {
-      background:
-        linear-gradient(90deg, #d8d8d8 25%, #e8e8e8 50%, #d8d8d8 75%),
-        linear-gradient(#e0e0e0 1px, transparent 1px),
-        linear-gradient(90deg, #e0e0e0 1px, transparent 1px);
-      background-size:
-        200% 100%,
-        40px 40px,
-        40px 40px; // 펄스 배경과 격자무늬 결합
-      animation: skeleton-pulse 1.2s infinite linear;
-    }
-  }
-
-  @keyframes skeleton-pulse {
-    0% {
-      background-position:
-        200% 0,
-        0 0,
-        0 0;
-    }
-    100% {
-      background-position:
-        -200% 0,
-        0 0,
-        0 0;
-    }
   }
 
   .buttons {

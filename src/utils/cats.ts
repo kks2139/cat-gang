@@ -1,3 +1,6 @@
+// import ImgCatTest from "@/assets/svg/cat_test.svg";
+import L from "leaflet";
+
 import ImgCat1 from "@/assets/img/cat_1.png";
 import ImgCat2 from "@/assets/img/cat_2.png";
 import ImgCat3 from "@/assets/img/cat_3.png";
@@ -13,7 +16,6 @@ import ImgCat12 from "@/assets/img/cat_12.png";
 import ImgCat13 from "@/assets/img/cat_13.png";
 import ImgCat14 from "@/assets/img/cat_14.png";
 import ImgCatMe from "@/assets/img/cat_me.png";
-// import ImgCatTest from "@/assets/svg/cat_test.svg";
 
 export interface CatInfo {
   rarity: "common" | "rare" | "unique"; // 희귀함 정도
@@ -22,8 +24,7 @@ export interface CatInfo {
   img: string;
   hp: number;
   punchPower: number;
-  overlay?: kakao.maps.CustomOverlay;
-  overlayContent?: HTMLDivElement;
+  marker?: L.Marker;
   // 상황별 대사
   dialog: {
     chat?: string;
