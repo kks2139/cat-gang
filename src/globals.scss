@@ -801,21 +801,21 @@ input {
   }
 }
 
+// 지도 축척바
 .leaflet-control-scale-line {
-  // 기본 스타일 초기화
+  $border-color: rgba(0, 0, 0, 0.3);
+
   background: transparent !important;
   border: none !important;
-  border-bottom: 1.5px solid #333 !important;
-
-  // 텍스트 설정
-  color: black;
+  border-bottom: 1px solid $border-color !important;
 
   // 위치 조정
-  padding: 0 0 3px 10px !important;
-  height: 14px;
-  display: flex;
-  align-items: center;
-  position: relative;
+  position: fixed;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  color: black;
 
   // 양 끝 가이드 선 (Pseudo-elements)
   &::before,
@@ -824,8 +824,8 @@ input {
     position: absolute;
     bottom: 0;
     width: 1px;
-    height: 4px; // 끝에 살짝 올라오는 선의 높이
-    background-color: #474747;
+    height: 3px; // 끝에 살짝 올라오는 선의 높이
+    background-color: $border-color;
   }
 
   &::before {

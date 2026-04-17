@@ -37,9 +37,18 @@ interface Props {
   onClickCat?: () => void;
   ownCats?: OwnCat[];
   onClickOwnCat?: (value: OwnCat) => void;
+  onZoomanim?: (zoomValue: number) => void;
+  onMapReady?: () => void;
 }
 
-function MapContent({ onClickCat, ownCats, onClickOwnCat }: Props) {
+function MapContent({
+  className,
+  onClickCat,
+  ownCats,
+  onClickOwnCat,
+  onZoomanim,
+  onMapReady,
+}: Props) {
   const { setSelectedCat } = useCatStore((s) => s.actions);
 
   const [isInitLoading, setIsInitLoading] = useState(false);
@@ -48,7 +57,6 @@ function MapContent({ onClickCat, ownCats, onClickOwnCat }: Props) {
   const isMapReady = useRef(false);
   const isWatchPositionReady = useRef(false);
   const centerPositionOfCats = useRef<L.LatLng>(undefined);
-  const skyDecorationRef = useRef<HTMLDivElement>(null);
 
   const myCatRef = useRef<L.Marker>(null);
   const catMarkersRef = useRef<L.Marker[]>([]);
@@ -99,10 +107,6 @@ function MapContent({ onClickCat, ownCats, onClickOwnCat }: Props) {
     }
 
     const myPosition = myCatRef.current.getLatLng();
-
-    if (centerPositionOfCats.current) {
-      console.log(myPosition.distanceTo(centerPositionOfCats.current));
-    }
 
     // 내 고양이 이전좌표랑 일정m 이상 차이날때만 cats 새로 그린다
     const canSkipDraw = centerPositionOfCats.current
@@ -198,10 +202,6 @@ function MapContent({ onClickCat, ownCats, onClickOwnCat }: Props) {
     [drawCats, drawMe],
   );
 
-  const setCloudScale = (scale: number) => {
-    skyDecorationRef.current?.style.setProperty("--cloud-zoom", String(scale));
-  };
-
   useEffect(() => {
     if (!isRendered.current) {
       return;
@@ -259,8 +259,7 @@ function MapContent({ onClickCat, ownCats, onClickOwnCat }: Props) {
 
     isMapReady.current = true;
 
-    // 구름 스케일 초기화
-    setCloudScale(MAX_ZOOM_LEVEL - MIN_ZOOM_LEVEL + 1);
+    onMapReady?.();
 
     map
       .on("zoomend", () => {
@@ -271,18 +270,12 @@ function MapContent({ onClickCat, ownCats, onClickOwnCat }: Props) {
         }
       })
       .on("zoomanim", (e) => {
-        setCloudScale(e.zoom - MIN_ZOOM_LEVEL + 1);
+        onZoomanim?.(e.zoom - MIN_ZOOM_LEVEL + 1);
       });
-  }, [map]);
+  }, [map, onMapReady, onZoomanim]);
 
   return (
-    <div className={cn("map-content")}>
-      <div ref={skyDecorationRef} className={cn("sky-decoration")}>
-        {Array.from({ length: 15 }, (_, i) => (
-          <div key={i} className={cn("cloud", `c${i + 1}`)} />
-        ))}
-      </div>
-
+    <div className={className}>
       <AnimatePresence>
         {isInitLoading && (
           <motion.div
@@ -312,6 +305,12 @@ function MapContent({ onClickCat, ownCats, onClickOwnCat }: Props) {
 export default function Map({ className, ...rest }: Props) {
   const [isNight, setIsNight] = useState(false);
 
+  const skyDecorationRef = useRef<HTMLDivElement>(null);
+
+  const setCloudScale = (scale: number) => {
+    skyDecorationRef.current?.style.setProperty("--cloud-zoom", String(scale));
+  };
+
   useEffect(() => {
     const hours = new Date().getHours();
 
@@ -320,33 +319,52 @@ export default function Map({ className, ...rest }: Props) {
   }, []);
 
   return (
-    <MapContainer
-      className={cn("Map", className)}
-      center={[37.5665, 126.978]} // 센터 기본값 서울시청
-      zoom={MAX_ZOOM_LEVEL}
-      maxZoom={MAX_ZOOM_LEVEL}
-      minZoom={MIN_ZOOM_LEVEL}
-      zoomControl={false}
-      scrollWheelZoom={"center"}
-      doubleClickZoom={"center"}
-      touchZoom={"center"}
-      attributionControl={false} // 하단 저작권 표시줄 전체 삭제
-      dragging={false}
-      bounceAtZoomLimits={false}
-    >
-      <TileLayer
-        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-        maxZoom={20}
-      />
-      <MapContent {...rest} />
+    <div className={cn("map-wrapper", { night: isNight })}>
+      <div ref={skyDecorationRef} className={cn("sky-decoration")}>
+        {Array.from({ length: 15 }, (_, i) => (
+          <div key={i} className={cn("cloud", `c${i + 1}`)} />
+        ))}
+      </div>
 
-      <ScaleControl
-        position="bottomleft" // 위치 설정 (topleft, topright, bottomleft, bottomright)
-        imperial={false} // 마일(mi) 단위 표시 여부 (false면 미터법만 표시)
-        maxWidth={100} // 축척 바의 최대 길이 (픽셀 단위)
-      />
-      {isNight && <div className={cn("night-overlay")} />}
-    </MapContainer>
+      <MapContainer
+        className={cn("Map", className)}
+        center={[37.5665, 126.978]} // 센터 기본값 서울시청
+        zoom={MAX_ZOOM_LEVEL}
+        maxZoom={MAX_ZOOM_LEVEL}
+        minZoom={MIN_ZOOM_LEVEL}
+        zoomControl={false}
+        scrollWheelZoom={"center"}
+        doubleClickZoom={"center"}
+        touchZoom={"center"}
+        attributionControl={false} // 하단 저작권 표시줄 전체 삭제
+        dragging={false}
+        bounceAtZoomLimits={false}
+      >
+        <TileLayer
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          maxZoom={20}
+        />
+
+        <MapContent
+          {...rest}
+          className={cn("map-content", { night: isNight })}
+          onMapReady={() => {
+            // 구름 스케일 초기화
+            setCloudScale(MAX_ZOOM_LEVEL - MIN_ZOOM_LEVEL + 1);
+          }}
+          onZoomanim={(zoomValue) => {
+            setCloudScale(zoomValue);
+          }}
+        />
+
+        <ScaleControl
+          position="bottomleft" // 위치 설정 (topleft, topright, bottomleft, bottomright)
+          imperial={false} // 마일(mi) 단위 표시 여부 (false면 미터법만 표시)
+          maxWidth={100} // 축척 바의 최대 길이 (픽셀 단위)
+        />
+        {isNight && <div className={cn("night-overlay")} />}
+      </MapContainer>
+    </div>
   );
 }
