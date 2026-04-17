@@ -329,6 +329,7 @@ export default function Map({ className, ...rest }: Props) {
       zoomControl={false}
       scrollWheelZoom={"center"}
       doubleClickZoom={"center"}
+      touchZoom={"center"}
       attributionControl={false} // 하단 저작권 표시줄 전체 삭제
       dragging={false}
       bounceAtZoomLimits={false}
