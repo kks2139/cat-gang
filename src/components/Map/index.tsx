@@ -232,6 +232,7 @@ function MapContent({
     (async () => {
       setIsInitLoading(true);
 
+      drawOwnCats();
       await createMeAndCats();
 
       setIsInitLoading(false);
@@ -239,7 +240,7 @@ function MapContent({
 
       onCreateCatsComplete?.();
     })();
-  }, [createMeAndCats, map, onCreateCatsComplete]);
+  }, [createMeAndCats, drawOwnCats, map, onCreateCatsComplete]);
 
   useEffect(() => {
     if (isInitLoading || isWatchPositionReady.current) {
@@ -355,8 +356,6 @@ export default function Map({ className, ...rest }: Props) {
             setisLoading(false);
           }}
           onZoomanim={(zoom) => {
-            console.log(zoom, zoom - MIN_ZOOM_LEVEL + 1);
-
             setCloudScale(zoom - MIN_ZOOM_LEVEL + 1);
           }}
         />
