@@ -6,12 +6,12 @@
   perspective: 1000px; // 얼마만큼 떨어져서 보는지 값
   overflow: hidden;
   margin-top: -40px;
-  // background-color: rgb(0, 140, 255);
 
   // 구름 효과
   .sky-decoration {
     z-index: 100;
     position: absolute;
+    top: 45px;
     width: 100%;
     height: 100%; // 지도 전체에 구름이 퍼지도록
     pointer-events: none;
@@ -106,9 +106,9 @@
   position: relative;
   overflow: hidden;
   height: 100%;
-  transform: rotateX(30deg); // 뒤로 눕히는 효과
+  transform: rotateX(35deg); // 뒤로 눕히는 효과
   border-radius: 30px;
-  box-shadow: 0 0 40px 80px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 -80px 60px 40px rgba(104, 187, 255, 0.3);
 
   .map-content {
     z-index: 1000;
@@ -146,95 +146,95 @@
     border-left: none;
     border-right: none;
   }
+}
 
-  .loading {
-    z-index: 9999;
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
+.loading {
+  z-index: 9999;
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border-radius: 30px;
+  background-color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border: 2px solid var(--orange-map-border);
+
+  .paw-animation {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 10px 20px;
-    border-radius: 30px;
-    background-color: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    border: 2px solid var(--orange-map-border);
+    column-gap: 12px;
+    margin-right: 15px;
 
-    .paw-animation {
-      display: flex;
-      column-gap: 12px;
-      margin-right: 15px;
+    .paw {
+      position: relative;
+      width: 12px;
+      height: 10px;
+      background-color: var(--orange-map-shadow);
+      border-radius: 50% 50% 45% 45%;
+      opacity: 0;
+      animation: paw-step 1.5s infinite;
 
-      .paw {
-        position: relative;
-        width: 12px;
-        height: 10px;
+      &::after {
+        content: "";
+        position: absolute;
+        width: 4px;
+        height: 5px;
         background-color: var(--orange-map-shadow);
-        border-radius: 50% 50% 45% 45%;
-        opacity: 0;
-        animation: paw-step 1.5s infinite;
+        border-radius: 50%;
+        top: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        box-shadow:
+          -6px 2px 0 var(--orange-map-shadow),
+          6px 2px 0 var(--orange-map-shadow);
+      }
 
-        &::after {
-          content: "";
-          position: absolute;
-          width: 4px;
-          height: 5px;
-          background-color: var(--orange-map-shadow);
-          border-radius: 50%;
-          top: -8px;
-          left: 50%;
-          transform: translateX(-50%);
-          box-shadow:
-            -6px 2px 0 var(--orange-map-shadow),
-            6px 2px 0 var(--orange-map-shadow);
-        }
-
-        @for $i from 1 through 3 {
-          &:nth-child(#{$i}) {
-            animation-delay: ($i - 1) * 0.3s;
-          }
+      @for $i from 1 through 3 {
+        &:nth-child(#{$i}) {
+          animation-delay: ($i - 1) * 0.3s;
         }
       }
     }
+  }
 
-    .loading-text {
-      font-size: 16px;
-      font-weight: 800;
-      color: var(--orange-shadow);
-      display: flex;
+  .loading-text {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--orange-shadow);
+    display: flex;
 
-      span {
-        animation: text-bounce 1s infinite;
-        @for $i from 1 through 6 {
-          &:nth-child(#{$i}) {
-            animation-delay: ($i - 1) * 0.1s;
-          }
+    span {
+      animation: text-bounce 1s infinite;
+      @for $i from 1 through 6 {
+        &:nth-child(#{$i}) {
+          animation-delay: ($i - 1) * 0.1s;
         }
       }
     }
+  }
 
-    @keyframes paw-step {
-      0%,
-      100% {
-        opacity: 0;
-        transform: scale(0.8);
-      }
-      30%,
-      60% {
-        opacity: 1;
-        transform: scale(1.1);
-      }
+  @keyframes paw-step {
+    0%,
+    100% {
+      opacity: 0;
+      transform: scale(0.8);
     }
+    30%,
+    60% {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+  }
 
-    @keyframes text-bounce {
-      0%,
-      100% {
-        transform: translateY(0);
-      }
-      50% {
-        transform: translateY(-4px);
-      }
+  @keyframes text-bounce {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-4px);
     }
   }
 }

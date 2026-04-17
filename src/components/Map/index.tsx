@@ -22,6 +22,7 @@ import styles from "./index.module.scss";
 
 const cn = classNames.bind(styles);
 
+const INIT_ZOOM_LEVEL = 18;
 const MAX_ZOOM_LEVEL = 19;
 const MIN_ZOOM_LEVEL = 16;
 const BOUNDARY_METER_OF_ME = 50;
@@ -39,6 +40,7 @@ interface Props {
   onClickOwnCat?: (value: OwnCat) => void;
   onZoomanim?: (zoomValue: number) => void;
   onMapReady?: () => void;
+  onCreateCatsComplete?: () => void;
 }
 
 function MapContent({
@@ -48,6 +50,7 @@ function MapContent({
   onClickOwnCat,
   onZoomanim,
   onMapReady,
+  onCreateCatsComplete,
 }: Props) {
   const { setSelectedCat } = useCatStore((s) => s.actions);
 
@@ -225,8 +228,10 @@ function MapContent({
 
       setIsInitLoading(false);
       isRendered.current = true;
+
+      onCreateCatsComplete?.();
     })();
-  }, [createMeAndCats, map]);
+  }, [createMeAndCats, map, onCreateCatsComplete]);
 
   useEffect(() => {
     if (isInitLoading || isWatchPositionReady.current) {
@@ -270,40 +275,16 @@ function MapContent({
         }
       })
       .on("zoomanim", (e) => {
-        onZoomanim?.(e.zoom - MIN_ZOOM_LEVEL + 1);
+        onZoomanim?.(e.zoom);
       });
   }, [map, onMapReady, onZoomanim]);
 
-  return (
-    <div className={className}>
-      <AnimatePresence>
-        {isInitLoading && (
-          <motion.div
-            className={cn("loading")}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.1 }}
-          >
-            <div className={cn("paw-animation")}>
-              {Array.from({ length: 3 }, (_, i) => (
-                <div key={i} className={cn("paw")} />
-              ))}
-            </div>
-            <div className={cn("loading-text")}>
-              {["찾", "는", "중", ".", ".", "."].map((ch, i) => (
-                <span key={i}>{ch}</span>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+  return <div className={className}></div>;
 }
 
 export default function Map({ className, ...rest }: Props) {
   const [isNight, setIsNight] = useState(false);
+  const [isLoading, setisLoading] = useState(true);
 
   const skyDecorationRef = useRef<HTMLDivElement>(null);
 
@@ -329,7 +310,7 @@ export default function Map({ className, ...rest }: Props) {
       <MapContainer
         className={cn("Map", className)}
         center={[37.5665, 126.978]} // 센터 기본값 서울시청
-        zoom={MAX_ZOOM_LEVEL}
+        zoom={INIT_ZOOM_LEVEL}
         maxZoom={MAX_ZOOM_LEVEL}
         minZoom={MIN_ZOOM_LEVEL}
         zoomControl={false}
@@ -346,15 +327,26 @@ export default function Map({ className, ...rest }: Props) {
           maxZoom={20}
         />
 
+        {/* 맵 내부 마커생성, 이벤트 등록 등 */}
         <MapContent
           {...rest}
           className={cn("map-content", { night: isNight })}
           onMapReady={() => {
+            console.log(
+              skyDecorationRef.current,
+              MAX_ZOOM_LEVEL - INIT_ZOOM_LEVEL + 2,
+            );
+
             // 구름 스케일 초기화
-            setCloudScale(MAX_ZOOM_LEVEL - MIN_ZOOM_LEVEL + 1);
+            setCloudScale(MAX_ZOOM_LEVEL - INIT_ZOOM_LEVEL + 2);
           }}
-          onZoomanim={(zoomValue) => {
-            setCloudScale(zoomValue);
+          onCreateCatsComplete={() => {
+            setisLoading(false);
+          }}
+          onZoomanim={(zoom) => {
+            console.log(zoom, zoom - MIN_ZOOM_LEVEL + 1);
+
+            setCloudScale(zoom - MIN_ZOOM_LEVEL + 1);
           }}
         />
 
@@ -365,6 +357,29 @@ export default function Map({ className, ...rest }: Props) {
         />
         {isNight && <div className={cn("night-overlay")} />}
       </MapContainer>
+
+      <AnimatePresence>
+        {isLoading && (
+          <motion.div
+            className={cn("loading")}
+            initial={{ opacity: 0, y: -5, translateX: "-50%" }}
+            animate={{ opacity: 1, y: 0, translateX: "-50%" }}
+            exit={{ opacity: 0, y: -5, translateX: "-50%" }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className={cn("paw-animation")}>
+              {Array.from({ length: 3 }, (_, i) => (
+                <div key={i} className={cn("paw")} />
+              ))}
+            </div>
+            <div className={cn("loading-text")}>
+              {["찾", "는", "중", ".", ".", "."].map((ch, i) => (
+                <span key={i}>{ch}</span>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
