@@ -28,9 +28,9 @@ const cn = classNames.bind(styles);
 export default function FindCat() {
   const navigate = useNavigate();
 
-  const { setSelectedCat } = useCatStore((s) => s.actions);
+  const isShowStage = useCatStore((s) => s.isShowStage);
+  const { setSelectedCat, setIsShowStage } = useCatStore((s) => s.actions);
 
-  const [isShowStage, setIsShowStage] = useState(false);
   const [isShowVictoryDialog, setIsShowVictoryDialog] = useState(false);
   const [catchedCat, setCatchedCat] = useState<CatInfo>();
   const [selectedMenu, setSelectedMenu] = useState<"catched" | "all">();

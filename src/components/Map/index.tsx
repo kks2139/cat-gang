@@ -58,6 +58,7 @@ function MapContent({
   onMapReady,
   onCreateCatsComplete,
 }: Props) {
+  const isShowStage = useCatStore((s) => s.isShowStage);
   const { setSelectedCat } = useCatStore((s) => s.actions);
 
   const [isInitLoading, setIsInitLoading] = useState(false);
@@ -111,7 +112,7 @@ function MapContent({
   );
 
   const drawCats = useCallback(() => {
-    if (!myCatRef.current) {
+    if (!myCatRef.current || isShowStage) {
       return;
     }
 
@@ -178,7 +179,7 @@ function MapContent({
 
       catMarkersRef.current.push(marker);
     });
-  }, [map, onClickCat, setSelectedCat]);
+  }, [isShowStage, map, onClickCat, setSelectedCat]);
 
   const drawOwnCats = useCallback(() => {
     // 이전에 생성한 랜덤 마커들 해제
@@ -306,7 +307,7 @@ export default function Map({ className, ...rest }: Props) {
   }, []);
 
   return (
-    <div className={cn("map-wrapper", { night: isNight })}>
+    <div className={cn("map-wrapper")}>
       <div ref={skyDecorationRef} className={cn("sky-decoration")}>
         {Array.from({ length: 15 }, (_, i) => (
           <div key={i} className={cn("cloud", `c${i + 1}`)} />
@@ -339,11 +340,6 @@ export default function Map({ className, ...rest }: Props) {
           {...rest}
           className={cn("map-content", { night: isNight })}
           onMapReady={() => {
-            console.log(
-              skyDecorationRef.current,
-              MAX_ZOOM_LEVEL - INIT_ZOOM_LEVEL + 2,
-            );
-
             // 구름 스케일 초기화
             setCloudScale(MAX_ZOOM_LEVEL - INIT_ZOOM_LEVEL + 2);
           }}

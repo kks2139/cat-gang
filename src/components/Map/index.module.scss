@@ -106,9 +106,9 @@
   position: relative;
   overflow: hidden;
   height: 100%;
-  transform: rotateX(31deg); // 뒤로 눕히는 효과
+  transform: rotateX(25deg); // 뒤로 눕히는 효과
   border-radius: 20px;
-  box-shadow: 0 -80px 60px 40px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 -80px 60px 40px rgba(0, 0, 0, 0.1);
 
   .map-content {
     z-index: 1000;
@@ -119,8 +119,6 @@
     height: 100%;
     overflow: hidden;
     pointer-events: none;
-
-    box-shadow: 0 5px 10px 10px rgb(255, 255, 255) inset;
   }
 
   .night-overlay {

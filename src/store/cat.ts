@@ -5,14 +5,17 @@ import { type CatInfo } from "../utils/cats";
 
 interface CatStore {
   selectedCat?: CatInfo;
+  isShowStage: boolean;
   actions: {
     setSelectedCat: (value: CatInfo | undefined) => void;
+    setIsShowStage: (value: boolean) => void;
   };
 }
 
 export const useCatStore = create<CatStore>()(
   immer((set) => ({
     selectedCat: undefined,
+    isShowStage: false,
     actions: {
       setSelectedCat(value) {
         set((state) => {
@@ -20,6 +23,11 @@ export const useCatStore = create<CatStore>()(
           state.selectedCat = value as any;
         });
       },
+      setIsShowStage(value) {
+        set((state) => {
+          state.isShowStage = value;
+        });
+      },
     },
-  }))
+  })),
 );
