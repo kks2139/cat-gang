@@ -29,7 +29,7 @@ import styles from "./index.module.scss";
 
 const cn = classNames.bind(styles);
 
-const INIT_ZOOM_LEVEL = 18;
+const INIT_ZOOM_LEVEL = 19;
 const MAX_ZOOM_LEVEL = 19;
 const MIN_ZOOM_LEVEL = 16;
 const BOUNDARY_METER_OF_ME = 50;
@@ -347,7 +347,7 @@ export default function Map({ className, ...rest }: Props) {
           className={cn("map-content", { night: isNight })}
           onMapReady={(map) => {
             // 구름 스케일 초기화
-            setCloudScale(MAX_ZOOM_LEVEL - INIT_ZOOM_LEVEL + 2);
+            setCloudScale(MAX_ZOOM_LEVEL - INIT_ZOOM_LEVEL + 4);
             // 맵 상태에 등록
             setMap(map);
           }}
