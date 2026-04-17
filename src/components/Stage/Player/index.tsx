@@ -35,8 +35,6 @@ function CatVisual({
             })}
             src={cat.img || ""}
             alt={cat.name || ""}
-            width={100}
-            height={100}
           />
           <div className={cn("cat-shadow")} />
         </>

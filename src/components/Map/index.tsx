@@ -11,8 +11,9 @@ import {
   ZoomControl,
 } from "react-leaflet";
 
-import ImgCatMe from "@/assets/img/cat_me.png";
+import ImgCatMe from "@/assets/img/character/cat-me.png";
 import { useCatStore } from "@/store/cat";
+import { useViewStore } from "@/store/view";
 import { catCharacters } from "@/utils/cats";
 import {
   animateMarker,
@@ -45,7 +46,7 @@ interface Props {
   ownCats?: OwnCat[];
   onClickOwnCat?: (value: OwnCat) => void;
   onZoomanim?: (zoomValue: number) => void;
-  onMapReady?: () => void;
+  onMapReady?: (map: L.Map) => void;
   onCreateCatsComplete?: () => void;
 }
 
@@ -271,7 +272,7 @@ function MapContent({
 
     isMapReady.current = true;
 
-    onMapReady?.();
+    onMapReady?.(map);
 
     map
       .on("zoomend", () => {
@@ -290,6 +291,7 @@ function MapContent({
 }
 
 export default function Map({ className, ...rest }: Props) {
+  const { setMap } = useViewStore((s) => s.actions);
   const [isNight, setIsNight] = useState(false);
   const [isLoading, setisLoading] = useState(true);
 
@@ -305,6 +307,10 @@ export default function Map({ className, ...rest }: Props) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsNight(hours >= 18 || hours < 6);
   }, []);
+
+  useEffect(() => {
+    return () => setMap(null);
+  }, [setMap]);
 
   return (
     <div className={cn("map-wrapper")}>
@@ -339,9 +345,11 @@ export default function Map({ className, ...rest }: Props) {
         <MapContent
           {...rest}
           className={cn("map-content", { night: isNight })}
-          onMapReady={() => {
+          onMapReady={(map) => {
             // 구름 스케일 초기화
             setCloudScale(MAX_ZOOM_LEVEL - INIT_ZOOM_LEVEL + 2);
+            // 맵 상태에 등록
+            setMap(map);
           }}
           onCreateCatsComplete={() => {
             setisLoading(false);

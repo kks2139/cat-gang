@@ -3,7 +3,6 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  column-gap: 20px;
   color: white;
   padding: 10px 0;
 
@@ -25,13 +24,18 @@
       flex-direction: column;
       align-items: center;
       animation: floating 3s infinite ease-in-out;
+      width: 160px;
+      height: 160px;
     }
 
     .cat-img {
-      position: relative;
       z-index: 2;
+      position: absolute;
+      top: -30px;
       transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.1));
+      width: 210px;
+      height: 210px;
 
       &.punch {
         animation: hit 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;

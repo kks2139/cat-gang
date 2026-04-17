@@ -1,21 +1,38 @@
 // import ImgCatTest from "@/assets/svg/cat_test.svg";
 import L from "leaflet";
 
-import ImgCat1 from "@/assets/img/cat_1.png";
-import ImgCat2 from "@/assets/img/cat_2.png";
-import ImgCat3 from "@/assets/img/cat_3.png";
-import ImgCat4 from "@/assets/img/cat_4.png";
-import ImgCat5 from "@/assets/img/cat_5.png";
-import ImgCat6 from "@/assets/img/cat_6.png";
-import ImgCat7 from "@/assets/img/cat_7.png";
-import ImgCat8 from "@/assets/img/cat_8.png";
-import ImgCat9 from "@/assets/img/cat_9.png";
-import ImgCat10 from "@/assets/img/cat_10.png";
-import ImgCat11 from "@/assets/img/cat_11.png";
-import ImgCat12 from "@/assets/img/cat_12.png";
-import ImgCat13 from "@/assets/img/cat_13.png";
-import ImgCat14 from "@/assets/img/cat_14.png";
-import ImgCatMe from "@/assets/img/cat_me.png";
+import ImgCat1 from "@/assets/img/character/cat-1.png";
+import ImgCat2 from "@/assets/img/character/cat-2.png";
+import ImgCat3 from "@/assets/img/character/cat-3.png";
+import ImgCat4 from "@/assets/img/character/cat-4.png";
+import ImgCat5 from "@/assets/img/character/cat-5.png";
+import ImgCat6 from "@/assets/img/character/cat-6.png";
+import ImgCat7 from "@/assets/img/character/cat-7.png";
+import ImgCat8 from "@/assets/img/character/cat-8.png";
+import ImgCat9 from "@/assets/img/character/cat-9.png";
+import ImgCat10 from "@/assets/img/character/cat-10.png";
+import ImgCat11 from "@/assets/img/character/cat-11.png";
+import ImgCat12 from "@/assets/img/character/cat-12.png";
+import ImgCat13 from "@/assets/img/character/cat-13.png";
+import ImgCat14 from "@/assets/img/character/cat-14.png";
+import ImgCat15 from "@/assets/img/character/cat-15.png";
+import ImgCat16 from "@/assets/img/character/cat-16.png";
+import ImgCat17 from "@/assets/img/character/cat-17.png";
+import ImgCat18 from "@/assets/img/character/cat-18.png";
+import ImgCat19 from "@/assets/img/character/cat-19.png";
+import ImgCat20 from "@/assets/img/character/cat-20.png";
+import ImgCat21 from "@/assets/img/character/cat-21.png";
+import ImgCat22 from "@/assets/img/character/cat-22.png";
+import ImgCat23 from "@/assets/img/character/cat-23.png";
+import ImgCat24 from "@/assets/img/character/cat-24.png";
+import ImgCat25 from "@/assets/img/character/cat-25.png";
+import ImgCat26 from "@/assets/img/character/cat-26.png";
+import ImgCat27 from "@/assets/img/character/cat-27.png";
+import ImgCat28 from "@/assets/img/character/cat-28.png";
+import ImgCat29 from "@/assets/img/character/cat-29.png";
+import ImgCat30 from "@/assets/img/character/cat-30.png";
+import ImgCat31 from "@/assets/img/character/cat-31.png";
+import ImgCatMe from "@/assets/img/character/cat-me.png";
 
 export interface CatInfo {
   rarity: "common" | "rare" | "unique"; // 희귀함 정도
@@ -546,6 +563,543 @@ export const catCharacters: CatInfo[] = [
         "가사 한 줄 못 쓰고 런 하네... 넌 내 마에스트로가 될 자격이 없다.",
         "야! 덕소 별빛보다 빠르게 사라지네? 리스펙한다.",
         "무대 공포증 있냐? 왜 갑자기 튀어! 박자 다 깨지게!",
+      ],
+    },
+  },
+
+  // +++++++++++++++++++++++++++++++++
+
+  {
+    rarity: "unique",
+    name: "하야시",
+    crying: "냐아앙-! (혼또니..!)",
+    img: ImgCat15,
+    hp: 12,
+    punchPower: 4,
+    dialog: {
+      chat: "혼또니, 냐앙",
+      meet: [
+        "긴자에서 온 하야시다. 이 구역의 질서를 바로잡으러 왔지.",
+        "예의 없는 고양이는 싫어한다. 주먹으로 예법을 가르쳐주마.",
+        "나의 칼날 같은 앞발을 피할 수 있을 것 같나?",
+      ],
+      win: "일본도의 예리함, 그것이 나의 펀치다.",
+      lose: [
+        "바보 같은... 내 패배를 인정할 수밖에 없군.",
+        "긴자의 벚꽃이 지는구나...",
+        "조선 냥이의 저력... 잊지 않겠다.",
+      ],
+      provoke: "너의 움직임은 이미 간파했다.",
+      seduce: "나와 함께 저녁 노을을 보며 사케... 아니, 우유 한 잔 하겠나?",
+      punch: [
+        "발도술 냥냥 펀치!",
+        "일섬! 보이지 않는 속도다!",
+        "사쿠라 흩날리듯 맞아라!",
+      ],
+      run: [
+        "비겁하게 도망치는 건 무사의 수치다!",
+        "거기 서라! 긴자의 자존심을 걸고 쫓아가겠다!",
+        "등을 보이는 고양이는 베지(때리지) 않는다. 가라!",
+      ],
+    },
+  },
+  {
+    rarity: "rare",
+    name: "쌍칼",
+    crying: "샤악-! (연장 챙겨라!)",
+    img: ImgCat16,
+    hp: 10,
+    punchPower: 5,
+    dialog: {
+      chat: "샤아악, 냐앙",
+      meet: [
+        "종로엔 주먹만 있는 게 아니야. 날카로운 발톱도 있지.",
+        "내 앞발은 두 개다. 그래서 쌍칼이지.",
+        "피 냄새가 나는군... 너한테서 말이야.",
+      ],
+      win: "내 발톱은 절대 빗나가지 않아.",
+      lose: [
+        "발톱이... 부러졌어...",
+        "형님, 먼저 갑니다... 냥.",
+        "이 쌍칼이 무너지다니... 말도 안 돼!",
+      ],
+      provoke: "상처 하나당 츄르 한 봉지다. 감당하겠나?",
+      seduce: "날카로운 내 눈빛에 반했나 보군.",
+      punch: [
+        "좌삼삼 우삼삼 펀치!",
+        "발톱의 춤을 보여주마!",
+        "이건 그냥 주먹이 아니야, 칼날이지!",
+      ],
+      run: [
+        "도망치는 쥐새끼 잡는 게 내 전공이지.",
+        "어딜 가! 내 사정거리 안이다!",
+        "발바닥 땀 나게 뛰어봐야 내 발톱 밑이다!",
+      ],
+    },
+  },
+  {
+    rarity: "common",
+    name: "번개",
+    crying: "번-쩍! 냐앙!",
+    img: ImgCat17,
+    hp: 8,
+    punchPower: 2,
+    dialog: {
+      chat: "번쩍, 냐앙",
+      meet: [
+        "내가 왜 번개인 줄 알아? 한 번 보고 말 거거든.",
+        "눈 깜빡이지 마. 그 사이에 넌 누워있을 테니까.",
+        "속도라면 누구에게도 지지 않는다!",
+      ],
+      win: "방금 뭐가 지나갔나? 내 주먹이다.",
+      lose: [
+        "내 속도가... 읽혔다고?!",
+        "번개가... 꺼졌어...",
+        "너무 빨리 뛰어서 발바닥이 뜨거워...",
+      ],
+      provoke: "넌 거북이냐? 왜 이렇게 느려?",
+      seduce: "세상에서 가장 빠른 데이트 신청, 어때?",
+      punch: [
+        "광속의 솜방망이!",
+        "안 보이지? 나도 안 보여!",
+        "찌릿찌릿할 거다!",
+      ],
+      run: [
+        "나보다 빨리 도망간다고? 그건 불가능해!",
+        "너 지금 제자리걸음 하는 거니?",
+        "시속 100km로 추격해주마!",
+      ],
+    },
+  },
+  {
+    rarity: "unique",
+    name: "각성옹",
+    crying: "그오오오! (풀 파워!)",
+    img: ImgCat18,
+    hp: 15,
+    punchPower: 6,
+    dialog: {
+      chat: "그오오, 냐앙",
+      meet: [
+        "드디어... 내 안의 흑염룡(흑묘)이 깨어났다.",
+        "이 모습이 된 이상, 곱게 돌아가긴 힘들 거다.",
+        "한계를 돌파한 고양이의 힘을 보여주지.",
+      ],
+      win: "이것이 진정한 각성의 힘이다.",
+      lose: [
+        "각성 시간이... 끝났나...",
+        "에너지가 부족해... 캔... 캔을 다오...",
+        "다음 번엔... 2단계 변신이다...",
+      ],
+      provoke: "네 주먹으론 내 털 끝 하나 건드리지 못한다.",
+      seduce: "강한 고양이가 끌리는 법이지. 안 그래?",
+      punch: [
+        "리미트 브레이크 펀치!",
+        "초사이어인 냥냥 탭!",
+        "차원이 다른 타격감이다!",
+      ],
+      run: [
+        "도망쳐봐야 내 기(氣)를 벗어날 순 없다.",
+        "비겁하게 도망치다니, 실망이군.",
+        "지구 끝까지 쫓아가서 진실의 방으로 보내주마.",
+      ],
+    },
+  },
+  {
+    rarity: "rare",
+    name: "미와 형사",
+    crying: "조-센 징! 냐앙!",
+    img: ImgCat19,
+    hp: 9,
+    punchPower: 3,
+    dialog: {
+      chat: "조센징, 냐앙",
+      meet: [
+        "김두한! 아니, 너 김두한 친구지?!",
+        "순순히 츄르를 내놓으면 목숨만은 살려주지.",
+        "고문실로 가고 싶나? 아니면 여기서 맞을래?",
+      ],
+      win: "종로 경찰서의 무서움을 알겠나!",
+      lose: [
+        "나 미와 경부보가... 이런 굴욕을!",
+        "긴또깡! 너 이놈!",
+        "후퇴다! 일단 후퇴해!",
+      ],
+      provoke: "네놈의 사상검증을 시작하겠다.",
+      seduce: "밀정이 되어준다면 높은 자리를 약속하지.",
+      punch: [
+        "취조실의 매운맛!",
+        "순사 펀치!",
+        "네 놈을 긴또깡 옆방에 가둬주마!",
+      ],
+      run: [
+        "야! 거기 안 서?! 공무집행 방해다!",
+        "수배령을 내리겠다! 넌 이제 끝이야!",
+        "도망가는 꼴이 딱 독립군이구먼!",
+      ],
+    },
+  },
+  {
+    rarity: "common",
+    name: "독사",
+    crying: "쉿- 냐앙!",
+    img: ImgCat20,
+    hp: 7,
+    punchPower: 7,
+    dialog: {
+      chat: "쉿, 냐앙",
+      meet: [
+        "한 번 물면 절대 놓지 않는다. 그게 내 스타일이지.",
+        "내 주먹엔 독이 서려 있다. 스치기만 해도 아플 걸?",
+        "조용히... 숨통을 끊어주마.",
+      ],
+      win: "독이 온몸에 퍼졌을 텐데, 괜찮겠나?",
+      lose: [
+        "내 독기보다 네 주먹이 더 독하구나...",
+        "해독제가... 필요해...",
+        "쓰러지는 건 나답지 않은데.",
+      ],
+      provoke: "네 눈동자에 공포가 서려 있군.",
+      seduce: "치명적인 매력에 빠지고 싶나?",
+      punch: ["맹독 냥냥 찌르기!", "급소만 골라서 때린다!", "신경 마비 펀치!"],
+      run: [
+        "독사가 먹잇감을 놓치는 법은 없지.",
+        "도망갈수록 독은 더 빨리 퍼질 뿐이다.",
+        "끝까지 쫓아가서 뒷덜미를 물어주마.",
+      ],
+    },
+  },
+  {
+    rarity: "common",
+    name: "상하이 조",
+    crying: "안- 되겠소! 냥!",
+    img: ImgCat21,
+    hp: 10,
+    punchPower: 4,
+    dialog: {
+      chat: "안되겠소, 냐앙",
+      meet: [
+        "안되겠소, 쏩시다! 아니, 때립시다!",
+        "상하이에서 온 매운맛을 보여주지.",
+        "총은 두고 왔다. 주먹으로도 충분하니까.",
+      ],
+      win: "고자가 될 뻔했군, 조심하라고.",
+      lose: [
+        "여기가 어디요... 아, 패배했소.",
+        "병원... 병원으로 가야겠소...",
+        "내 주먹이 빗나가다니!",
+      ],
+      provoke: "총알보다 빠른 주먹, 본 적 있나?",
+      seduce: "동무, 나랑 같이 혁명적인 츄르 한 그릇 하겠나?",
+      punch: ["총알 펀치!", "확인사살 냥냥 탭!", "안되겠소, 이거 맞으시오!"],
+      run: [
+        "어딜 도망가나! 상하이 조를 따돌릴 순 없다!",
+        "서라! 서지 않으면 쏘겠... 아니 때리겠다!",
+        "도망가는 폼이 영 좋지 못한 곳을 스치겠구먼.",
+      ],
+    },
+  },
+  {
+    rarity: "common",
+    name: "개고기",
+    crying: "왈왈! 아 아니 냥!",
+    img: ImgCat22,
+    hp: 13,
+    punchPower: 2,
+    dialog: {
+      chat: "왈왈, 냐앙",
+      meet: [
+        "이름이 왜 개고기냐고? 끈질기게 물고 늘어지니까!",
+        "난 한 놈만 팬다. 그게 너야.",
+        "맞아도 안 아파. 나는 맷집 하나로 버티거든.",
+      ],
+      win: "내 맷집이 네 주먹보다 강했네.",
+      lose: [
+        "아... 오늘은 좀 아프네.",
+        "개고기 체면이 말이 아니구먼.",
+        "한 번만 더 기회를 줘...",
+      ],
+      provoke: "때려봐, 간지러우니까.",
+      seduce: "내 푹신한 뱃살 만져볼래?",
+      punch: [
+        "무식하게 밀어붙이기!",
+        "박치기 한 방!",
+        "개싸움의 진수를 보여주마!",
+      ],
+      run: [
+        "도망가지 마! 나랑 더 놀자니까!",
+        "꼬리 살랑거린다고 봐줄 줄 알아?",
+        "끝까지 쫓아가서 핥아버린다!",
+      ],
+    },
+  },
+  {
+    rarity: "rare",
+    name: "신마적",
+    crying: "으아아! (하극상이다!)",
+    img: ImgCat23,
+    hp: 11,
+    punchPower: 5,
+    dialog: {
+      chat: "으아아, 냐앙",
+      meet: [
+        "구마적은 갔다. 이제 내가 새로운 왕이다!",
+        "학생 주제에 까불지 마라. 아, 난 고양이지?",
+        "종로의 서열을 다시 정리해주마.",
+      ],
+      win: "새로운 시대의 주인공은 바로 나다.",
+      lose: [
+        "내가... 내가 밀리다니!",
+        "술기운이 덜 깼나... 어지럽군.",
+        "하극상이다... 이건 분명 하극상이야!",
+      ],
+      provoke: "네가 감히 내 자리를 넘보느냐?",
+      seduce: "술 한 잔... 아니, 캣닢 한 봉지 할래?",
+      punch: ["신시대의 주먹!", "거침없는 앞발 후리기!", "내가 신마적이다!"],
+      run: [
+        "왕의 앞에서 도망치는 쥐새끼로군!",
+        "어디 가서 내 얘기 하지 마라, 창피하니까!",
+        "거기 서! 종로 바닥 끝까지 쫓아간다!",
+      ],
+    },
+  },
+  {
+    rarity: "unique",
+    name: "염동력냥",
+    crying: "삐비빅- (우주가 돕는다..)",
+    img: ImgCat24,
+    hp: 8,
+    punchPower: 8,
+    dialog: {
+      chat: "삐비빅, 냐앙",
+      meet: [
+        "난 손을 쓰지 않고도 널 이길 수 있다.",
+        "우주의 기운이 내 앞발에 집중되고 있어.",
+        "물리 법칙을 무시하는 타격감을 보여주지.",
+      ],
+      win: "이것이 염동력의 힘이다. 훗.",
+      lose: [
+        "전파가... 약해지고 있어...",
+        "우주의 기운이... 끊겼다...",
+        "집중력이 부족했군.",
+      ],
+      provoke: "너의 공격 패턴은 이미 계산 끝났다.",
+      seduce: "내 텔레파시, 들리니? 사랑해.",
+      punch: ["사이코키네시스 펀치!", "공중 부양 냥냥 탭!", "정신 공격이다!"],
+      run: [
+        "공간이동으로 쫓아가주마.",
+        "도망가는 궤적을 이미 계산했다.",
+        "중력 제어로 발을 묶어주지.",
+      ],
+    },
+  },
+  {
+    rarity: "common",
+    name: "이화룡",
+    crying: "애오오옹! (명동!)",
+    img: ImgCat25,
+    hp: 11,
+    punchPower: 4,
+    dialog: {
+      chat: "애오옹, 냐앙",
+      meet: [
+        "명동의 백호, 이화룡이다.",
+        "품격 있게 싸워보자고. 난 신사거든.",
+        "주먹보다는 지략이지. 하지만 주먹도 세다고?",
+      ],
+      win: "명동의 평화는 내가 지킨다.",
+      lose: [
+        "명동 바닥에 얼굴을 못 들겠구먼.",
+        "품격 있게 지는 것도 실력이지.",
+        "잠시 쉬어가는 것뿐이다.",
+      ],
+      provoke: "너무 서두르지 마, 다치니까.",
+      seduce: "명동에서 제일 맛있는 생선 가게 아는데, 갈래?",
+      punch: ["명동의 백호 주먹!", "우아한 일격!", "평화를 위한 펀치!"],
+      run: [
+        "도망치는 모습도 제법 우아하군.",
+        "명동을 벗어나면 넌 끝이다.",
+        "쫓아가는 건 체통에 안 맞지만, 이번만 예외다.",
+      ],
+    },
+  },
+  {
+    rarity: "common",
+    name: "알바묘",
+    crying: "어서오세냥-! (시급 만원!)",
+    img: ImgCat26,
+    hp: 9,
+    punchPower: 3,
+    dialog: {
+      chat: "어서오세냥, 냐앙",
+      meet: [
+        "아, 손님! 대결은 메뉴에 없는데요?",
+        "빨리 때리고 퇴근하고 싶습니다.",
+        "진상 고양이는 딱 질색이에요!",
+      ],
+      win: "오늘 알바비는 네 츄르로 받겠다.",
+      lose: [
+        "아... 산재 처리 되나요?",
+        "점장님... 저 오늘 좀 늦을 것 같아요.",
+        "때려치우고 싶다... 냥.",
+      ],
+      provoke: "주문하신 펀치 나왔습니다, 손님.",
+      seduce: "퇴근하고 같이 편의점 털러 갈래?",
+      punch: ["서비스 펀치!", "유통기한 지난 매운맛!", "분노의 편의점 탭!"],
+      run: [
+        "야! 계산 안 하고 가?! 무전취식이다!",
+        "도망가도 CCTV에 다 찍혔어!",
+        "퇴근 시간 지났는데 쫓아가게 만드네...!",
+      ],
+    },
+  },
+  {
+    rarity: "rare",
+    name: "훈련병",
+    crying: "야- 옹! (악! 악!)",
+    img: ImgCat27,
+    hp: 12,
+    punchPower: 3,
+    dialog: {
+      chat: "악! 악! 냐앙",
+      meet: [
+        "102번 교육생 고양이! 전투 준비 완료!",
+        "목소리 봐라? 다시 한다! 야옹!",
+        "각개전투의 매운맛을 보여주겠습니다!",
+      ],
+      win: "승리! 15분간 휴식 실시!",
+      lose: [
+        "탈영하고 싶다... 냥.",
+        "기합이 부족했습니다! 악!",
+        "조교님... 못 하겠습니다...",
+      ],
+      provoke: "너, 군기가 빠졌구나? 연병장 돌아!",
+      seduce: "군대 가면 기다려줄 거야?",
+      punch: ["FM 정석 펀치!", "유격 훈련 냥냥 탭!", "총검술 대신 앞발술!"],
+      run: [
+        "탈영병 검거 실시!",
+        "거기 서! 안 서면 선착순이다!",
+        "도망가봐야 부대 안이다, 임마!",
+      ],
+    },
+  },
+  {
+    rarity: "unique",
+    name: "흑막냥",
+    crying: "흐흐흐.. (계획대로야..)",
+    img: ImgCat28,
+    hp: 14,
+    punchPower: 5,
+    dialog: {
+      chat: "흐흐흐, 냐앙",
+      meet: [
+        "이 모든 대결은 나의 시나리오대로다.",
+        "네가 여기까지 올 줄 알고 있었지.",
+        "최종 보스의 위엄을 느껴봐라.",
+      ],
+      win: "예정된 결과였어. 넌 내 장기말일 뿐.",
+      lose: [
+        "계획에 오차가 생기다니...!",
+        "이것도... 너의 운인가...",
+        "제2의 시나리오를 가동한다.",
+      ],
+      provoke: "너의 과거를 알고 있다. 흔들리지 마라.",
+      seduce: "나의 오른팔이 된다면 세상을 주지.",
+      punch: ["어둠의 심판!", "그림자 펀치!", "파멸의 서막이다!"],
+      run: [
+        "도망치는 것조차 내 계획의 일부다.",
+        "어차피 넌 내 손바닥 안에서 놀고 있어.",
+        "다음에 만날 땐 더 재미있을 거다.",
+      ],
+    },
+  },
+  {
+    rarity: "common",
+    name: "복서냥",
+    crying: "슉-슉- 냥!",
+    img: ImgCat29,
+    hp: 10,
+    punchPower: 4,
+    dialog: {
+      chat: "슉슉, 냐앙",
+      meet: [
+        "왼발은 거들 뿐. 오른발은 핵주먹이지.",
+        "원투! 원투! 넌 이미 가드 불능이다.",
+        "링 위에 올랐으면 임자는 하나뿐이야.",
+      ],
+      win: "K.O! 깨끗한 승리다.",
+      lose: [
+        "수건 던져... 기권이야...",
+        "카운트 세지 마... 어지러워...",
+        "가드가 비었었나 보군.",
+      ],
+      provoke: "가드 올려라, 솜방망이 들어간다.",
+      seduce: "내 스텝, 리드미컬하지 않아?",
+      punch: ["냥냥 잽!", "강력한 바디 블로우!", "어퍼컷 냥!"],
+      run: [
+        "아웃복싱 하냐? 들어와서 붙어!",
+        "링 밖으로 도망가는 건 반칙이야!",
+        "풋워크로 따라잡아주마!",
+      ],
+    },
+  },
+  {
+    rarity: "common",
+    name: "붕어빵",
+    crying: "따끈- 냥!",
+    img: ImgCat30,
+    hp: 10,
+    punchPower: 3,
+    dialog: {
+      chat: "따끈따끈, 냐앙",
+      meet: [
+        "머리부터 먹을래, 꼬리부터 먹을래?",
+        "내 안에는 달콤한 팥 대신 독기가 들어있지.",
+        "겨울의 매운맛을 보여주마!",
+      ],
+      win: "달콤 쌉싸름한 승리의 맛!",
+      lose: [
+        "옆구리 터졌어... 팥 쏟아진다 냥.",
+        "식어버렸어... 난 끝이야.",
+        "누가 날 데워줘...",
+      ],
+      provoke: "넌 슈크림이냐? 물러터졌네.",
+      seduce: "나랑 같이 종이봉투 안에서 쉴래?",
+      punch: ["뜨거운 팥소 펀치!", "붕어 꼬리 치기!", "겉바속촉 일격!"],
+      run: [
+        "야! 너 나 안 사가?! 그냥 가면 어떡해!",
+        "식기 전에 돌아와! 쫓아간다!",
+        "봉투 밖으로 튀지 마! 위험해!",
+      ],
+    },
+  },
+  {
+    rarity: "unique",
+    name: "도깨비",
+    crying: "어흥-! (금 나와라 뚝딱!)",
+    img: ImgCat31,
+    hp: 16,
+    punchPower: 4,
+    dialog: {
+      chat: "어흥, 냐앙",
+      meet: [
+        "고양이 방망이 맛 좀 볼테냐?",
+        "장난질치러 왔다. 엉덩이 조심해라!",
+        "나랑 씨름 한 판 할까, 냥이 자식아?",
+      ],
+      win: "메밀묵이나 가져와라! 냐하하!",
+      lose: [
+        "방망이가... 부러졌네?",
+        "도깨비 체면이 말이 아니구먼.",
+        "닭 피... 닭 피만 아니면 이겼다!",
+      ],
+      provoke: "네 꼬리를 떼서 방망이를 만들어주마.",
+      seduce: "금은보화 줄게, 나랑 친구 할래?",
+      punch: ["도깨비 방망이 펀치!", "금 나와라 퍽! 냥!", "도깨비불 싸대기!"],
+      run: [
+        "어딜 도망가! 내 요술에 걸려들었으면서!",
+        "도망가면 엉덩이에 뿔 난다!",
+        "안개 속으로 사라져도 난 다 안다!",
       ],
     },
   },

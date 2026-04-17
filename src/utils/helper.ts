@@ -240,7 +240,7 @@ export const createMarker = ({
   const icon = L.divIcon({
     html: container,
     className: "",
-    iconSize: [50, 50],
+    iconSize: [100, 100],
   });
 
   // 맵에 마커 추가

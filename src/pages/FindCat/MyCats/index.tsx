@@ -1,23 +1,42 @@
 import classNames from "classnames/bind";
+import { format } from "date-fns";
 
 import Skeleton from "@/components/Skeleton";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
+import { useViewStore } from "@/store/view";
 import { catCharacters, type CatInfo, getCat } from "@/utils/cats";
 
 import styles from "./index.module.scss";
 
 const cn = classNames.bind(styles);
 
+interface MyCat {
+  lat: number;
+  lng: number;
+  createdAt: string | null;
+}
+
 interface Props {
   className?: string;
 }
 
 export default function MyCats({ className }: Props) {
+  const map = useViewStore((s) => s.map);
+
   const { data, isLoading } = useMyCatsQuery();
 
   const myCats = data
     ?.filter(({ cat_name }) => catCharacters.some((c) => c.name === cat_name))
-    .map((c) => getCat(c.cat_name)) as CatInfo[];
+    .map((c) => {
+      const { lat, lng } = c.position as Pick<MyCat, "lat" | "lng">;
+
+      return {
+        ...getCat(c.cat_name),
+        lat,
+        lng,
+        createdAt: c.created_at,
+      };
+    }) as (CatInfo & MyCat)[];
 
   if (isLoading) {
     return (
@@ -37,11 +56,31 @@ export default function MyCats({ className }: Props) {
       <div className={cn("wrapper", className)}>
         {myCats?.length ? (
           <ul>
-            {myCats.map(({ name, img, crying }, i) => (
+            {myCats.map(({ name, img, crying, lat, lng, createdAt }, i) => (
               <li key={name + i}>
-                <img src={img} alt={name} width={50} height={50} />
-                <span>{name} :</span>
-                <span>{crying}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    map?.setView([lat, lng]);
+                  }}
+                >
+                  <img src={img} alt={name} width={100} height={100} />
+                  <div className={cn("info")}>
+                    <div className={cn("row")}>
+                      <span>{name} :</span>
+                      <span>{crying}</span>
+                    </div>
+                    <div className={cn("row")}>
+                      <span>잡은 날 :</span>
+                      <span>
+                        {format(
+                          createdAt || new Date(),
+                          "yy년 MM월 dd일 HH:mm",
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </button>
               </li>
             ))}
           </ul>

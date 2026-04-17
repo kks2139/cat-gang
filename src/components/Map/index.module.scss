@@ -1,11 +1,12 @@
 @use "@/styles/mixins" as *;
+@use "sass:math";
 
 .map-wrapper {
   position: relative;
-  height: 70%;
+  height: calc(70%);
   perspective: 1000px; // 얼마만큼 떨어져서 보는지 값
   overflow: hidden;
-  margin-top: -40px;
+  margin-top: -20px;
 
   // 구름 효과
   .sky-decoration {
@@ -20,7 +21,7 @@
 
     .cloud {
       position: absolute;
-      background-color: rgb(255, 255, 255);
+      background-color: rgb(255, 255, 255, 0.8);
       border-radius: 20px;
       filter: blur(0.5px) drop-shadow(2px 60px rgba(0, 0, 0, 0.06)); // 구름 그림자
       opacity: 0; // 시작 시 투명하게
@@ -35,22 +36,22 @@
 
       @for $i from 1 through 15 {
         &.c#{$i} {
-          $width: (30 + random(50)) * 1px;
+          $width: (30 + math.random(50)) * 1px;
           $height: $width * 0.35;
           // y 좌표는 인덱스를 활용해 세로로 겹치지 않도록 골고루 분산
-          $y-pos: (($i - 1) * 6 + random(5)) * 1%;
+          $y-pos: (($i - 1) * 6 + math.random(5)) * 1%;
           // x 좌표는 가로 전체에 랜덤 분산 (0% ~ 90% 사이)
-          $x-pos: random(90) * 1%;
+          $x-pos: math.random(90) * 1%;
 
           // 구름 2개 정도(인덱스 7,8)는 중앙 영역에 살짝 모이도록 조정
           @if $i >= 7 and $i <= 8 {
-            $y-pos: (35 + random(15)) * 1%;
-            $x-pos: (40 + random(14)) * 1%;
+            $y-pos: (35 + math.random(15)) * 1%;
+            $x-pos: (40 + math.random(14)) * 1%;
           }
 
-          $duration: (20 + random(30)) * 1s;
-          $is-reverse: random(2) == 1;
-          $opacity: (50 + random(40)) / 100;
+          $duration: (20 + math.random(30)) * 1s;
+          $is-reverse: math.random(2) == 1;
+          $opacity: (50 + math.random(40)) / 100;
 
           width: $width;
           height: $height;
@@ -106,11 +107,17 @@
   position: relative;
   overflow: hidden;
   height: 100%;
-  transform: rotateX(28deg); // 뒤로 눕히는 효과
+  transform: rotateX(20deg); // 뒤로 눕히는 효과
   border-radius: 20px;
   box-shadow: 0 -80px 60px 40px rgba(110, 110, 110, 0.1);
 
+  outline: none !important;
+  &:focus {
+    outline: none !important;
+  }
+
   .map-content {
+    outline-style: none !important;
     z-index: 1000;
     position: absolute;
     top: 0;
@@ -119,6 +126,8 @@
     height: 100%;
     overflow: hidden;
     pointer-events: none;
+
+    box-shadow: 0 0 30px 10px rgba(110, 110, 110, 0.1) inset;
   }
 
   .night-overlay {
