@@ -37,22 +37,7 @@
     height: 100%; // 지도 전체에 구름이 퍼지도록
     pointer-events: none;
     transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); // 줌 변경 시 부드럽게 크기 변화
-
-    &.z-16 {
-      transform: scale(1);
-    }
-
-    &.z-17 {
-      transform: scale(1.5);
-    }
-
-    &.z-18 {
-      transform: scale(2);
-    }
-
-    &.z-19 {
-      transform: scale(2.5);
-    }
+    transform: scale(var(--cloud-zoom, 1));
 
     .cloud {
       position: absolute;

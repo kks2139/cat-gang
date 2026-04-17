@@ -24,6 +24,7 @@ import styles from "./index.module.scss";
 const cn = classNames.bind(styles);
 
 const MAX_ZOOM_LEVEL = 19;
+const MIN_ZOOM_LEVEL = 16;
 const BOUNDARY_METER_OF_ME = 50;
 
 export interface OwnCat {
@@ -195,15 +196,6 @@ function MapContent({ onClickCat, ownCats, onClickOwnCat }: Props) {
     [drawCats, drawMe],
   );
 
-  const updateCloudZoom = useCallback((zoom: number) => {
-    if (!skyDecorationRef.current) {
-      return;
-    }
-
-    const zoomClass = styles[`z-${zoom}`] || styles["z-19"];
-    skyDecorationRef.current.className = `${styles["sky-decoration"]} ${zoomClass}`;
-  }, []);
-
   useEffect(() => {
     if (!isRendered.current) {
       return;
@@ -270,9 +262,18 @@ function MapContent({ onClickCat, ownCats, onClickOwnCat }: Props) {
         }
       })
       .on("zoomanim", (e) => {
-        updateCloudZoom(e.zoom);
+        // const currentZoom = map.getZoom();
+        // const zoomTo = currentZoom < e.zoom ? "in" : "out";
+        // setCloudZoom(e.zoom - MIN_ZOOM_LEVEL + 1);
+        // if (zoomTo === "in") {
+        // }
+
+        skyDecorationRef.current?.style.setProperty(
+          "--cloud-zoom",
+          (e.zoom - MIN_ZOOM_LEVEL + 1).toString(),
+        );
       });
-  }, [map, updateCloudZoom]);
+  }, [map]);
 
   return (
     <div className={cn("map-content")}>
@@ -324,11 +325,13 @@ export default function Map({ className, ...rest }: Props) {
       center={[37.5665, 126.978]} // 센터 기본값 서울시청
       zoom={MAX_ZOOM_LEVEL}
       maxZoom={MAX_ZOOM_LEVEL}
-      minZoom={16}
+      minZoom={MIN_ZOOM_LEVEL}
       zoomControl={false}
-      scrollWheelZoom={true}
+      scrollWheelZoom={"center"}
+      doubleClickZoom={"center"}
       attributionControl={false} // 하단 저작권 표시줄 전체 삭제
       dragging={false}
+      bounceAtZoomLimits={false}
     >
       <TileLayer
         url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
