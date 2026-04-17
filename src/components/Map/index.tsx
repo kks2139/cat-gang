@@ -3,7 +3,13 @@ import { AnimatePresence, motion } from "framer-motion";
 import L from "leaflet";
 import { useCallback, useEffect, useRef, useState } from "react";
 // Marker 아이콘 깨짐 방지 (특정 환경에서 아이콘 경로가 인식 안 될 때 필요)
-import { MapContainer, ScaleControl, TileLayer, useMap } from "react-leaflet";
+import {
+  MapContainer,
+  ScaleControl,
+  TileLayer,
+  useMap,
+  ZoomControl,
+} from "react-leaflet";
 
 import ImgCatMe from "@/assets/img/cat_me.png";
 import { useCatStore } from "@/store/cat";
@@ -321,6 +327,7 @@ export default function Map({ className, ...rest }: Props) {
         dragging={false}
         bounceAtZoomLimits={false}
       >
+        <ZoomControl position="bottomright" />
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
