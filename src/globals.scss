@@ -499,12 +499,10 @@ input {
     from {
       filter: blur(2px);
       transform: translateX(-50%) scale(1);
-      // opacity: 1;
     }
     to {
       filter: blur(2px);
       transform: translateX(-50%) scale(0.95);
-      // opacity: 0.6;
     }
   }
 }
