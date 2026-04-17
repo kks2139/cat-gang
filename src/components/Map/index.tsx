@@ -106,7 +106,7 @@ function MapContent({ onClickCat, ownCats, onClickOwnCat }: Props) {
 
     // 내 고양이 이전좌표랑 일정m 이상 차이날때만 cats 새로 그린다
     const canSkipDraw = centerPositionOfCats.current
-      ? myPosition.distanceTo(centerPositionOfCats.current) <= 20
+      ? myPosition.distanceTo(centerPositionOfCats.current) <= 40
       : false;
 
     if (canSkipDraw) {
@@ -198,6 +198,10 @@ function MapContent({ onClickCat, ownCats, onClickOwnCat }: Props) {
     [drawCats, drawMe],
   );
 
+  const setCloudScale = (scale: number) => {
+    skyDecorationRef.current?.style.setProperty("--cloud-zoom", String(scale));
+  };
+
   useEffect(() => {
     if (!isRendered.current) {
       return;
@@ -255,6 +259,9 @@ function MapContent({ onClickCat, ownCats, onClickOwnCat }: Props) {
 
     isMapReady.current = true;
 
+    // 구름 스케일 초기화
+    setCloudScale(MAX_ZOOM_LEVEL - MIN_ZOOM_LEVEL + 1);
+
     map
       .on("zoomend", () => {
         const pos = myCatRef.current?.getLatLng();
@@ -264,23 +271,14 @@ function MapContent({ onClickCat, ownCats, onClickOwnCat }: Props) {
         }
       })
       .on("zoomanim", (e) => {
-        // const currentZoom = map.getZoom();
-        // const zoomTo = currentZoom < e.zoom ? "in" : "out";
-        // setCloudZoom(e.zoom - MIN_ZOOM_LEVEL + 1);
-        // if (zoomTo === "in") {
-        // }
-
-        skyDecorationRef.current?.style.setProperty(
-          "--cloud-zoom",
-          (e.zoom - MIN_ZOOM_LEVEL + 1).toString(),
-        );
+        setCloudScale(e.zoom - MIN_ZOOM_LEVEL + 1);
       });
   }, [map]);
 
   return (
     <div className={cn("map-content")}>
       <div ref={skyDecorationRef} className={cn("sky-decoration")}>
-        {Array.from({ length: 8 }, (_, i) => (
+        {Array.from({ length: 15 }, (_, i) => (
           <div key={i} className={cn("cloud", `c${i + 1}`)} />
         ))}
       </div>
