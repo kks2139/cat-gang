@@ -106,9 +106,9 @@
   position: relative;
   overflow: hidden;
   height: 100%;
-  transform: rotateX(25deg); // 뒤로 눕히는 효과
+  transform: rotateX(28deg); // 뒤로 눕히는 효과
   border-radius: 20px;
-  box-shadow: 0 -80px 60px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 -80px 60px 40px rgba(110, 110, 110, 0.1);
 
   .map-content {
     z-index: 1000;
