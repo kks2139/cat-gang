@@ -249,36 +249,7 @@ export const createMarker = ({
   return marker;
 };
 
-type Coords = Pick<GeolocationCoordinates, "latitude" | "longitude">;
-
-// 이전, 현재 좌표를 비교해서  diffMeter 이상 차이나면 true 반환
-export const calculateDistanceOverMeters = (
-  prev?: Coords,
-  curr?: Coords,
-  diffMeter = 20,
-) => {
-  if (!prev || !curr) return true;
-
-  const R = 6371e3; // 지구 반지름 (m)
-
-  // 라디안 변환
-  const dLat = ((curr.latitude - prev.latitude) * Math.PI) / 180;
-  const dLon = ((curr.longitude - prev.longitude) * Math.PI) / 180;
-
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((prev.latitude * Math.PI) / 180) *
-      Math.cos((curr.latitude * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const distance = R * c;
-
-  console.log("diffMeter :", diffMeter);
-
-  return distance >= diffMeter;
-};
+export type Coords = Pick<GeolocationCoordinates, "latitude" | "longitude">;
 
 export const removeMarkerWithMotion = (marker: L.Marker, duration = 300) => {
   const el = marker.getElement();

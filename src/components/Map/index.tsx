@@ -3,14 +3,13 @@ import { AnimatePresence, motion } from "framer-motion";
 import L from "leaflet";
 import { useCallback, useEffect, useRef, useState } from "react";
 // Marker 아이콘 깨짐 방지 (특정 환경에서 아이콘 경로가 인식 안 될 때 필요)
-import { MapContainer, TileLayer, useMap } from "react-leaflet";
+import { MapContainer, ScaleControl, TileLayer, useMap } from "react-leaflet";
 
 import ImgCatMe from "@/assets/img/cat_me.png";
 import { useCatStore } from "@/store/cat";
 import { catCharacters } from "@/utils/cats";
 import {
   animateMarker,
-  calculateDistanceOverMeters,
   createMarker,
   getCurrentPosition,
   getRandomLocationInCircle,
@@ -48,7 +47,7 @@ function MapContent({ onClickCat, ownCats, onClickOwnCat }: Props) {
   const isRendered = useRef(false);
   const isMapReady = useRef(false);
   const isWatchPositionReady = useRef(false);
-  const prevPosition = useRef<GeolocationCoordinates>(undefined);
+  const centerPositionOfCats = useRef<L.LatLng>(undefined);
   const skyDecorationRef = useRef<HTMLDivElement>(null);
 
   const myCatRef = useRef<L.Marker>(null);
@@ -101,15 +100,21 @@ function MapContent({ onClickCat, ownCats, onClickOwnCat }: Props) {
 
     const myPosition = myCatRef.current.getLatLng();
 
-    // 내 고양이 이전좌표랑 일정m 이상 차이날때만 cats 새로 그린다
-    const needToDraw = calculateDistanceOverMeters(prevPosition.current, {
-      latitude: myPosition.lat,
-      longitude: myPosition.lng,
-    });
+    if (centerPositionOfCats.current) {
+      console.log(myPosition.distanceTo(centerPositionOfCats.current));
+    }
 
-    if (!needToDraw) {
+    // 내 고양이 이전좌표랑 일정m 이상 차이날때만 cats 새로 그린다
+    const canSkipDraw = centerPositionOfCats.current
+      ? myPosition.distanceTo(centerPositionOfCats.current) <= 20
+      : false;
+
+    if (canSkipDraw) {
       return;
     }
+
+    // 고양이들 그릴 중심점 업데이트
+    centerPositionOfCats.current = myPosition;
 
     // 이전에 생성한 랜덤 마커들 해제
     catMarkersRef.current.forEach((marker) => {
@@ -187,11 +192,8 @@ function MapContent({ onClickCat, ownCats, onClickOwnCat }: Props) {
 
   const createMeAndCats = useCallback(
     async (usePanTo?: boolean) => {
-      const result = await drawMe(usePanTo);
+      await drawMe(usePanTo);
       drawCats();
-
-      // 고양이들 그린 후 내위치 기록
-      prevPosition.current = result?.coords;
     },
     [drawCats, drawMe],
   );
@@ -339,14 +341,13 @@ export default function Map({ className, ...rest }: Props) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
         maxZoom={20}
       />
-      {/* <TileLayer
-        url="https://tiles.stadiamaps.com/tiles/stamen_terrain_lines/{z}/{x}/{y}{r}.png"
-        attribution="&copy; Stadia Maps, &copy; Stamen Design"
-        opacity={0.8} // 너무 진하면 배경이 죽으므로 불투명도를 살짝 조절해보세요.
-        maxZoom={20}
-      /> */}
       <MapContent {...rest} />
 
+      <ScaleControl
+        position="bottomleft" // 위치 설정 (topleft, topright, bottomleft, bottomright)
+        imperial={false} // 마일(mi) 단위 표시 여부 (false면 미터법만 표시)
+        maxWidth={100} // 축척 바의 최대 길이 (픽셀 단위)
+      />
       {isNight && <div className={cn("night-overlay")} />}
     </MapContainer>
   );

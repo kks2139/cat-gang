@@ -41,7 +41,7 @@
 
     .cloud {
       position: absolute;
-      background-color: rgb(241, 241, 241); // 더 진하고 불투명하게
+      background-color: rgb(255, 255, 255); // 더 진하고 불투명하게
       border-radius: 20px;
       filter: blur(1px);
       opacity: 0; // 시작 시 투명하게 (Fade-in 유도)
