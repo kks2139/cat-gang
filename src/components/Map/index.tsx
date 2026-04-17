@@ -9,8 +9,9 @@ import ImgCatMe from "@/assets/img/cat_me.png";
 import { useCatStore } from "@/store/cat";
 import { catCharacters } from "@/utils/cats";
 import {
+  animateMarker,
   calculateDistanceOverMeters,
-  createCustomOverlay,
+  createMarker,
   getCurrentPosition,
   getRandomLocationInCircle,
   getRandomNumber,
@@ -42,12 +43,6 @@ function MapContent({ onClickCat, ownCats, onClickOwnCat }: Props) {
   const { setSelectedCat } = useCatStore((s) => s.actions);
 
   const [isInitLoading, setIsInitLoading] = useState(false);
-  // const [isNight, setIsNight] = useState(false);
-
-  // useEffect(() => {
-  //   const hours = new Date().getHours();
-  //   setIsNight(hours >= 18 || hours < 6);
-  // }, []);
 
   const isRendered = useRef(false);
   const isMapReady = useRef(false);
@@ -69,19 +64,20 @@ function MapContent({ onClickCat, ownCats, onClickOwnCat }: Props) {
         return;
       }
 
-      // 기존 마커 제거
-      myCatRef.current?.remove();
+      if (myCatRef.current) {
+        animateMarker(myCatRef.current, [coords.latitude, coords.longitude]);
+      } else {
+        const marker = createMarker({
+          type: "me",
+          imgUrl: ImgCatMe,
+          map,
+          position: [coords.latitude, coords.longitude],
+        });
 
-      const marker = createCustomOverlay({
-        type: "me",
-        imgUrl: ImgCatMe,
-        map,
-        position: [coords.latitude, coords.longitude],
-      });
+        marker.setZIndexOffset(99);
 
-      marker.setZIndexOffset(99);
-
-      myCatRef.current = marker;
+        myCatRef.current = marker;
+      }
 
       // 현재 위치로 지도 중심 이동
       if (usePanTo) {
@@ -140,7 +136,7 @@ function MapContent({ onClickCat, ownCats, onClickOwnCat }: Props) {
         BOUNDARY_METER_OF_ME,
       );
 
-      const marker = createCustomOverlay({
+      const marker = createMarker({
         type: "enemy",
         catName: cat.name,
         position: randomLatLng,
@@ -176,7 +172,7 @@ function MapContent({ onClickCat, ownCats, onClickOwnCat }: Props) {
     ownCats?.forEach((cat) => {
       const { position } = cat;
 
-      const marker = createCustomOverlay({
+      const marker = createMarker({
         position: [position.lat, position.lng],
         type: "owned",
         map,

@@ -73,13 +73,25 @@ input {
   --orange-map-shadow: #f5b091; // 지도 전용 그림자
 }
 
-.custom-overlay-container {
+.marker-container {
   $swim-duration: 20s;
   $walk-duration: 0.6s;
   $move-range: 12px;
 
   position: relative;
   animation: cat-move $swim-duration linear infinite;
+
+  // 고양이 이미지
+  img {
+    z-index: 1;
+    position: relative;
+    width: 50px !important;
+    height: 50px;
+    animation:
+      walk-bounce $walk-duration ease-in-out infinite alternate,
+      cat-jump $swim-duration linear infinite;
+    animation-delay: 0s, var(--jump-delay, 0s); // 점프 타이밍 랜덤화
+  }
 
   &.no-animation {
     animation: none;
@@ -297,18 +309,6 @@ input {
         transform: translateY(0);
       }
     }
-  }
-
-  // 고양이 이미지지
-  img {
-    z-index: 1;
-    position: relative;
-    width: 50px;
-    height: 50px;
-    animation:
-      walk-bounce $walk-duration ease-in-out infinite alternate,
-      cat-jump $swim-duration linear infinite;
-    animation-delay: 0s, var(--jump-delay, 0s); // 점프 타이밍 랜덤화
   }
 
   // 내 고양이 위치 화살표 (2D Cat Paw Arrow)

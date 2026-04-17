@@ -131,7 +131,7 @@ interface CreateOverlayOptions {
   catName?: string;
 }
 
-export const createCustomOverlay = ({
+export const createMarker = ({
   map,
   position,
   imgUrl,
@@ -146,7 +146,7 @@ export const createCustomOverlay = ({
   const container = document.createElement("div");
   container.dataset.cat = "true";
   container.dataset.status = "none";
-  container.classList.add("custom-overlay-container");
+  container.classList.add("marker-container");
 
   if (imgUrl) {
     // 고양이 이미지
@@ -255,7 +255,7 @@ type Coords = Pick<GeolocationCoordinates, "latitude" | "longitude">;
 export const calculateDistanceOverMeters = (
   prev?: Coords,
   curr?: Coords,
-  diffMeter = 30,
+  diffMeter = 20,
 ) => {
   if (!prev || !curr) return true;
 
@@ -274,6 +274,8 @@ export const calculateDistanceOverMeters = (
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const distance = R * c;
+
+  console.log("diffMeter :", diffMeter);
 
   return distance >= diffMeter;
 };
@@ -309,4 +311,42 @@ export const watchPosition = async (
   );
 
   return watchId;
+};
+
+/**
+ * 마커를 부드럽게 이동시킨다
+ * @param marker Leaflet 마커 객체
+ * @param destination 이동할 목적지 좌표
+ * @param duration 이동 시간 (ms, 기본값 500ms)
+ */
+export const animateMarker = (
+  marker: L.Marker,
+  newPosition: L.LatLngExpression,
+  duration: number = 300,
+) => {
+  const startLatLng = marker.getLatLng();
+  const endLatLng = L.latLng(newPosition);
+  let startTime: number | null = null;
+
+  const frame = (currentTime: number) => {
+    if (!startTime) startTime = currentTime;
+
+    // 진행률 계산 (0 ~ 1)
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+
+    // 선형 보간법(Lerp)으로 중간 좌표 계산
+    const currentLat =
+      startLatLng.lat + (endLatLng.lat - startLatLng.lat) * progress;
+    const currentLng =
+      startLatLng.lng + (endLatLng.lng - startLatLng.lng) * progress;
+
+    marker.setLatLng([currentLat, currentLng]);
+
+    if (progress < 1) {
+      requestAnimationFrame(frame); // 다음 프레임 요청
+    }
+  };
+
+  requestAnimationFrame(frame);
 };
