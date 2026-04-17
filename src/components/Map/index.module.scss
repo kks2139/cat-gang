@@ -43,7 +43,7 @@
       position: absolute;
       background-color: rgb(255, 255, 255);
       border-radius: 20px;
-      filter: blur(1px);
+      filter: blur(0.5px) drop-shadow(2px 70px rgba(0, 0, 0, 0.05)); // 구름 그림자
       opacity: 0; // 시작 시 투명하게
 
       &::before,
@@ -63,10 +63,10 @@
           // x 좌표는 가로 전체에 랜덤 분산 (0% ~ 90% 사이)
           $x-pos: random(90) * 1%;
 
-          // 구름 3개 정도(인덱스 7,8,9)는 중앙 영역에 살짝 모이도록 조정
-          @if $i >= 7 and $i <= 9 {
-            $y-pos: (40 + random(15)) * 1%;
-            $x-pos: (35 + random(14)) * 1%;
+          // 구름 2개 정도(인덱스 7,8)는 중앙 영역에 살짝 모이도록 조정
+          @if $i >= 7 and $i <= 8 {
+            $y-pos: (35 + random(15)) * 1%;
+            $x-pos: (40 + random(14)) * 1%;
           }
 
           $duration: (20 + random(30)) * 1s;
