@@ -1,13 +1,19 @@
 import classNames from "classnames/bind";
 import { AnimatePresence, motion } from "framer-motion";
 import L from "leaflet";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 // Marker 아이콘 깨짐 방지 (특정 환경에서 아이콘 경로가 인식 안 될 때 필요)
 import {
   MapContainer,
   ScaleControl,
   TileLayer,
-  useMap,
+  useMapEvents,
   ZoomControl,
 } from "react-leaflet";
 
@@ -31,7 +37,7 @@ const cn = classNames.bind(styles);
 
 const INIT_ZOOM_LEVEL = 19;
 const MAX_ZOOM_LEVEL = 19;
-const MIN_ZOOM_LEVEL = 16;
+const MIN_ZOOM_LEVEL = 17;
 const BOUNDARY_METER_OF_ME = 50;
 
 export interface OwnCat {
@@ -48,6 +54,7 @@ interface Props {
   onZoomanim?: (zoomValue: number) => void;
   onMapReady?: (map: L.Map) => void;
   onCreateCatsComplete?: () => void;
+  ref?: React.Ref<L.Marker | null>;
 }
 
 function MapContent({
@@ -58,7 +65,11 @@ function MapContent({
   onZoomanim,
   onMapReady,
   onCreateCatsComplete,
+  ref: myMarkerRef,
 }: Props) {
+  const isStopFocusMe = useViewStore((s) => s.isStopFocusMe);
+  const { setIsStopFocusMe } = useViewStore((s) => s.actions);
+
   const isShowStage = useCatStore((s) => s.isShowStage);
   const { setSelectedCat } = useCatStore((s) => s.actions);
 
@@ -68,12 +79,56 @@ function MapContent({
   const isMapReady = useRef(false);
   const isWatchPositionReady = useRef(false);
   const centerPositionOfCats = useRef<L.LatLng>(undefined);
+  const isStopFocus = useRef(false);
 
-  const myCatRef = useRef<L.Marker>(null);
   const catMarkersRef = useRef<L.Marker[]>([]);
   const ownCatMarkersRef = useRef<L.Marker[]>([]);
+  const myCatRef = useRef<L.Marker>(null);
 
-  const map = useMap();
+  // 부모의 myMarkerRef.current에 그 값을 동기화합니다.
+  useImperativeHandle<L.Marker | null, L.Marker | null>(myMarkerRef, () => {
+    return myCatRef.current;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myCatRef.current]);
+
+  const map = useMapEvents({
+    zoomend() {
+      const pos = myCatRef.current?.getLatLng();
+
+      if (pos) {
+        // map.setView([pos.lat, pos.lng]);
+      }
+    },
+    zoomanim(e) {
+      onZoomanim?.(e.zoom);
+    },
+    dragstart() {
+      setIsStopFocusMe(true);
+    },
+  });
+
+  useEffect(() => {
+    isStopFocus.current = isStopFocusMe;
+  }, [isStopFocusMe]);
+
+  const calcuateMapBounds = useCallback(
+    (coords: GeolocationCoordinates) => {
+      const { latitude, longitude } = coords;
+
+      // 1km 범위 설정을 위한 변화량
+      const latDiff = 0.009;
+      const lngDiff = 0.011;
+
+      // 남서쪽과 북동쪽 좌표 계산
+      const southWest = L.latLng(latitude - latDiff, longitude - lngDiff);
+      const northEast = L.latLng(latitude + latDiff, longitude + lngDiff);
+      const bounds = L.latLngBounds(southWest, northEast);
+
+      // 지도 제한 설정
+      map.setMaxBounds(bounds);
+    },
+    [map],
+  );
 
   const drawMe = useCallback(
     async (usePanTo?: boolean) => {
@@ -82,6 +137,9 @@ function MapContent({
       if (!coords) {
         return;
       }
+
+      // 드래그 제한범위 설정
+      calcuateMapBounds(coords);
 
       if (myCatRef.current) {
         animateMarker(myCatRef.current, [coords.latitude, coords.longitude]);
@@ -98,18 +156,21 @@ function MapContent({
         myCatRef.current = marker;
       }
 
-      // 현재 위치로 지도 중심 이동
-      if (usePanTo) {
-        map.panTo([coords.latitude, coords.longitude], { duration: 1 });
-      } else {
-        map.setView([coords.latitude, coords.longitude]);
+      // 드래그된 상태 아닐때
+      if (!isStopFocus.current) {
+        // 현재 위치로 지도 중심 이동
+        if (usePanTo) {
+          map.panTo([coords.latitude, coords.longitude], { duration: 1 });
+        } else {
+          map.setView([coords.latitude, coords.longitude]);
+        }
       }
 
       return {
         coords,
       };
     },
-    [map],
+    [calcuateMapBounds, map],
   );
 
   const drawCats = useCallback(() => {
@@ -185,11 +246,11 @@ function MapContent({
   const drawOwnCats = useCallback(() => {
     // 이전에 생성한 랜덤 마커들 해제
     ownCatMarkersRef.current.forEach((marker) => {
-      marker.remove();
+      removeMarkerWithMotion(marker);
     });
     ownCatMarkersRef.current = [];
 
-    // 잡은 고양이들 overlay 그리기
+    // 잡은 고양이들(깃발) 그리기
     ownCats?.forEach((cat) => {
       const { position } = cat;
 
@@ -274,40 +335,23 @@ function MapContent({
     isMapReady.current = true;
 
     onMapReady?.(map);
-
-    map
-      .on("zoomend", () => {
-        const pos = myCatRef.current?.getLatLng();
-
-        if (pos) {
-          map.setView([pos.lat, pos.lng]);
-        }
-      })
-      .on("zoomanim", (e) => {
-        onZoomanim?.(e.zoom);
-      });
   }, [map, onMapReady, onZoomanim]);
 
   return <div className={className}></div>;
 }
 
 export default function Map({ className, ...rest }: Props) {
-  const { setMap } = useViewStore((s) => s.actions);
-  const [isNight, setIsNight] = useState(false);
+  const map = useViewStore((s) => s.map);
+  const { setMap, setIsStopFocusMe } = useViewStore((s) => s.actions);
+
   const [isLoading, setisLoading] = useState(true);
 
   const skyDecorationRef = useRef<HTMLDivElement>(null);
+  const myMarkerRef = useRef<L.Marker>(null);
 
   const setCloudScale = (scale: number) => {
     skyDecorationRef.current?.style.setProperty("--cloud-zoom", String(scale));
   };
-
-  useEffect(() => {
-    const hours = new Date().getHours();
-
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsNight(hours >= 18 || hours < 6);
-  }, []);
 
   useEffect(() => {
     return () => setMap(null);
@@ -332,8 +376,8 @@ export default function Map({ className, ...rest }: Props) {
         doubleClickZoom={"center"}
         touchZoom={"center"}
         attributionControl={false} // 하단 저작권 표시줄 전체 삭제
-        dragging={false}
         bounceAtZoomLimits={false}
+        maxBoundsViscosity={0.9}
       >
         <ZoomControl position="bottomright" />
         <TileLayer
@@ -345,7 +389,8 @@ export default function Map({ className, ...rest }: Props) {
         {/* 맵 내부 마커생성, 이벤트 등록 등 */}
         <MapContent
           {...rest}
-          className={cn("map-content", { night: isNight })}
+          ref={myMarkerRef}
+          className={cn("map-content")}
           onMapReady={(map) => {
             // 구름 스케일 초기화
             setCloudScale(MAX_ZOOM_LEVEL - INIT_ZOOM_LEVEL + 4);
@@ -361,12 +406,24 @@ export default function Map({ className, ...rest }: Props) {
         />
 
         <ScaleControl
-          position="bottomleft" // 위치 설정 (topleft, topright, bottomleft, bottomright)
+          position={"bottomleft"} // 위치 설정 (topleft, topright, bottomleft, bottomright)
           imperial={false} // 마일(mi) 단위 표시 여부 (false면 미터법만 표시)
           maxWidth={100} // 축척 바의 최대 길이 (픽셀 단위)
         />
-        {isNight && <div className={cn("night-overlay")} />}
       </MapContainer>
+
+      <button
+        data-name="focus-button"
+        className={cn("focus-button")}
+        onClick={async () => {
+          if (myMarkerRef.current) {
+            map?.flyTo(myMarkerRef.current.getLatLng());
+            setIsStopFocusMe(false);
+          }
+        }}
+      >
+        내 위치
+      </button>
 
       <AnimatePresence>
         {isLoading && (

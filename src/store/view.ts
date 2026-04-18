@@ -13,10 +13,12 @@ interface Message {
 interface ViewStore {
   toastMessages: Message[];
   map: L.Map | null;
+  isStopFocusMe: boolean;
   actions: {
     addToastMessage: (message: Omit<Message, "id">) => void;
     removeToastMessage: () => void;
     setMap: (map: L.Map | null) => void;
+    setIsStopFocusMe: (value: boolean) => void;
   };
 }
 
@@ -24,6 +26,7 @@ export const useViewStore = create<ViewStore>()(
   immer((set, get) => ({
     toastMessages: [],
     map: null,
+    isStopFocusMe: false,
     actions: {
       addToastMessage({ message, duration = 2000 }) {
         set((state) => {
@@ -45,6 +48,11 @@ export const useViewStore = create<ViewStore>()(
       setMap(map) {
         set((state) => {
           state.map = map;
+        });
+      },
+      setIsStopFocusMe(value) {
+        set((state) => {
+          state.isStopFocusMe = value;
         });
       },
     },

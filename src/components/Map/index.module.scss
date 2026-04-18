@@ -1,16 +1,31 @@
 @use "@/styles/mixins" as *;
 @use "sass:math";
 
+.focus-button {
+  z-index: 1000;
+  position: absolute;
+  bottom: 10px;
+  right: 60px;
+  background-color: white;
+  box-shadow: 0 6px 10px 2px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  transition: 0.2s;
+  padding: 10px;
+  color: rgb(88, 88, 88);
+
+  &:active {
+    background-color: #d8d8d8;
+  }
+}
+
 .map-wrapper {
   position: relative;
-  height: calc(70%);
-  perspective: 1000px; // 얼마만큼 떨어져서 보는지 값
   overflow: hidden;
-  margin-top: -20px;
+  height: 100%;
 
   // 구름 효과
   .sky-decoration {
-    z-index: 100;
+    z-index: 999;
     position: absolute;
     top: 45px;
     width: 100%;
@@ -107,9 +122,7 @@
   position: relative;
   overflow: hidden;
   height: 100%;
-  transform: rotateX(20deg); // 뒤로 눕히는 효과
   border-radius: 20px;
-  box-shadow: 0 -80px 60px 40px rgba(110, 110, 110, 0.1);
 
   outline: none !important;
   &:focus {
@@ -117,7 +130,6 @@
   }
 
   .map-content {
-    outline-style: none !important;
     z-index: 1000;
     position: absolute;
     top: 0;
@@ -126,34 +138,6 @@
     height: 100%;
     overflow: hidden;
     pointer-events: none;
-
-    box-shadow: 0 0 30px 10px rgba(110, 110, 110, 0.1) inset;
-  }
-
-  .night-overlay {
-    z-index: 999; // 타일보다는 위, 오버레이보다는 아래여야 함
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 20, 50, 0.1); // 밤 색감 틴트
-    pointer-events: none;
-    animation: fade-in 1s ease-out;
-  }
-
-  @keyframes fade-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  &::after {
-    border-left: none;
-    border-right: none;
   }
 }
 

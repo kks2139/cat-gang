@@ -121,7 +121,7 @@ export const getCurrentPosition = async () => {
   });
 };
 
-type OverlayType = "me" | "owned" | "enemy" | "loacation-spread-out";
+type OverlayType = "me" | "owned" | "enemy";
 
 interface CreateOverlayOptions {
   map: L.Map;
@@ -144,7 +144,6 @@ export const createMarker = ({
 
   // 최상위 컨테이너
   const container = document.createElement("div");
-  container.dataset.cat = "true";
   container.dataset.status = "none";
   container.classList.add("marker-container");
 
@@ -174,7 +173,7 @@ export const createMarker = ({
     container.appendChild(wrapper);
   }
 
-  // 잡은 고양이일때
+  // 잡은 고양이일때(깃발)
   if (type === "owned") {
     container.classList.add("no-animation", "small-shadow");
 
@@ -189,15 +188,6 @@ export const createMarker = ({
 
     wrapper.appendChild(pole);
     wrapper.appendChild(flag);
-    container.appendChild(wrapper);
-  }
-
-  if (type === "loacation-spread-out") {
-    container.classList.add("no-animation", "no-shadow");
-
-    const wrapper = document.createElement("div");
-    wrapper.className = "location-spread-out";
-
     container.appendChild(wrapper);
   }
 

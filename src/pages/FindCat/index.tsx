@@ -12,6 +12,7 @@ import Stage from "@/components/Stage";
 import { useCatchCatMutation } from "@/queries/useCatchCatMutation";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
 import { useCatStore } from "@/store/cat";
+import { useViewStore } from "@/store/view";
 import { type CatInfo, getCat } from "@/utils/cats";
 import {
   getFireworkElement,
@@ -28,6 +29,7 @@ const cn = classNames.bind(styles);
 export default function FindCat() {
   const navigate = useNavigate();
 
+  const { setIsStopFocusMe } = useViewStore((s) => s.actions);
   const isShowStage = useCatStore((s) => s.isShowStage);
   const { setSelectedCat, setIsShowStage } = useCatStore((s) => s.actions);
 
@@ -55,6 +57,7 @@ export default function FindCat() {
         onClickCat={() => {
           setIsShowStage(true);
           setSelectedMenu(undefined);
+          setIsStopFocusMe(true);
         }}
         onClickOwnCat={(cat) => {
           setOwnCatInfo(cat);
@@ -65,6 +68,7 @@ export default function FindCat() {
         <div className={cn("buttons")}>
           <Button
             onClick={() => {
+              setIsStopFocusMe(true);
               setSelectedMenu("catched");
             }}
           >
