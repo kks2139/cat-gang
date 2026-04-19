@@ -1,16 +1,48 @@
 .CloudLayer {
+  box-shadow: 0 0 0 5px blue;
+  width: 100px;
+  height: 100px;
+
+  .cloud-wrapper {
+    box-shadow: 0 0 0 2px red inset;
+    // position: absolute;
+    position: relative;
+    // top: 50%;
+    // left: 50%;
+    animation: floating 10s linear infinite;
+    transition: transform 0.3s;
+
+    @keyframes floating {
+      0% {
+        transform: translateX(0);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateX(150px);
+        opacity: 0;
+      }
+    }
+  }
+
+  .scale-wrapper {
+    transition: transform 0.3s;
+    will-change: transform; // 브라우저 최적화 힌트
+  }
+
   .cloud {
+    position: relative;
     border-radius: 50%;
     width: 80px;
     height: 80px;
     background-color: rgb(255, 255, 255, 0.8);
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    will-change: transform; // 브라우저 최적화 힌트
     pointer-events: none; // 지도를 클릭하거나 드래그하는 데 방해되지 않도록 설정
     filter: blur(1px) drop-shadow(2px 120px rgba(0, 0, 0, 0.06)); // 구름 그림자
-    transition: transform 0.2s;
 
     &::before,
     &::after {
