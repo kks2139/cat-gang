@@ -36,9 +36,9 @@ import SkyLayer from "./SkyLayer";
 
 const cn = classNames.bind(styles);
 
+export const MAX_ZOOM_LEVEL = 19;
+export const MIN_ZOOM_LEVEL = 17;
 const INIT_ZOOM_LEVEL = 19;
-const MAX_ZOOM_LEVEL = 19;
-const MIN_ZOOM_LEVEL = 17;
 const BOUNDARY_METER_OF_ME = 50;
 
 export interface OwnCat {

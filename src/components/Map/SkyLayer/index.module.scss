@@ -1,6 +1,4 @@
 .CloudLayer {
-  // position: relative;
-
   .cloud {
     border-radius: 50%;
     width: 80px;
@@ -11,10 +9,8 @@
     left: 50%;
     will-change: transform; // 브라우저 최적화 힌트
     pointer-events: none; // 지도를 클릭하거나 드래그하는 데 방해되지 않도록 설정
-
     filter: blur(1px) drop-shadow(2px 120px rgba(0, 0, 0, 0.06)); // 구름 그림자
-
-    transform: scale(var(--scale, 1));
+    transition: transform 0.2s;
 
     &::before,
     &::after {
