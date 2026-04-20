@@ -38,7 +38,7 @@ const cn = classNames.bind(styles);
 
 export const MAX_ZOOM_LEVEL = 19;
 export const MIN_ZOOM_LEVEL = 17;
-const INIT_ZOOM_LEVEL = 19;
+export const INIT_ZOOM_LEVEL = 19;
 const BOUNDARY_METER_OF_ME = 50;
 
 export interface OwnCat {
@@ -52,7 +52,6 @@ interface Props {
   onClickCat?: () => void;
   ownCats?: OwnCat[];
   onClickOwnCat?: (value: OwnCat) => void;
-  onZoomanim?: (zoomValue: number) => void;
   onMapReady?: (map: L.Map) => void;
   onCreateCatsComplete?: () => void;
   ref?: React.Ref<L.Marker | null>;
@@ -63,7 +62,6 @@ function MapContent({
   onClickCat,
   ownCats,
   onClickOwnCat,
-  onZoomanim,
   onMapReady,
   onCreateCatsComplete,
   ref: myMarkerRef,
@@ -93,16 +91,6 @@ function MapContent({
   }, [myCatRef.current]);
 
   const map = useMapEvents({
-    zoomend() {
-      const pos = myCatRef.current?.getLatLng();
-
-      if (pos) {
-        // map.setView([pos.lat, pos.lng]);
-      }
-    },
-    zoomanim(e) {
-      onZoomanim?.(e.zoom);
-    },
     dragstart() {
       setIsStopFocusMe(true);
     },
@@ -116,21 +104,27 @@ function MapContent({
     (coords: GeolocationCoordinates) => {
       const { latitude, longitude } = coords;
 
-      // 1km 범위 설정을 위한 변화량
-      const latDiff = 0.009;
-      const lngDiff = 0.011;
+      // 1. 원을 생성합니다.
+      const tempCircle = L.circle([latitude, longitude], {
+        radius: 300,
+        interactive: false,
+        fillOpacity: 0,
+        color: "transparent",
+      });
 
-      // 남서쪽과 북동쪽 좌표 계산
-      const southWest = L.latLng(latitude - latDiff, longitude - lngDiff);
-      const northEast = L.latLng(latitude + latDiff, longitude + lngDiff);
-      const bounds = L.latLngBounds(southWest, northEast);
+      // 2. 중요: 지도가 있어야 영역 계산이 가능하므로 지도에 추가합니다.
+      tempCircle.addTo(map);
 
-      // 지도 제한 설정
+      // 3. 영역을 가져옵니다.
+      const bounds = tempCircle.getBounds();
+
+      // 4. 영역 설정 후 지도로부터 원을 제거합니다 (화면에 안 보이게).
+      tempCircle.remove();
+
       map.setMaxBounds(bounds);
     },
     [map],
   );
-
   const drawMe = useCallback(
     async (usePanTo?: boolean) => {
       const coords = await getCurrentPosition();
@@ -336,7 +330,7 @@ function MapContent({
     isMapReady.current = true;
 
     onMapReady?.(map);
-  }, [map, onMapReady, onZoomanim]);
+  }, [map, onMapReady]);
 
   return <div className={className}></div>;
 }
@@ -396,9 +390,6 @@ export default function Map({ className, ...rest }: Props) {
           }}
           onCreateCatsComplete={() => {
             setisLoading(false);
-          }}
-          onZoomanim={(zoom) => {
-            setCloudScale(zoom - MIN_ZOOM_LEVEL + 1);
           }}
         />
 
