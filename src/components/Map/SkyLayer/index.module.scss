@@ -1,69 +1,81 @@
-.CloudLayer {
-  box-shadow: 0 0 0 5px blue;
-  width: 100px;
-  height: 100px;
+.SkyLayer {
+  z-index: 999;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 
-  .cloud-wrapper {
-    box-shadow: 0 0 0 2px red inset;
-    // position: absolute;
-    position: relative;
-    // top: 50%;
-    // left: 50%;
-    animation: floating 10s linear infinite;
-    transition: transform 0.3s;
+  .wrapper {
+    position: absolute;
+    pointer-events: none;
+    transition: transform 0.1s linear;
 
-    @keyframes floating {
-      0% {
-        transform: translateX(0);
-        opacity: 0;
-      }
-      10% {
-        opacity: 1;
-      }
-      90% {
-        opacity: 1;
-      }
-      100% {
-        transform: translateX(150px);
-        opacity: 0;
-      }
-    }
-  }
-
-  .scale-wrapper {
-    transition: transform 0.3s;
-    will-change: transform; // 브라우저 최적화 힌트
-  }
-
-  .cloud {
-    position: relative;
-    border-radius: 50%;
-    width: 80px;
-    height: 80px;
-    background-color: rgb(255, 255, 255, 0.8);
-    pointer-events: none; // 지도를 클릭하거나 드래그하는 데 방해되지 않도록 설정
-    filter: blur(1px) drop-shadow(2px 120px rgba(0, 0, 0, 0.06)); // 구름 그림자
-
-    &::before,
-    &::after {
-      content: "";
+    .floating-wrapper {
       position: absolute;
-      background-color: inherit;
-      border-radius: 50px;
+      animation: floating 10s infinite;
+
+      @keyframes floating {
+        0% {
+          opacity: 0;
+          transform: translateX(0);
+        }
+        10% {
+          opacity: 1;
+        }
+        90% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+          transform: translateX(80px);
+        }
+      }
     }
 
-    &::before {
-      width: 80px;
+    .box,
+    .shadow {
+      width: 50px;
       height: 50px;
-      bottom: 0;
-      left: -25px;
+      background-color: rgb(255, 255, 255, 0.8);
+      border-radius: 50px;
+
+      &::before,
+      &::after {
+        content: "";
+        position: absolute;
+        background-color: inherit;
+        border-radius: 50px;
+      }
+
+      &::before {
+        width: 50px;
+        height: 30px;
+        bottom: 0;
+        left: -15px;
+      }
+
+      &::after {
+        width: 50px;
+        height: 35px;
+        bottom: 0;
+        left: 13px;
+      }
     }
 
-    &::after {
-      width: 90px;
-      height: 60px;
-      bottom: 0;
-      left: 20px;
+    .box {
+      position: absolute;
+      z-index: 1;
+      top: 0;
+      left: 0;
+    }
+
+    .shadow {
+      z-index: -1;
+      position: absolute;
+      top: 120px;
+      background-color: black;
+      opacity: 0.1;
+      filter: blur(5px);
     }
   }
 }

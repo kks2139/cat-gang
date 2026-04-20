@@ -360,11 +360,7 @@ export default function Map({ className, ...rest }: Props) {
 
   return (
     <div className={cn("map-wrapper")}>
-      {/* <div ref={skyDecorationRef} className={cn("sky-decoration")}>
-        {Array.from({ length: 15 }, (_, i) => (
-          <div key={i} className={cn("cloud", `c${i + 1}`)} />
-        ))}
-      </div> */}
+      <SkyLayer />
 
       <MapContainer
         className={cn("Map", className)}
@@ -386,8 +382,6 @@ export default function Map({ className, ...rest }: Props) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
           maxZoom={20}
         />
-
-        <SkyLayer />
 
         {/* 맵 내부 마커생성, 이벤트 등록 등 */}
         <MapContent

@@ -1,130 +1,119 @@
+"use client";
+
 import classNames from "classnames/bind";
-import { AnimatePresence, motion } from "framer-motion";
-import type { LeafletEvent } from "leaflet";
-import { useRef, useState } from "react";
-import { Pane, useMapEvents } from "react-leaflet";
+import { useEffect, useRef } from "react";
 
-import Button from "@/components/Button";
+import { getRandomNumber } from "@/utils/helper";
 
-import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL } from "..";
 import styles from "./index.module.scss";
 
-const cn = classNames.bind(styles);
-
-type LeafletEventWithFlyTo = LeafletEvent & { flyTo?: boolean };
-
-function CloudLayer() {
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [cloudScale, setCloudScale] = useState(
-    (MAX_ZOOM_LEVEL - MIN_ZOOM_LEVEL) * 0.5 + 0.5,
-  );
-  const [isStopCalc, setIsStopCalc] = useState(false);
-
-  const cloudRef = useRef<HTMLDivElement>(null);
-  const paneRef = useRef<HTMLElement>(null);
-
-  const calcCloudPosition = () => {
-    const center = map.getCenter();
-    // 위도/경도를 픽셀 좌표로 변환하여 움직임의 기준점으로 삼습니다.
-    const point = map.latLngToLayerPoint(center);
-
-    // 원근감 계수 (0.1 ~ 0.5 사이에서 조절하세요)
-    // 값이 작을수록 구름이 더 멀리 있는 것처럼 느껴집니다.
-    const speed = 0.3;
-
-    console.log(22, point);
-
-    setOffset({
-      x: point.x * speed,
-      y: point.y * speed,
-    });
-  };
-
-  // 1. 지도의 움직임을 감지하는 이벤트 리스너
-  const map = useMapEvents({
-    move: (e) => {
-      if (isStopCalc) {
-        return;
-      }
-
-      const event = e as LeafletEventWithFlyTo;
-
-      if (event.flyTo) {
-        setIsStopCalc(true);
-
-        setTimeout(() => {
-          setIsStopCalc(false);
-          calcCloudPosition();
-        }, 1_000);
-
-        return;
-      }
-
-      calcCloudPosition();
-    },
-    zoomanim: (e) => {
-      const zoom = e.zoom;
-      const scale = MAX_ZOOM_LEVEL % zoom;
-      const maxScale = MAX_ZOOM_LEVEL - MIN_ZOOM_LEVEL;
-
-      const res = (maxScale - scale) * 0.5 + 0.5;
-
-      setCloudScale(res);
-    },
-  });
-
-  // 2. transform을 통해 구름의 위치를 실시간으로 조정
-  const cloudStyle = {
-    transform: `scale(${cloudScale}) translate3d(${-offset.x}px, ${-offset.y}px, 0)`,
-  } as React.CSSProperties;
-
-  if (isStopCalc) {
-    return null;
-  }
-
-  return (
-    <>
-      <AnimatePresence>
-        {!isStopCalc ? (
-          <Pane
-            ref={paneRef}
-            className={cn("CloudLayer")}
-            name="cloudPane"
-            style={{ zIndex: 701 }}
-          >
-            <AnimatePresence>
-              {Array.from({ length: 1 }).map((_, i) => (
-                <motion.div
-                  key={i}
-                  // exit={{ opacity: 0, transition: { duration: 0.3 } }}
-                  className={cn("cloud-wrapper", { hide: isStopCalc })}
-                >
-                  <div className={cn("scale-wrapper")} style={cloudStyle}>
-                    <div ref={cloudRef} className={cn("cloud")}></div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </Pane>
-        ) : null}
-      </AnimatePresence>
-
-      <Button
-        style={{ zIndex: 800 }}
-        onClick={() => {
-          // resetCloudPosition();
-        }}
-      >
-        test
-      </Button>
-    </>
-  );
-}
+const cx = classNames.bind(styles);
 
 export default function SkyLayer() {
+  const divRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const wheelRef = useRef(1);
+
+  useEffect(() => {
+    const div = divRef.current;
+    if (!div) return;
+
+    let rafId: number | null = null;
+    let wheelRafId: number | null = null;
+    let mouseX = 0;
+    let mouseY = 0;
+
+    const updateTransforms = () => {
+      const wrappers = div.querySelectorAll("[data-wrapper]");
+
+      wrappers.forEach((el) => {
+        const wrapper = el as HTMLDivElement;
+        const box = wrapper.querySelector("[data-box]") as HTMLDivElement;
+        const shadow = wrapper.querySelector("[data-shadow]") as HTMLDivElement;
+
+        if (!box || !shadow) return;
+
+        // box setting
+        const boxSpeed = 0.5;
+        box.style.transform = `translate(${mouseX * boxSpeed}px, ${mouseY * boxSpeed}px)`;
+
+        // shadow setting
+        const shadowSpeed = 0.4;
+        shadow.style.transform = `translate(${mouseX * shadowSpeed}px, ${mouseY * shadowSpeed}px)`;
+      });
+    };
+
+    const updateScale = () => {
+      const wrappers = div.querySelectorAll("[data-wrapper]");
+      wrappers.forEach((el) => {
+        const wrapper = el as HTMLDivElement;
+        wrapper.style.transform = `scale(${wheelRef.current})`;
+      });
+    };
+
+    const mouseMoveHandler = (e: MouseEvent) => {
+      mouseX = e.offsetX;
+      mouseY = e.offsetY;
+
+      if (rafId !== null) return;
+
+      rafId = requestAnimationFrame(() => {
+        updateTransforms();
+        rafId = null;
+      });
+    };
+
+    const wheelHandler = (e: WheelEvent) => {
+      if (e.deltaY > 0) {
+        wheelRef.current += 0.1;
+      } else {
+        wheelRef.current -= 0.1;
+      }
+
+      if (wheelRafId !== null) return;
+
+      wheelRafId = requestAnimationFrame(() => {
+        updateScale();
+        wheelRafId = null;
+      });
+    };
+
+    div.addEventListener("mousemove", mouseMoveHandler);
+    div.addEventListener("wheel", wheelHandler);
+
+    return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      if (wheelRafId !== null) cancelAnimationFrame(wheelRafId);
+      div.removeEventListener("mousemove", mouseMoveHandler);
+      div.removeEventListener("wheel", wheelHandler);
+    };
+  }, []);
+
   return (
-    <>
-      <CloudLayer />
-    </>
+    <div ref={divRef} className={cx("SkyLayer")}>
+      {Array.from({ length: 8 }, (_, i) => {
+        const top = getRandomNumber(90);
+        const left = getRandomNumber(65);
+        const animationDelay = getRandomNumber(10);
+
+        return (
+          <div
+            key={i}
+            data-wrapper
+            ref={wrapperRef}
+            className={cx("wrapper")}
+            style={{ top: `${top}%`, left: `${left}%` }}
+          >
+            <div
+              className={cx("floating-wrapper")}
+              style={{ animationDelay: `-${animationDelay}s` }}
+            >
+              <div data-box className={cx("box")}></div>
+              <div data-shadow className={cx("shadow")}></div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
