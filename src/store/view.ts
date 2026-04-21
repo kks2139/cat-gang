@@ -13,6 +13,7 @@ interface Message {
 interface ViewStore {
   toastMessages: Message[];
   map: L.Map | null;
+  // 내 위치 포커스 해제
   isStopFocusMe: boolean;
   actions: {
     addToastMessage: (message: Omit<Message, "id">) => void;

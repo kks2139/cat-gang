@@ -78,7 +78,6 @@ function MapContent({
   const isMapReady = useRef(false);
   const isWatchPositionReady = useRef(false);
   const centerPositionOfCats = useRef<L.LatLng>(undefined);
-  const isStopFocus = useRef(false);
 
   const catMarkersRef = useRef<L.Marker[]>([]);
   const ownCatMarkersRef = useRef<L.Marker[]>([]);
@@ -95,10 +94,6 @@ function MapContent({
       setIsStopFocusMe(true);
     },
   });
-
-  useEffect(() => {
-    isStopFocus.current = isStopFocusMe;
-  }, [isStopFocusMe]);
 
   const calcuateMapBounds = useCallback(
     (coords: GeolocationCoordinates) => {
@@ -125,6 +120,7 @@ function MapContent({
     },
     [map],
   );
+
   const drawMe = useCallback(
     async (usePanTo?: boolean) => {
       const coords = await getCurrentPosition();
@@ -152,7 +148,7 @@ function MapContent({
       }
 
       // 드래그된 상태 아닐때
-      if (!isStopFocus.current) {
+      if (!isStopFocusMe) {
         // 현재 위치로 지도 중심 이동
         if (usePanTo) {
           map.panTo([coords.latitude, coords.longitude], { duration: 1 });
@@ -165,7 +161,7 @@ function MapContent({
         coords,
       };
     },
-    [calcuateMapBounds, map],
+    [calcuateMapBounds, isStopFocusMe, map],
   );
 
   const drawCats = useCallback(() => {
@@ -198,11 +194,11 @@ function MapContent({
 
       switch (rarity) {
         case "rare":
-          return num < 20; // 그릴 확률
+          return num < 5; // 그릴 확률
         case "unique":
-          return num < 10; //
+          return num < 2; //
         default:
-          return num < 40;
+          return num < 20;
       }
     });
 
@@ -337,16 +333,12 @@ function MapContent({
 
 export default function Map({ className, ...rest }: Props) {
   const map = useViewStore((s) => s.map);
+  const isStopFocusMe = useViewStore((s) => s.isStopFocusMe);
   const { setMap, setIsStopFocusMe } = useViewStore((s) => s.actions);
 
   const [isLoading, setisLoading] = useState(true);
 
-  const skyDecorationRef = useRef<HTMLDivElement>(null);
   const myMarkerRef = useRef<L.Marker>(null);
-
-  const setCloudScale = (scale: number) => {
-    skyDecorationRef.current?.style.setProperty("--cloud-zoom", String(scale));
-  };
 
   useEffect(() => {
     return () => setMap(null);
@@ -383,8 +375,6 @@ export default function Map({ className, ...rest }: Props) {
           ref={myMarkerRef}
           className={cn("map-content")}
           onMapReady={(map) => {
-            // 구름 스케일 초기화
-            setCloudScale(MAX_ZOOM_LEVEL - INIT_ZOOM_LEVEL + 4);
             // 맵 상태에 등록
             setMap(map);
           }}
@@ -402,16 +392,14 @@ export default function Map({ className, ...rest }: Props) {
 
       <button
         data-name="focus-button"
-        className={cn("focus-button")}
+        className={cn("focus-button", { "stop-focus": isStopFocusMe })}
         onClick={async () => {
           if (myMarkerRef.current) {
             map?.flyTo(myMarkerRef.current.getLatLng());
             setIsStopFocusMe(false);
           }
         }}
-      >
-        내 위치
-      </button>
+      ></button>
 
       <AnimatePresence>
         {isLoading && (

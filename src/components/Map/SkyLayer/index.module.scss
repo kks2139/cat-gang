@@ -62,21 +62,23 @@
       }
     }
 
+    // 구름
     .box {
       position: absolute;
       z-index: 1;
       top: 0;
       left: 0;
-      filter: blur(1.5px);
+      filter: blur(1.2px);
     }
 
+    // 구름 그림자
     .shadow {
       z-index: -1;
       position: absolute;
       top: 100px;
       background-color: black;
       opacity: 0.1;
-      filter: blur(4px);
+      filter: blur(3px);
     }
   }
 }

@@ -12,7 +12,7 @@ import styles from "./index.module.scss";
 
 const cx = classNames.bind(styles);
 
-const scaleUpBy = (scale: number, by = 0.5) => {
+const scaleUpBy = (scale: number, by = 0.3) => {
   return scale * by + by;
 };
 
@@ -48,11 +48,11 @@ export default function SkyLayer() {
         if (!box || !shadow) return;
 
         // box setting
-        const boxSpeed = 0.02;
+        const boxSpeed = 0.3;
         box.style.transform = `translate(${moveX * boxSpeed}px, ${moveY * boxSpeed}px)`;
 
         // shadow setting
-        const shadowSpeed = 0.015;
+        const shadowSpeed = 0.2;
         shadow.style.transform = `translate(${moveX * shadowSpeed}px, ${moveY * shadowSpeed}px)`;
       });
     };
@@ -61,8 +61,10 @@ export default function SkyLayer() {
       const wrappers = div.querySelectorAll("[data-wrapper]");
       wrappers.forEach((el, i) => {
         const wrapper = el as HTMLDivElement;
-        const num = i * 0.1;
-        const randomScale = i % 2 === 0 ? scale + num : scale - num;
+        const num = Math.max(i * 0.1, 0.3);
+        const mod = i % 3;
+        const randomScale =
+          mod === 0 ? scale : mod === 1 ? scale + num : scale - num;
 
         wrapper.style.transform = `scale(${randomScale})`;
       });
@@ -118,7 +120,7 @@ export default function SkyLayer() {
 
   return (
     <div ref={divRef} className={cx("SkyLayer")}>
-      {Array.from({ length: 6 }, (_, i) => {
+      {Array.from({ length: 8 }, (_, i) => {
         const top = getRandomNumber(60);
         const left = getRandomNumber(90);
         const animationDelay = getRandomNumber(10);
