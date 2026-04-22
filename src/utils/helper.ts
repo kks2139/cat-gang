@@ -150,6 +150,7 @@ export const createMarker = ({
   if (imgUrl) {
     // 고양이 이미지
     const catImg = document.createElement("img");
+    catImg.dataset.catImg = "true";
     catImg.src = imgUrl;
 
     container.appendChild(catImg);
@@ -283,7 +284,7 @@ export const watchPosition = async (
 export const animateMarker = (
   marker: L.Marker,
   newPosition: L.LatLngExpression,
-  duration: number = 300,
+  duration: number = 500,
 ) => {
   const startLatLng = marker.getLatLng();
   const endLatLng = L.latLng(newPosition);

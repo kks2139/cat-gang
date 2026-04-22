@@ -18,6 +18,8 @@ import {
 } from "react-leaflet";
 
 import ImgCatMe from "@/assets/img/character/cat-me.png";
+import ImgCatMeWalk1 from "@/assets/img/character/cat-me-walk-1.png";
+import ImgCatMeWalk2 from "@/assets/img/character/cat-me-walk-2.png";
 import { useCatStore } from "@/store/cat";
 import { useViewStore } from "@/store/view";
 import { catCharacters } from "@/utils/cats";
@@ -86,6 +88,9 @@ function MapContent({
   const catMarkersRef = useRef<L.Marker[]>([]);
   const ownCatMarkersRef = useRef<L.Marker[]>([]);
   const myCatRef = useRef<L.Marker>(null);
+  const walkTimerRef = useRef<ReturnType<typeof setInterval> | undefined>(
+    undefined,
+  );
 
   // 부모의 myMarkerRef.current에 그 값을 동기화합니다.
   useImperativeHandle<L.Marker | null, L.Marker | null>(myMarkerRef, () => {
@@ -125,6 +130,40 @@ function MapContent({
     [map],
   );
 
+  const startWalkAnimation = useCallback(() => {
+    const catImg = myCatRef.current
+      ?.getElement()
+      ?.querySelector("[data-cat-img]") as HTMLImageElement | null;
+
+    if (!catImg) return;
+
+    if (walkTimerRef.current) {
+      clearInterval(walkTimerRef.current);
+    }
+
+    const walkFrames = [
+      ImgCatMeWalk1,
+      ImgCatMeWalk2,
+      ImgCatMeWalk1,
+      ImgCatMeWalk2,
+    ];
+    let frameIndex = 0;
+    catImg.src = walkFrames[frameIndex];
+
+    walkTimerRef.current = setInterval(() => {
+      frameIndex++;
+
+      if (frameIndex >= walkFrames.length) {
+        clearInterval(walkTimerRef.current);
+        walkTimerRef.current = undefined;
+        catImg.src = ImgCatMe;
+        return;
+      }
+
+      catImg.src = walkFrames[frameIndex];
+    }, 375);
+  }, []);
+
   const drawMe = useCallback(
     async (usePanTo?: boolean) => {
       const coords = await getCurrentPosition();
@@ -137,7 +176,12 @@ function MapContent({
       calcuateMapBounds(coords);
 
       if (myCatRef.current) {
-        animateMarker(myCatRef.current, [coords.latitude, coords.longitude]);
+        startWalkAnimation();
+        animateMarker(
+          myCatRef.current,
+          [coords.latitude, coords.longitude],
+          1500,
+        );
       } else {
         const marker = createMarker({
           type: "me",
@@ -153,11 +197,15 @@ function MapContent({
 
       // 드래그된 상태 아닐때 (ref로 항상 최신값 참조)
       if (!isStopFocusMeRef.current) {
+        startWalkAnimation();
+
         // 현재 위치로 지도 중심 이동
         if (usePanTo) {
-          map.panTo([coords.latitude, coords.longitude], { duration: 1 });
+          map.panTo([coords.latitude, coords.longitude], { duration: 1.5 });
         } else {
-          map.setView([coords.latitude, coords.longitude]);
+          map.setView([coords.latitude, coords.longitude], undefined, {
+            duration: 1.5,
+          });
         }
       }
 
@@ -165,7 +213,7 @@ function MapContent({
         coords,
       };
     },
-    [calcuateMapBounds, map],
+    [calcuateMapBounds, map, startWalkAnimation],
   );
 
   const drawCats = useCallback(() => {
