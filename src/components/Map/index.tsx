@@ -69,6 +69,10 @@ function MapContent({
   const isStopFocusMe = useViewStore((s) => s.isStopFocusMe);
   const { setIsStopFocusMe } = useViewStore((s) => s.actions);
 
+  // 최신 isStopFocusMe 값을 ref에 동기화 (클로저 스코프 문제 방지)
+  const isStopFocusMeRef = useRef(isStopFocusMe);
+  isStopFocusMeRef.current = isStopFocusMe;
+
   const isShowStage = useCatStore((s) => s.isShowStage);
   const { setSelectedCat } = useCatStore((s) => s.actions);
 
@@ -147,8 +151,8 @@ function MapContent({
         myCatRef.current = marker;
       }
 
-      // 드래그된 상태 아닐때
-      if (!isStopFocusMe) {
+      // 드래그된 상태 아닐때 (ref로 항상 최신값 참조)
+      if (!isStopFocusMeRef.current) {
         // 현재 위치로 지도 중심 이동
         if (usePanTo) {
           map.panTo([coords.latitude, coords.longitude], { duration: 1 });
@@ -161,7 +165,7 @@ function MapContent({
         coords,
       };
     },
-    [calcuateMapBounds, isStopFocusMe, map],
+    [calcuateMapBounds, map],
   );
 
   const drawCats = useCallback(() => {

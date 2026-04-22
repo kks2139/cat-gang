@@ -38,6 +38,7 @@
       height: 50px;
       background-color: rgb(255, 255, 255, 0.8);
       border-radius: 50px;
+      transition: 0.2s;
 
       &::before,
       &::after {
@@ -75,7 +76,7 @@
     .shadow {
       z-index: -1;
       position: absolute;
-      top: 100px;
+      top: 150px;
       background-color: black;
       opacity: 0.1;
       filter: blur(3px);
