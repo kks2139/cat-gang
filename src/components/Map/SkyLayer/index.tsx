@@ -1,8 +1,9 @@
 "use client";
 
 import classNames from "classnames/bind";
+import { AnimatePresence, motion } from "framer-motion";
 import type { ZoomAnimEvent } from "leaflet";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useViewStore } from "@/store/view";
 import { getRandomNumber } from "@/utils/helper";
@@ -12,15 +13,27 @@ import styles from "./index.module.scss";
 
 const cx = classNames.bind(styles);
 
+const CLOUDS = Array.from({ length: 12 }, (_, i) => ({
+  index: i,
+  top: getRandomNumber(60),
+  left: getRandomNumber(90),
+  animationDelay: getRandomNumber(10),
+}));
+
 const scaleUpBy = (scale: number, by = 0.3) => {
   return scale * by + by;
 };
 
 export default function SkyLayer() {
   const divRef = useRef<HTMLDivElement>(null);
-  const wrapperRef = useRef<HTMLDivElement>(null);
 
   const map = useViewStore((s) => s.map);
+
+  const [currentScale, setCurrentScale] = useState(1);
+
+  const additionalCloudCount = useMemo(() => {
+    return currentScale > 1 ? 1 : currentScale > 0.7 ? 2 : 3;
+  }, [currentScale]);
 
   useEffect(() => {
     const div = divRef.current;
@@ -32,6 +45,9 @@ export default function SkyLayer() {
     let startX: number;
     let startY: number;
     let scale = scaleUpBy(INIT_ZOOM_LEVEL - MIN_ZOOM_LEVEL + 1);
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setCurrentScale(scale);
 
     const updateTransforms = () => {
       const wrappers = div.querySelectorAll("[data-wrapper]");
@@ -66,7 +82,7 @@ export default function SkyLayer() {
         const randomScale =
           mod === 0 ? scale : mod === 1 ? scale + num : scale - num;
 
-        wrapper.style.transform = `scale(${randomScale})`;
+        wrapper.style.transform = `scale(${Math.max(randomScale, 0.5).toFixed(1)})`;
       });
     };
 
@@ -91,6 +107,7 @@ export default function SkyLayer() {
 
     const zoomHandler = (e: ZoomAnimEvent) => {
       scale = scaleUpBy(e.zoom - MIN_ZOOM_LEVEL + 1);
+      setCurrentScale(scale);
 
       if (wheelRafId !== null) return;
 
@@ -120,29 +137,36 @@ export default function SkyLayer() {
 
   return (
     <div ref={divRef} className={cx("SkyLayer")}>
-      {Array.from({ length: 8 }, (_, i) => {
-        const top = getRandomNumber(60);
-        const left = getRandomNumber(90);
-        const animationDelay = getRandomNumber(10);
+      <AnimatePresence>
+        {CLOUDS.slice(0, 4 * additionalCloudCount).map(
+          ({ index, top, left, animationDelay }) => {
+            // const top = getRandomNumber(60);
+            // const left = getRandomNumber(90);
+            // const animationDelay = getRandomNumber(10);
 
-        return (
-          <div
-            key={i}
-            data-wrapper
-            ref={wrapperRef}
-            className={cx("wrapper")}
-            style={{ top: `${top}%`, left: `${left}%` }}
-          >
-            <div
-              className={cx("floating-wrapper")}
-              style={{ animationDelay: `-${animationDelay}s` }}
-            >
-              <div data-box className={cx("box")}></div>
-              <div data-shadow className={cx("shadow")}></div>
-            </div>
-          </div>
-        );
-      })}
+            return (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.5 }}
+                key={index}
+                data-wrapper
+                className={cx("wrapper")}
+                style={{ top: `${top}%`, left: `${left}%` }}
+              >
+                <div
+                  className={cx("floating-wrapper")}
+                  style={{ animationDelay: `-${animationDelay}s` }}
+                >
+                  <div data-box className={cx("box")}></div>
+                  <div data-shadow className={cx("shadow")}></div>
+                </div>
+              </motion.div>
+            );
+          },
+        )}
+      </AnimatePresence>
     </div>
   );
 }

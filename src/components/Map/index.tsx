@@ -348,6 +348,14 @@ export default function Map({ className, ...rest }: Props) {
     return () => setMap(null);
   }, [setMap]);
 
+  useEffect(() => {
+    if (isLoading) {
+      map?.dragging.disable();
+    } else {
+      map?.dragging.enable();
+    }
+  }, [isLoading, map]);
+
   return (
     <div className={cn("map-wrapper")}>
       <SkyLayer />

@@ -38,7 +38,7 @@
       height: 50px;
       background-color: rgb(255, 255, 255, 0.8);
       border-radius: 50px;
-      transition: 0.2s;
+      transition: 0.1s;
 
       &::before,
       &::after {
@@ -79,7 +79,7 @@
       top: 150px;
       background-color: black;
       opacity: 0.1;
-      filter: blur(3px);
+      filter: blur(4px);
     }
   }
 }
