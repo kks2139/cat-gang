@@ -310,13 +310,13 @@ input {
 
   // 내 고양이 위치 화살표 (2D Cat Paw Arrow)
   .arrow-3d-wrapper {
-    z-index: 99;
+    z-index: 999;
     position: absolute;
-    top: -30px;
+    top: -25px;
     left: 50%;
     transform: translateX(-50%);
-    width: 34px;
-    height: 45px;
+    width: 35px;
+    height: 35px;
     animation: floating-arrow 1.5s ease-in-out infinite;
 
     .arrow-3d {
@@ -334,8 +334,8 @@ input {
         bottom: 5px;
         width: 0;
         height: 0;
-        border-left: 15px solid transparent;
-        border-right: 15px solid transparent;
+        border-left: 12px solid transparent;
+        border-right: 12px solid transparent;
         border-top: 25px solid var(--orange-1);
         filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2));
         animation: arrow-blink 2s ease-in-out infinite;
