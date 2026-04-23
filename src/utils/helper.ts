@@ -8,7 +8,7 @@ export const wait = (delay: number) =>
 
 export const getPostposition = (
   word = "",
-  type: "obj" | "sub" | "topic" | "with",
+  type: "obj" | "sub" | "topic" | "with"
 ) => {
   // 마지막 글자의 유니코드 확인
   const lastChar = word.charCodeAt(word.length - 1);
@@ -32,7 +32,7 @@ export const getPostposition = (
 export const getRandomLocationInCircle = (
   lat: number,
   lng: number,
-  radiusInMeters: number,
+  radiusInMeters: number
 ): L.LatLngExpression => {
   // 1. 0 ~ radiusInMeters 사이의 랜덤한 거리 생성
   // (중심에 몰리지 않게 하기 위해 Math.sqrt 사용)
@@ -90,7 +90,7 @@ export const checkLocationStatus = async () => {
       const result = await navigator.permissions.query({ name: "geolocation" });
       if (result.state === "denied") {
         alert(
-          "위치 권한이 거부되었습니다.\n설정에서 위치 권한을 허용해주세요.",
+          "위치 권한이 거부되었습니다.\n설정에서 위치 권한을 허용해주세요."
         );
         return false;
       }
@@ -117,7 +117,7 @@ export const getCurrentPosition = async () => {
       {
         enableHighAccuracy: true,
         maximumAge: 0,
-      },
+      }
     );
   });
 };
@@ -257,7 +257,7 @@ export const removeMarkerWithMotion = (marker: L.Marker, duration = 300) => {
 };
 
 export const watchPosition = async (
-  onSuccess: (coords: GeolocationCoordinates) => void,
+  onSuccess: (coords: GeolocationCoordinates) => void
 ) => {
   const isOk = await checkLocationStatus();
 
@@ -270,7 +270,7 @@ export const watchPosition = async (
       onSuccess(pos.coords);
     },
     undefined,
-    { enableHighAccuracy: true, maximumAge: 0 },
+    { enableHighAccuracy: true, maximumAge: 0 }
   );
 
   return watchId;
@@ -285,7 +285,7 @@ export const watchPosition = async (
 export const animateMarker = (
   marker: L.Marker,
   newPosition: L.LatLngExpression,
-  duration: number = 500,
+  duration: number = 500
 ) => {
   const startLatLng = marker.getLatLng();
   const endLatLng = L.latLng(newPosition);
@@ -319,5 +319,5 @@ export const getNightTime = (date: Date) => {
 
   const isNightTime = h >= 18 || 6 >= h;
 
-  return { isNightTime: false, hours: h };
+  return { isNightTime, hours: h };
 };
