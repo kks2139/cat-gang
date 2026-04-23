@@ -53,6 +53,7 @@ interface Props extends StatusProps, CatVisualProps {
 export default function Player({
   cat,
   hp,
+  defense,
   introMotion,
   punchDuraion = 1,
   seduceDuraion = 1,
@@ -69,9 +70,15 @@ export default function Player({
 
   const status = useMemo(
     () => (
-      <Status cat={cat} hp={hp} introMotion={introMotion} hpEffect={hpEffect} />
+      <Status
+        cat={cat}
+        hp={hp}
+        defense={defense}
+        introMotion={introMotion}
+        hpEffect={hpEffect}
+      />
     ),
-    [cat, hp, hpEffect, introMotion],
+    [cat, defense, hp, hpEffect, introMotion],
   );
 
   useEffect(() => {

@@ -16,6 +16,7 @@ export interface StatusProps {
   introMotion?: MotionNodeAnimationOptions;
   hp: number;
   hpEffect?: HpEffect;
+  defense: number;
 }
 
 export function Status({ isMe, cat, introMotion, hp, hpEffect }: StatusProps) {

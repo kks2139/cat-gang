@@ -40,6 +40,7 @@ export interface CatInfo {
   crying: string;
   img: string;
   hp: number;
+  defense: number;
   punchPower: number;
   marker?: L.Marker;
   // 상황별 대사
@@ -60,8 +61,9 @@ export const myCat: CatInfo = {
   name: "나비",
   crying: "냐아앙! (끝까지 간다!)",
   img: ImgCatMe,
-  hp: 15,
-  punchPower: 5,
+  hp: 10,
+  punchPower: 6,
+  defense: 2,
   dialog: {
     meet: [
       "난 최고의 주먹왕이 될 고양이야! 길을 비켜라!",
@@ -97,6 +99,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat1,
     hp: 10,
     punchPower: 3,
+    defense: 2,
     dialog: {
       chat: "야옹! 냐앙",
       meet: [
@@ -131,6 +134,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat2,
     hp: 10,
     punchPower: 3,
+    defense: 2,
     dialog: {
       chat: "애오오옹냥",
       meet: [
@@ -165,6 +169,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat3,
     hp: 10,
     punchPower: 3,
+    defense: 2,
     dialog: {
       chat: "끄응, 야옹",
       meet: [
@@ -199,6 +204,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat4,
     hp: 10,
     punchPower: 3,
+    defense: 2,
     dialog: {
       chat: "가오! 냐앙",
       meet: [
@@ -233,6 +239,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat5,
     hp: 10,
     punchPower: 3,
+    defense: 2,
     dialog: {
       chat: "rrr.. 야옹",
       meet: [
@@ -267,6 +274,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat6,
     hp: 10,
     punchPower: 3,
+    defense: 2,
     dialog: {
       chat: "하암, 냐앙",
       meet: [
@@ -301,6 +309,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat7,
     hp: 10,
     punchPower: 3,
+    defense: 2,
     dialog: {
       chat: "크르릉, 야옹",
       meet: [
@@ -335,6 +344,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat8,
     hp: 10,
     punchPower: 3,
+    defense: 2,
     dialog: {
       chat: "끄아앙! 냐옹",
       meet: [
@@ -369,6 +379,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat9,
     hp: 10,
     punchPower: 3,
+    defense: 2,
     dialog: {
       chat: "뇸뇸, 야옹",
       meet: [
@@ -403,6 +414,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat10,
     hp: 10,
     punchPower: 3,
+    defense: 2,
     dialog: {
       chat: "불쉿! 냐앙",
       meet: [
@@ -437,6 +449,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat11,
     hp: 10,
     punchPower: 3,
+    defense: 2,
     dialog: {
       chat: "푸르르 냐옹",
       meet: [
@@ -471,6 +484,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat12,
     hp: 10,
     punchPower: 3,
+    defense: 2,
     dialog: {
       chat: "애오옹, 야옹",
       meet: [
@@ -505,6 +519,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat13,
     hp: 10,
     punchPower: 3,
+    defense: 2,
     dialog: {
       chat: "바삭, 냐앙",
       meet: [
@@ -539,6 +554,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat14,
     hp: 10,
     punchPower: 3,
+    defense: 2,
     dialog: {
       chat: "메-에스트로옹",
       meet: [
@@ -576,6 +592,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat15,
     hp: 12,
     punchPower: 4,
+    defense: 2,
     dialog: {
       chat: "혼또니, 냐앙",
       meet: [
@@ -610,6 +627,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat16,
     hp: 10,
     punchPower: 5,
+    defense: 2,
     dialog: {
       chat: "샤아악, 냐앙",
       meet: [
@@ -644,6 +662,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat17,
     hp: 8,
     punchPower: 2,
+    defense: 2,
     dialog: {
       chat: "번쩍, 냐앙",
       meet: [
@@ -678,6 +697,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat18,
     hp: 15,
     punchPower: 6,
+    defense: 2,
     dialog: {
       chat: "그오오, 냐앙",
       meet: [
@@ -712,6 +732,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat19,
     hp: 9,
     punchPower: 3,
+    defense: 2,
     dialog: {
       chat: "조센징, 냐앙",
       meet: [
@@ -746,6 +767,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat20,
     hp: 7,
     punchPower: 7,
+    defense: 2,
     dialog: {
       chat: "쉿, 냐앙",
       meet: [
@@ -776,6 +798,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat21,
     hp: 10,
     punchPower: 4,
+    defense: 2,
     dialog: {
       chat: "안되겠소, 냐앙",
       meet: [
@@ -806,6 +829,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat22,
     hp: 13,
     punchPower: 2,
+    defense: 2,
     dialog: {
       chat: "왈왈, 냐앙",
       meet: [
@@ -840,6 +864,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat23,
     hp: 11,
     punchPower: 5,
+    defense: 2,
     dialog: {
       chat: "으아아, 냐앙",
       meet: [
@@ -870,6 +895,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat24,
     hp: 8,
     punchPower: 8,
+    defense: 2,
     dialog: {
       chat: "삐비빅, 냐앙",
       meet: [
@@ -900,6 +926,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat25,
     hp: 11,
     punchPower: 4,
+    defense: 2,
     dialog: {
       chat: "애오옹, 냐앙",
       meet: [
@@ -930,6 +957,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat26,
     hp: 9,
     punchPower: 3,
+    defense: 2,
     dialog: {
       chat: "어서오세냥, 냐앙",
       meet: [
@@ -960,6 +988,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat27,
     hp: 12,
     punchPower: 3,
+    defense: 2,
     dialog: {
       chat: "악! 악! 냐앙",
       meet: [
@@ -990,6 +1019,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat28,
     hp: 14,
     punchPower: 5,
+    defense: 2,
     dialog: {
       chat: "흐흐흐, 냐앙",
       meet: [
@@ -1020,6 +1050,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat29,
     hp: 10,
     punchPower: 4,
+    defense: 2,
     dialog: {
       chat: "슉슉, 냐앙",
       meet: [
@@ -1050,6 +1081,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat30,
     hp: 10,
     punchPower: 3,
+    defense: 2,
     dialog: {
       chat: "따끈따끈, 냐앙",
       meet: [
@@ -1080,6 +1112,7 @@ export const catCharacters: CatInfo[] = [
     img: ImgCat31,
     hp: 16,
     punchPower: 4,
+    defense: 2,
     dialog: {
       chat: "어흥, 냐앙",
       meet: [

@@ -49,6 +49,10 @@ export default function Stage({ onClose, onWin }: Props) {
     myHp: myCat.hp,
     enemyHp: selectedCat?.hp || 0,
   });
+  const [defenseInfo, setDefenseInfo] = useState({
+    myDefense: myCat.defense,
+    enemyDefense: selectedCat?.defense || 0,
+  });
   const [punchedBy, setPunchedBy] = useState<Side>();
   const [seducedBy, setSeducedBy] = useState<Side>();
   const [provokedBy, setProvokedBy] = useState<Side>();
@@ -80,12 +84,16 @@ export default function Stage({ onClose, onWin }: Props) {
             : undefined;
 
   // return: 승리한 사이드
-  const punch = async (side: Side): Promise<Side | void> => {
+  const punch = async (by: Side): Promise<Side | void> => {
     let winnerSide: Side | undefined;
     const actionDelay = (PUNCH_DURATION + DELAY_OF_ACTIONS) * 1000;
+    const isByMe = by === "me";
+    const damage = isByMe
+      ? myCat.punchPower - (defenseInfo.enemyDefense || 0)
+      : selectedCat!.punchPower - (defenseInfo.myDefense || 0);
 
-    if (side === "me") {
-      const enemyHp = Math.max(hpInfo.enemyHp - myCat.punchPower, 0);
+    if (isByMe) {
+      const enemyHp = Math.max(hpInfo.enemyHp - damage, 0);
 
       if (enemyHp === 0) {
         winnerSide = "me";
@@ -98,7 +106,7 @@ export default function Stage({ onClose, onWin }: Props) {
 
       setHpInfo({ ...hpInfo, enemyHp });
     } else {
-      const myHp = Math.max(hpInfo.myHp - selectedCat!.punchPower, 0);
+      const myHp = Math.max(hpInfo.myHp - damage, 0);
 
       if (myHp === 0) {
         winnerSide = "enemy";
@@ -118,20 +126,34 @@ export default function Stage({ onClose, onWin }: Props) {
     return winnerSide;
   };
 
-  const seduce = async (side: Side) => {
-    if (side === "me") {
+  const seduce = async (by: Side) => {
+    const isByMe = by === "me";
+    const defense = Math.max(
+      (isByMe ? defenseInfo.enemyDefense : defenseInfo.myDefense) - 1,
+      0,
+    );
+
+    if (isByMe) {
       setSeducedBy("enemy");
       setTimeout(() => setSeducedBy(undefined), SEDUCE_DURATION * 1000);
+      setDefenseInfo({
+        ...defenseInfo,
+        enemyDefense: defense,
+      });
     } else {
       setSeducedBy("me");
       setTimeout(() => setSeducedBy(undefined), SEDUCE_DURATION * 1000);
+      setDefenseInfo({
+        ...defenseInfo,
+        myDefense: defense,
+      });
     }
 
     await wait((SEDUCE_DURATION + DELAY_OF_ACTIONS) * 1000);
   };
 
-  const provoke = async (side: Side) => {
-    if (side === "me") {
+  const provoke = async (by: Side) => {
+    if (by === "me") {
       setProvokedBy("enemy");
       setTimeout(() => setProvokedBy(undefined), PROVOKE_DURATION * 1000);
     } else {
@@ -199,6 +221,7 @@ export default function Stage({ onClose, onWin }: Props) {
           side="enemy"
           cat={selectedCat}
           hp={hpInfo.enemyHp}
+          defense={defenseInfo.enemyDefense}
           effectType={enemyEffect}
           punchDuraion={PUNCH_DURATION}
           seduceDuraion={SEDUCE_DURATION}
@@ -227,6 +250,7 @@ export default function Stage({ onClose, onWin }: Props) {
           side="me"
           cat={me}
           hp={hpInfo.myHp}
+          defense={defenseInfo.myDefense}
           effectType={myEffect}
           punchDuraion={PUNCH_DURATION}
           seduceDuraion={SEDUCE_DURATION}
@@ -387,6 +411,13 @@ export default function Stage({ onClose, onWin }: Props) {
                 }
                 case "seduce":
                   await seduce("enemy");
+
+                  setDialogInfo({
+                    side: "enemy",
+                    type: "system",
+                    speaker: "",
+                    text: `으.. ${selectedCat?.name}의 유혹에 넘어갔다..!`,
+                  });
 
                   break;
                 case "provoke":
