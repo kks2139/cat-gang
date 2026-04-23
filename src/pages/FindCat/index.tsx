@@ -72,7 +72,7 @@ export default function FindCat() {
               setSelectedMenu("catched");
             }}
           >
-            내 조직원
+            내 부하
           </Button>
           <Button
             onClick={() => {

@@ -14,7 +14,6 @@ import {
   ScaleControl,
   TileLayer,
   useMapEvents,
-  ZoomControl,
 } from "react-leaflet";
 
 import ImgCatMe from "@/assets/img/character/cat-me.png";
@@ -36,6 +35,7 @@ import {
 
 import styles from "./index.module.scss";
 import SkyLayer from "./SkyLayer";
+import ZoomButton from "./ZoomButton";
 
 const cn = classNames.bind(styles);
 
@@ -425,7 +425,6 @@ export default function Map({ className, ...rest }: Props) {
         bounceAtZoomLimits={false}
         maxBoundsViscosity={1}
       >
-        <ZoomControl position="bottomright" />
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
@@ -463,6 +462,8 @@ export default function Map({ className, ...rest }: Props) {
           }
         }}
       ></button>
+
+      <ZoomButton />
 
       <AnimatePresence>
         {isLoading && (

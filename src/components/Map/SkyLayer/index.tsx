@@ -11,7 +11,7 @@ import { getRandomNumber } from "@/utils/helper";
 import { INIT_ZOOM_LEVEL, MIN_ZOOM_LEVEL } from "..";
 import styles from "./index.module.scss";
 
-const cx = classNames.bind(styles);
+const cn = classNames.bind(styles);
 
 const CLOUDS = Array.from({ length: 12 }, (_, i) => ({
   index: i,
@@ -187,12 +187,12 @@ export default function SkyLayer({ isNight, hours = 0 }: Props) {
   }, [map]);
 
   return (
-    <div ref={divRef} className={cx("SkyLayer")}>
+    <div ref={divRef} className={cn("SkyLayer")}>
       <AnimatePresence>
         {!isNight && (
           <motion.div
             style={{ left: `${((hours - 6) / 12) * 100}%` }}
-            className={cx("sun")}
+            className={cn("sun")}
             initial={{ opacity: 0, y: -50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -50 }}
@@ -211,17 +211,17 @@ export default function SkyLayer({ isNight, hours = 0 }: Props) {
               transition={{ duration: 0.5 }}
               key={index}
               data-wrapper
-              className={cx("wrapper")}
+              className={cn("wrapper")}
               style={{ top: `${top}%`, left: `${left}%` }}
             >
               <div
-                className={cx("floating-wrapper")}
+                className={cn("floating-wrapper")}
                 style={{ animationDelay: `-${animationDelay}s` }}
               >
-                <div data-box className={cx("box", { night: isNight })}></div>
+                <div data-box className={cn("box", { night: isNight })}></div>
                 <div
                   data-shadow
-                  className={cx("shadow", { night: isNight })}
+                  className={cn("shadow", { night: isNight })}
                 ></div>
               </div>
             </motion.div>
