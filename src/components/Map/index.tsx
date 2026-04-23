@@ -20,6 +20,7 @@ import {
 import ImgCatMe from "@/assets/img/character/cat-me.png";
 import ImgCatMeWalk1 from "@/assets/img/character/cat-me-walk-1.png";
 import ImgCatMeWalk2 from "@/assets/img/character/cat-me-walk-2.png";
+import { useDayAndNight } from "@/hooks/useDayAndNight";
 import { useCatStore } from "@/store/cat";
 import { useViewStore } from "@/store/view";
 import { catCharacters } from "@/utils/cats";
@@ -392,6 +393,8 @@ export default function Map({ className, ...rest }: Props) {
 
   const myMarkerRef = useRef<L.Marker>(null);
 
+  const { isNight } = useDayAndNight();
+
   useEffect(() => {
     return () => setMap(null);
   }, [setMap]);
@@ -405,8 +408,8 @@ export default function Map({ className, ...rest }: Props) {
   }, [isLoading, map]);
 
   return (
-    <div className={cn("map-wrapper")}>
-      <SkyLayer />
+    <div className={cn("map-wrapper", { night: isNight })}>
+      <SkyLayer isNight={isNight} hours={6} />
 
       <MapContainer
         className={cn("Map", className)}

@@ -15,7 +15,7 @@ const cx = classNames.bind(styles);
 
 const CLOUDS = Array.from({ length: 12 }, (_, i) => ({
   index: i,
-  top: getRandomNumber(60),
+  top: getRandomNumber(70),
   left: getRandomNumber(90),
   animationDelay: getRandomNumber(10),
 }));
@@ -27,7 +27,12 @@ const scaleUpBy = (scale: number, by = 0.3) => {
   return scale * by + by;
 };
 
-export default function SkyLayer() {
+interface Props {
+  isNight?: boolean;
+  hours?: number;
+}
+
+export default function SkyLayer({ isNight, hours = 0 }: Props) {
   const divRef = useRef<HTMLDivElement>(null);
 
   const map = useViewStore((s) => s.map);
@@ -63,20 +68,13 @@ export default function SkyLayer() {
         if (!box || !shadow) return;
 
         if (animate) {
-          box.style.opacity = "0.1";
-          shadow.style.opacity = "0";
-          box.style.transition = "0.6s";
-          shadow.style.transition = "0.6s";
+          box.style.transition = "6s";
+          shadow.style.transition = "6s";
 
           setTimeout(() => {
-            box.style.opacity = "";
-            shadow.style.opacity = "";
-
-            setTimeout(() => {
-              box.style.transition = "";
-              shadow.style.transition = "";
-            }, 200);
-          }, 600);
+            box.style.transition = "";
+            shadow.style.transition = "";
+          }, 6000);
         }
 
         box.style.transform = "translate(0, 0)";
@@ -99,11 +97,11 @@ export default function SkyLayer() {
         if (!box || !shadow) return;
 
         // box setting
-        const boxSpeed = 0.3;
+        const boxSpeed = 0.2;
         box.style.transform = `translate(${moveX * boxSpeed}px, ${moveY * boxSpeed}px)`;
 
         // shadow setting
-        const shadowSpeed = 0.2;
+        const shadowSpeed = 0.1;
         shadow.style.transform = `translate(${moveX * shadowSpeed}px, ${moveY * shadowSpeed}px)`;
       });
     };
@@ -191,6 +189,19 @@ export default function SkyLayer() {
   return (
     <div ref={divRef} className={cx("SkyLayer")}>
       <AnimatePresence>
+        {!isNight && (
+          <motion.div
+            style={{ left: `${((hours - 6) / 12) * 100}%` }}
+            className={cx("sun")}
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -50 }}
+            transition={{ duration: 2 }}
+          ></motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {CLOUDS.slice(0, 4 * additionalCloudCount).map(
           ({ index, top, left, animationDelay }) => (
             <motion.div
@@ -207,8 +218,11 @@ export default function SkyLayer() {
                 className={cx("floating-wrapper")}
                 style={{ animationDelay: `-${animationDelay}s` }}
               >
-                <div data-box className={cx("box")}></div>
-                <div data-shadow className={cx("shadow")}></div>
+                <div data-box className={cx("box", { night: isNight })}></div>
+                <div
+                  data-shadow
+                  className={cx("shadow", { night: isNight })}
+                ></div>
               </div>
             </motion.div>
           ),

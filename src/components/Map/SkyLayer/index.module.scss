@@ -5,6 +5,55 @@
   height: 100%;
   pointer-events: none;
 
+  .sun {
+    position: absolute;
+    top: -10px;
+    width: 60px;
+    height: 60px;
+    background-color: rgb(255, 246, 169);
+    border-radius: 50%;
+    transition: left 1s;
+    box-shadow:
+      0 0 15px 5px rgba(255, 255, 180, 0.8),
+      0 0 40px 15px rgba(255, 230, 100, 0.5),
+      0 0 80px 30px rgba(255, 200, 50, 0.25);
+    animation: sunGlow 3s infinite;
+
+    // 태양 내부 밝은 코어
+    &::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60%;
+      height: 60%;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        rgba(255, 255, 255, 0.9) 0%,
+        rgba(255, 255, 230, 0.4) 60%,
+        transparent 100%
+      );
+    }
+
+    @keyframes sunGlow {
+      0%,
+      100% {
+        box-shadow:
+          0 0 15px 5px rgba(255, 255, 180, 0.8),
+          0 0 40px 15px rgba(255, 230, 100, 0.5),
+          0 0 80px 30px rgba(255, 200, 50, 0.25);
+      }
+      50% {
+        box-shadow:
+          0 0 20px 8px rgba(255, 255, 180, 0.9),
+          0 0 55px 22px rgba(255, 230, 100, 0.6),
+          0 0 100px 40px rgba(255, 200, 50, 0.3);
+      }
+    }
+  }
+
   .wrapper {
     position: absolute;
     pointer-events: none;
@@ -70,6 +119,10 @@
       top: 0;
       left: 0;
       filter: blur(1.2px);
+
+      &.night {
+        background-color: rgba(216, 224, 235, 0.8);
+      }
     }
 
     // 구름 그림자
@@ -78,8 +131,12 @@
       position: absolute;
       top: 150px;
       background-color: black;
-      opacity: 0.1;
+      opacity: 0.08;
       filter: blur(4px);
+
+      &.night {
+        opacity: 0.04;
+      }
     }
   }
 }

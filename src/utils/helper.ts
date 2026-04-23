@@ -1,3 +1,4 @@
+import { getHours } from "date-fns";
 import L from "leaflet";
 
 import { getCat } from "./cats";
@@ -311,4 +312,12 @@ export const animateMarker = (
   };
 
   requestAnimationFrame(frame);
+};
+
+export const getNightTime = (date: Date) => {
+  const h = getHours(date);
+
+  const isNightTime = h >= 18 || 6 >= h;
+
+  return { isNightTime: false, hours: h };
 };
