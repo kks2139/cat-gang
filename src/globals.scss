@@ -61,16 +61,21 @@ input {
 // 공통 스타일
 
 :root {
+  --background-1: #fdfdfd; // 기본 배경 (매우 연한 회색)
+  --font-color-1: #1e293b; // 기본 텍스트
+
   --yellow-1: rgb(255, 213, 0);
   --yellow-2: rgb(199, 166, 0);
   --blue-1: rgb(0, 110, 255);
   --green-1: rgb(73, 255, 112);
-  --orange-1: #ffb191; // 파스텔 오렌지 기본
-  --orange-2: #ffc8b0; // 파스텔 오렌지 연함
-  --orange-border: #ff9a76; // 파스텔 오렌지 진함 (테두리용)
-  --orange-shadow: #e07a5f; // 파스텔 오렌지 그림자
-  --orange-map-border: #ffdab9; // 지도 전용 연한 파스텔
-  --orange-map-shadow: #f5b091; // 지도 전용 그림자
+
+  // Stylish Purple Theme (기존 orange 변수명 유지하여 호환성 확보)
+  --orange-1: #7c4dff; // 일렉트릭 퍼플
+  --orange-2: #b47cff; // 라이트 퍼플
+  --orange-border: #6200ea; // 진한 보라 (테두리)
+  --orange-shadow: #311b92; // 깊은 그림자
+  --orange-map-border: #d1c4e9; // 지도용 연한 보라
+  --orange-map-shadow: #b39ddb; // 지도용 그림자
 }
 
 .marker-container {
@@ -364,7 +369,7 @@ input {
   @keyframes arrow-blink {
     0%,
     100% {
-      border-top-color: rgb(255, 199, 147);
+      border-top-color: var(--orange-map-border);
     }
     50% {
       border-top-color: var(--orange-border);
@@ -810,7 +815,7 @@ input {
   // 위치 조정
   z-index: 99999;
   position: absolute;
-  bottom: 9px;
+  bottom: 12px;
   left: 15px;
   font-size: 14px;
   text-align: center;
