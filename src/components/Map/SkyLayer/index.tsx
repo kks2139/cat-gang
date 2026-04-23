@@ -20,6 +20,9 @@ const CLOUDS = Array.from({ length: 12 }, (_, i) => ({
   animationDelay: getRandomNumber(10),
 }));
 
+// 누적 드래그 픽셀이 이 값을 넘으면 구름 위치 리셋
+const RESET_THRESHOLD = 500;
+
 const scaleUpBy = (scale: number, by = 0.3) => {
   return scale * by + by;
 };
@@ -48,6 +51,38 @@ export default function SkyLayer() {
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentScale(scale);
+
+    const resetTransforms = (animate = true) => {
+      const wrappers = div.querySelectorAll("[data-wrapper]");
+
+      wrappers.forEach((el) => {
+        const wrapper = el as HTMLDivElement;
+        const box = wrapper.querySelector("[data-box]") as HTMLDivElement;
+        const shadow = wrapper.querySelector("[data-shadow]") as HTMLDivElement;
+
+        if (!box || !shadow) return;
+
+        if (animate) {
+          box.style.opacity = "0.1";
+          shadow.style.opacity = "0";
+          box.style.transition = "0.6s";
+          shadow.style.transition = "0.6s";
+
+          setTimeout(() => {
+            box.style.opacity = "";
+            shadow.style.opacity = "";
+
+            setTimeout(() => {
+              box.style.transition = "";
+              shadow.style.transition = "";
+            }, 200);
+          }, 600);
+        }
+
+        box.style.transform = "translate(0, 0)";
+        shadow.style.transform = "translate(0, 0)";
+      });
+    };
 
     const updateTransforms = () => {
       const wrappers = div.querySelectorAll("[data-wrapper]");
@@ -105,6 +140,22 @@ export default function SkyLayer() {
       });
     };
 
+    const dragEndHandler = () => {
+      if (startX === undefined || startY === undefined) return;
+
+      const { x, y } = map.latLngToLayerPoint(map.getCenter());
+      const totalMoveX = Math.abs(startX - x);
+      const totalMoveY = Math.abs(startY - y);
+
+      // 누적 이동량이 임계값을 초과하면 구름 리셋
+      if (totalMoveX > RESET_THRESHOLD || totalMoveY > RESET_THRESHOLD) {
+        resetTransforms();
+        // startX/Y를 현재 center로 갱신해 다음 드래그 기준점 초기화
+        startX = x;
+        startY = y;
+      }
+    };
+
     const zoomHandler = (e: ZoomAnimEvent) => {
       scale = scaleUpBy(e.zoom - MIN_ZOOM_LEVEL + 1);
       setCurrentScale(scale);
@@ -120,6 +171,7 @@ export default function SkyLayer() {
     map
       .on("dragstart", dragStartHandler)
       .on("drag", dragHandler)
+      .on("dragend", dragEndHandler)
       .on("zoomanim", zoomHandler);
 
     // 초기 1회 scale 적용
@@ -131,6 +183,7 @@ export default function SkyLayer() {
 
       map.off("dragstart", dragStartHandler);
       map.off("drag", dragHandler);
+      map.off("dragend", dragEndHandler);
       map.off("zoomanim", zoomHandler);
     };
   }, [map]);
@@ -139,32 +192,26 @@ export default function SkyLayer() {
     <div ref={divRef} className={cx("SkyLayer")}>
       <AnimatePresence>
         {CLOUDS.slice(0, 4 * additionalCloudCount).map(
-          ({ index, top, left, animationDelay }) => {
-            // const top = getRandomNumber(60);
-            // const left = getRandomNumber(90);
-            // const animationDelay = getRandomNumber(10);
-
-            return (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.5 }}
-                key={index}
-                data-wrapper
-                className={cx("wrapper")}
-                style={{ top: `${top}%`, left: `${left}%` }}
+          ({ index, top, left, animationDelay }) => (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+              key={index}
+              data-wrapper
+              className={cx("wrapper")}
+              style={{ top: `${top}%`, left: `${left}%` }}
+            >
+              <div
+                className={cx("floating-wrapper")}
+                style={{ animationDelay: `-${animationDelay}s` }}
               >
-                <div
-                  className={cx("floating-wrapper")}
-                  style={{ animationDelay: `-${animationDelay}s` }}
-                >
-                  <div data-box className={cx("box")}></div>
-                  <div data-shadow className={cx("shadow")}></div>
-                </div>
-              </motion.div>
-            );
-          },
+                <div data-box className={cx("box")}></div>
+                <div data-shadow className={cx("shadow")}></div>
+              </div>
+            </motion.div>
+          ),
         )}
       </AnimatePresence>
     </div>

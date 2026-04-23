@@ -104,31 +104,31 @@ function MapContent({
     },
   });
 
-  const calcuateMapBounds = useCallback(
-    (coords: GeolocationCoordinates) => {
-      const { latitude, longitude } = coords;
+  // const applyMapBounds = useCallback(
+  //   (coords: GeolocationCoordinates) => {
+  //     const { latitude, longitude } = coords;
 
-      // 1. 원을 생성합니다.
-      const tempCircle = L.circle([latitude, longitude], {
-        radius: 300,
-        interactive: false,
-        fillOpacity: 0,
-        color: "transparent",
-      });
+  //     // 1. 원을 생성합니다.
+  //     const tempCircle = L.circle([latitude, longitude], {
+  //       radius: 300, // 300m 반경
+  //       interactive: false,
+  //       fillOpacity: 0,
+  //       color: "transparent",
+  //     });
 
-      // 2. 중요: 지도가 있어야 영역 계산이 가능하므로 지도에 추가합니다.
-      tempCircle.addTo(map);
+  //     // 2. 중요: 지도가 있어야 영역 계산이 가능하므로 지도에 추가합니다.
+  //     tempCircle.addTo(map);
 
-      // 3. 영역을 가져옵니다.
-      const bounds = tempCircle.getBounds();
+  //     // 3. 영역을 가져옵니다.
+  //     const bounds = tempCircle.getBounds();
 
-      // 4. 영역 설정 후 지도로부터 원을 제거합니다 (화면에 안 보이게).
-      tempCircle.remove();
+  //     // 4. 영역 설정 후 지도로부터 원을 제거합니다 (화면에 안 보이게).
+  //     tempCircle.remove();
 
-      map.setMaxBounds(bounds);
-    },
-    [map],
-  );
+  //     map.setMaxBounds(bounds);
+  //   },
+  //   [map],
+  // );
 
   const startWalkAnimation = useCallback(() => {
     const catImg = myCatRef.current
@@ -172,8 +172,8 @@ function MapContent({
         return;
       }
 
-      // 드래그 제한범위 설정
-      calcuateMapBounds(coords);
+      // 드래그 제한범위 설정 (비활성화)
+      // applyMapBounds(coords);
 
       if (myCatRef.current) {
         startWalkAnimation();
@@ -213,7 +213,7 @@ function MapContent({
         coords,
       };
     },
-    [calcuateMapBounds, map, startWalkAnimation],
+    [map, startWalkAnimation],
   );
 
   const drawCats = useCallback(() => {
@@ -420,7 +420,7 @@ export default function Map({ className, ...rest }: Props) {
         touchZoom={"center"}
         attributionControl={false} // 하단 저작권 표시줄 전체 삭제
         bounceAtZoomLimits={false}
-        maxBoundsViscosity={0.9}
+        maxBoundsViscosity={1}
       >
         <ZoomControl position="bottomright" />
         <TileLayer
