@@ -202,7 +202,7 @@ export default function SkyLayer({ isNight, hours = 0 }: Props) {
       </AnimatePresence>
 
       <AnimatePresence>
-        {CLOUDS.slice(0, 4 * additionalCloudCount).map(
+        {CLOUDS.slice(0, 5 * additionalCloudCount).map(
           ({ index, top, left, animationDelay }) => (
             <motion.div
               initial={{ opacity: 0 }}

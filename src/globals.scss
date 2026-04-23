@@ -805,6 +805,7 @@ input {
   padding-bottom: 3px !important;
   box-shadow: 0 2px 0 -1px $color;
   background-color: rgba(255, 255, 255, 0.6) !important;
+  background-color: transparent !important;
 
   // 위치 조정
   z-index: 99999;
