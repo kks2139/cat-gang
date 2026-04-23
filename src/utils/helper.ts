@@ -319,5 +319,5 @@ export const getNightTime = (date: Date) => {
 
   const isNightTime = h >= 18 || 6 >= h;
 
-  return { isNightTime: false, hours: h };
+  return { isNightTime, hours: h };
 };
