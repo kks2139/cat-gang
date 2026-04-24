@@ -1,6 +1,7 @@
 import classNames from "classnames/bind";
 import { useNavigate } from "react-router-dom";
 
+import TitleCatImg from "@/assets/img/title/main-title-cat.png";
 import Button from "@/components/Button";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
 import { useViewStore } from "@/store/view";
@@ -17,7 +18,13 @@ export default function Entry() {
 
   return (
     <main className={cn("Entry")}>
-      <h1 className={cn("title")}>냥만시대</h1>
+      <div className={cn("background")}>
+        <img src={TitleCatImg} width={100} height={100} alt="title-cat" />
+      </div>
+
+      <div className={cn("title")}>
+        <h1>냥만시대</h1>
+      </div>
 
       <div className={cn("content")}>
         <div className={cn("menu")}>
