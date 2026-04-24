@@ -14,6 +14,7 @@
     img {
       width: 600px;
       height: auto;
+      transform: translateY(-20px);
     }
   }
 
@@ -21,17 +22,23 @@
     z-index: 20;
     position: absolute;
     top: 12%;
-    font-family: "Fredoka", sans-serif;
-    font-size: 70px;
-    font-weight: 700;
-    color: #fff;
-    text-align: center;
-    letter-spacing: 2px;
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
     animation: title-float 4s ease-in-out infinite;
 
     h1 {
+      font-family: "Fredoka", sans-serif;
+      font-size: 70px;
+      font-weight: 700;
+      color: #fff;
+      text-align: center;
+      letter-spacing: 2px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+      transition: 0.2s;
       animation: content-enter 1s ease-out 0.8s both;
+
+      // 360px 이하일 때 대응
+      @media (max-width: 362px) {
+        font-size: 58px; // 좁은 화면을 위해 폰트 크기 축소
+      }
     }
   }
 
