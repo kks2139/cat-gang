@@ -105,32 +105,6 @@ function MapContent({
     },
   });
 
-  // const applyMapBounds = useCallback(
-  //   (coords: GeolocationCoordinates) => {
-  //     const { latitude, longitude } = coords;
-
-  //     // 1. 원을 생성합니다.
-  //     const tempCircle = L.circle([latitude, longitude], {
-  //       radius: 300, // 300m 반경
-  //       interactive: false,
-  //       fillOpacity: 0,
-  //       color: "transparent",
-  //     });
-
-  //     // 2. 중요: 지도가 있어야 영역 계산이 가능하므로 지도에 추가합니다.
-  //     tempCircle.addTo(map);
-
-  //     // 3. 영역을 가져옵니다.
-  //     const bounds = tempCircle.getBounds();
-
-  //     // 4. 영역 설정 후 지도로부터 원을 제거합니다 (화면에 안 보이게).
-  //     tempCircle.remove();
-
-  //     map.setMaxBounds(bounds);
-  //   },
-  //   [map],
-  // );
-
   const startWalkAnimation = useCallback(() => {
     const catImg = myCatRef.current
       ?.getElement()
@@ -172,9 +146,6 @@ function MapContent({
       if (!coords) {
         return;
       }
-
-      // 드래그 제한범위 설정 (비활성화)
-      // applyMapBounds(coords);
 
       if (myCatRef.current) {
         startWalkAnimation();
