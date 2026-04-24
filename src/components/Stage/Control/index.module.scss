@@ -7,10 +7,10 @@
 
   .dialog {
     position: relative;
-    background-color: var(--orange-map-border);
+    background-color: var(--main-map-border);
     padding: 8px;
     border-radius: 24px;
-    box-shadow: 0 4px 0 var(--orange-map-shadow);
+    box-shadow: 0 4px 0 var(--main-map-shadow);
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     user-select: none; // 텍스트 선택 방지
@@ -42,7 +42,7 @@
         font-weight: 900;
         font-size: 20px;
         margin-bottom: 8px;
-        color: var(--orange-shadow);
+        color: var(--main-shadow);
         text-shadow: 0.5px 0.5px 0 rgba(0, 0, 0, 0.1);
       }
 
@@ -62,7 +62,7 @@
             height: 16px;
             width: 3px;
             margin-left: 4px;
-            background-color: var(--orange-map-shadow);
+            background-color: var(--main-map-shadow);
             animation: blink 0.8s infinite;
             vertical-align: middle;
           }

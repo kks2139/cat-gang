@@ -6,15 +6,13 @@
   border-radius: 20px; // 더 뭉툭하고 부드러운 느낌
   font-size: 16px;
   font-weight: 800;
-  background: linear-gradient(135deg, var(--orange-1) 0%, var(--orange-2) 100%);
+  background: linear-gradient(135deg, var(--main-1) 0%, var(--main-2) 100%);
   color: #fff;
-  border: 3px solid var(--orange-border); // 더 진한 외곽선
+  border: 3px solid var(--main-border); // 더 진한 외곽선
   text-shadow: 0px 1px 3px rgba(0, 0, 0, 0.7); // 더 강한 그림자로 텍스트를 확실히 분리
-  box-shadow: 0 4px 0 var(--orange-shadow); // 더 어두운 그림자로 대비 강화
+  box-shadow: 0 4px 0 var(--main-shadow); // 더 어두운 그림자로 대비 강화
   text-align: center;
-  transition:
-    transform 0.1s,
-    box-shadow 0.1s;
+  transition: transform 0.1s, box-shadow 0.1s;
   overflow: hidden;
 
   // 봉제선 (Stitch line)
@@ -25,7 +23,7 @@
     font-size: 13px;
     border-radius: 14px;
     border-width: 2px;
-    box-shadow: 0 3px 0 var(--orange-shadow);
+    box-shadow: 0 3px 0 var(--main-shadow);
 
     @include plush-stitch(3px, 10px, 0.6, 1);
   }
@@ -47,7 +45,7 @@
   // 모바일 터치(Active) 시 꾹 눌리는 인형 느낌
   &:active:not(:disabled) {
     transform: translateY(3px); // 그림자 두께만큼 내려감
-    box-shadow: 0 1px 0 var(--orange-shadow);
+    box-shadow: 0 1px 0 var(--main-shadow);
     filter: brightness(0.95);
   }
 }

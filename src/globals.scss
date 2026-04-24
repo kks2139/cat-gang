@@ -70,12 +70,12 @@ input {
   --green-1: rgb(73, 255, 112);
 
   // Stylish Purple Theme (기존 orange 변수명 유지하여 호환성 확보)
-  --orange-1: #7c4dff; // 일렉트릭 퍼플
-  --orange-2: #b47cff; // 라이트 퍼플
-  --orange-border: #6200ea; // 진한 보라 (테두리)
-  --orange-shadow: #311b92; // 깊은 그림자
-  --orange-map-border: #d1c4e9; // 지도용 연한 보라
-  --orange-map-shadow: #b39ddb; // 지도용 그림자
+  --main-1: #7c4dff; // 일렉트릭 퍼플
+  --main-2: #b47cff; // 라이트 퍼플
+  --main-border: #6200ea; // 진한 보라 (테두리)
+  --main-shadow: #311b92; // 깊은 그림자
+  --main-map-border: #d1c4e9; // 지도용 연한 보라
+  --main-map-shadow: #b39ddb; // 지도용 그림자
 }
 
 .marker-container {
@@ -91,8 +91,7 @@ input {
     z-index: 1;
     position: relative;
     width: 100% !important;
-    animation:
-      walk-bounce $walk-duration ease-in-out infinite alternate,
+    animation: walk-bounce $walk-duration ease-in-out infinite alternate,
       cat-jump $swim-duration linear infinite;
     animation-delay: 0s, var(--jump-delay, 0s); // 점프 타이밍 랜덤화
   }
@@ -138,8 +137,7 @@ input {
     white-space: nowrap;
     opacity: 0;
     box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
-    animation:
-      show-up 15s infinite,
+    animation: show-up 15s infinite,
       chat-float 2s ease-in-out infinite alternate; // 둥둥 떠있는 효과 추가
 
     &::after {
@@ -269,9 +267,7 @@ input {
         opacity: 0.7;
 
         // 발가락 3개 구현 (사이즈 업)
-        box-shadow:
-          -5px -6px 0 -1px #8b572a,
-          0.5px -8px 0 -1px #8b572a,
+        box-shadow: -5px -6px 0 -1px #8b572a, 0.5px -8px 0 -1px #8b572a,
           6px -6px 0 -1px #8b572a;
       }
 
@@ -341,7 +337,7 @@ input {
         height: 0;
         border-left: 12px solid transparent;
         border-right: 12px solid transparent;
-        border-top: 25px solid var(--orange-1);
+        border-top: 25px solid var(--main-1);
         filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2));
         animation: arrow-blink 2s ease-in-out infinite;
       }
@@ -369,10 +365,10 @@ input {
   @keyframes arrow-blink {
     0%,
     100% {
-      border-top-color: var(--orange-map-border);
+      border-top-color: var(--main-map-border);
     }
     50% {
-      border-top-color: var(--orange-border);
+      border-top-color: var(--main-border);
     }
   }
 
@@ -387,8 +383,7 @@ input {
     filter: blur(2px) !important;
     background-color: rgba(0, 0, 0, 0.4);
     border-radius: 50%;
-    animation:
-      shadow-pulse $walk-duration ease-in-out infinite alternate,
+    animation: shadow-pulse $walk-duration ease-in-out infinite alternate,
       shadow-jump $swim-duration linear infinite;
     animation-delay: 0s, var(--jump-delay, 0s); // 점프 시 작아지고 흐려짐
   }
@@ -656,8 +651,7 @@ input {
         rgba(100, 0, 200, 0.4) 75%,
         rgba(60, 0, 120, 0) 100%
       );
-      box-shadow:
-        0 0 4px 2px rgba(220, 180, 255, 1),
+      box-shadow: 0 0 4px 2px rgba(220, 180, 255, 1),
         0 0 12px 6px rgba(180, 80, 255, 0.95),
         0 0 26px 12px rgba(130, 0, 255, 0.65),
         0 0 46px 20px rgba(80, 0, 180, 0.3);
@@ -693,8 +687,7 @@ input {
       rgba(255, 120, 0, 0.4) 75%,
       rgba(255, 60, 0, 0) 100%
     );
-    box-shadow:
-      0 0 4px 2px rgba(255, 255, 150, 1),
+    box-shadow: 0 0 4px 2px rgba(255, 255, 150, 1),
       0 0 12px 6px rgba(255, 230, 0, 0.95),
       0 0 26px 12px rgba(255, 170, 0, 0.65),
       0 0 46px 20px rgba(255, 100, 0, 0.3);

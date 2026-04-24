@@ -15,10 +15,10 @@
 
   .content {
     position: relative;
-    background-color: var(--orange-map-border);
+    background-color: var(--main-map-border);
     padding: 8px;
     border-radius: 24px;
-    box-shadow: 0 4px 0 var(--orange-map-shadow);
+    box-shadow: 0 4px 0 var(--main-map-shadow);
     width: 100%;
     max-width: 400px;
     overflow: hidden;
@@ -41,7 +41,7 @@
         font-weight: 900;
         font-size: 24px;
         margin-bottom: 20px;
-        color: var(--orange-shadow);
+        color: var(--main-shadow);
         letter-spacing: -0.5px;
       }
 
@@ -55,9 +55,8 @@
 
       strong {
         font-weight: 900;
-        color: var(--orange-shadow);
+        color: var(--main-shadow);
       }
     }
   }
 }
-

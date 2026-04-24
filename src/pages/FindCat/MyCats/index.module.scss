@@ -2,10 +2,10 @@
 
 .MyCats {
   position: relative;
-  background-color: var(--orange-map-border);
+  background-color: var(--main-map-border);
   padding: 8px; // 테두리 두께
   border-radius: 24px;
-  box-shadow: 0 4px 0 var(--orange-map-shadow);
+  box-shadow: 0 4px 0 var(--main-map-shadow);
   overflow: hidden;
 
   // 봉제선 (Stitch line)
@@ -23,7 +23,7 @@
       width: 6px;
     }
     &::-webkit-scrollbar-thumb {
-      background-color: var(--orange-map-shadow);
+      background-color: var(--main-map-shadow);
       border-radius: 10px;
     }
   }
@@ -69,7 +69,7 @@
 
           span {
             &:first-of-type {
-              color: var(--orange-shadow);
+              color: var(--main-shadow);
               font-weight: 900;
               font-size: 14px;
               white-space: nowrap;
@@ -118,7 +118,7 @@
   padding: 20px;
   background-color: #fff;
   border-radius: 20px;
-  border: 6px solid var(--orange-map-border);
+  border: 6px solid var(--main-map-border);
 
   li {
     display: flex;
