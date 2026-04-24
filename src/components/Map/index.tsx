@@ -393,7 +393,7 @@ export default function Map({ className, ...rest }: Props) {
 
   const myMarkerRef = useRef<L.Marker>(null);
 
-  const { isNight } = useDayAndNight();
+  const { isNight, hours } = useDayAndNight();
 
   useEffect(() => {
     return () => setMap(null);
@@ -409,7 +409,7 @@ export default function Map({ className, ...rest }: Props) {
 
   return (
     <div className={cn("map-wrapper", { night: isNight })}>
-      <SkyLayer isNight={isNight} hours={6} />
+      <SkyLayer isNight={isNight} hours={hours} />
 
       <MapContainer
         className={cn("Map", className)}

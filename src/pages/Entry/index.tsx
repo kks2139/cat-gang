@@ -17,8 +17,9 @@ export default function Entry() {
 
   return (
     <main className={cn("Entry")}>
+      <h1 className={cn("title")}>냥만시대</h1>
+
       <div className={cn("content")}>
-        <h1 className={cn("title")}>냥만시대</h1>
         <div className={cn("menu")}>
           <Button
             className={cn("start")}
