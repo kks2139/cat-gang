@@ -22,6 +22,17 @@ export default function Entry() {
         <img src={TitleCatImg} width={100} height={100} alt="title-cat" />
       </div>
 
+      {Array.from({ length: 2 }).map((_, i) => (
+        <div key={i} className={cn("paw", { [`n${i}`]: true })}>
+          <div
+            className={cn("paw-stamp")}
+            style={{ animationDelay: `${i * 0.2 + 2}s` }}
+          >
+            <div className={cn("pad")}></div>
+          </div>
+        </div>
+      ))}
+
       <div className={cn("title")}>
         <h1>냥만시대</h1>
       </div>

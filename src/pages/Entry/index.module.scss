@@ -1,9 +1,9 @@
 .Entry {
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  position: relative;
   height: 100vh;
   overflow: hidden;
 
@@ -32,7 +32,73 @@
 
     h1 {
       animation: content-enter 1s ease-out 0.8s both;
-      animation-delay: 1.3s;
+    }
+  }
+
+  .paw {
+    z-index: 10;
+    position: absolute;
+    top: 12%;
+    right: 2%;
+    pointer-events: none;
+    transform: rotate(15deg);
+
+    &.n0 {
+      top: 12%;
+      right: none;
+      left: 1%;
+      transform: rotate(-20deg);
+    }
+
+    .paw-stamp {
+      position: relative;
+      width: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: punch-slam 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+
+      &::before {
+        content: "";
+        animation: punch-shock 0.4s cubic-bezier(0.1, 0.8, 0.3, 1) both;
+      }
+      &::after {
+        content: "";
+        animation: punch-flash 0.4s ease-out both;
+      }
+
+      .pad {
+        position: relative;
+        z-index: 2;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          var(--main-1) 0%,
+          var(--main-map-border) 100%
+        );
+
+        &::after {
+          $paw-color: #fff;
+          content: "";
+          position: absolute;
+          top: 55%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 22px;
+          height: 22px;
+          background-color: $paw-color;
+          border-radius: 50% 50% 45% 45%;
+          opacity: 0.9;
+
+          // 발가락 3개 구현 (사이즈 업)
+          box-shadow:
+            -13px -13px 0 -6px $paw-color,
+            0 -17px 0 -6px $paw-color,
+            13px -13px 0 -6px $paw-color;
+        }
+      }
     }
   }
 
@@ -74,6 +140,48 @@
     100% {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+
+  @keyframes punch-slam {
+    0% {
+      transform: scale(3.5) rotate(25deg);
+      opacity: 0;
+    }
+    30% {
+      transform: scale(0.8) rotate(-10deg);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.1) rotate(5deg);
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+      opacity: 1;
+    }
+  }
+
+  @keyframes punch-shock {
+    0% {
+      transform: scale(0.1);
+      border-width: 20px;
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1.5);
+      border-width: 0px;
+      opacity: 0;
+    }
+  }
+
+  @keyframes punch-flash {
+    0% {
+      transform: scale(0.2);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(2);
+      opacity: 0;
     }
   }
 
