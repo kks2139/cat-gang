@@ -177,7 +177,10 @@ export default function FindCat() {
           // 폭죽효과
           catchedCat.marker.getElement()?.appendChild(getFireworkElement());
 
-          await Promise.all([wait(2000), fetchMyCats()]);
+          // 폭죽 duration 대기
+          await wait(1500);
+
+          fetchMyCats();
 
           // 잡은 고양이 overlay 지도에서 제거
           removeMarkerWithMotion(catchedCat.marker);

@@ -19,5 +19,6 @@ export const useMyCatsQuery = () => {
 
       return data;
     },
+    retry: 1,
   });
 };

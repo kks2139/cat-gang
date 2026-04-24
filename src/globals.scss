@@ -91,7 +91,8 @@ input {
     z-index: 1;
     position: relative;
     width: 100% !important;
-    animation: walk-bounce $walk-duration ease-in-out infinite alternate,
+    animation:
+      walk-bounce $walk-duration ease-in-out infinite alternate,
       cat-jump $swim-duration linear infinite;
     animation-delay: 0s, var(--jump-delay, 0s); // 점프 타이밍 랜덤화
   }
@@ -137,7 +138,8 @@ input {
     white-space: nowrap;
     opacity: 0;
     box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
-    animation: show-up 15s infinite,
+    animation:
+      show-up 15s infinite,
       chat-float 2s ease-in-out infinite alternate; // 둥둥 떠있는 효과 추가
 
     &::after {
@@ -210,7 +212,7 @@ input {
     margin-bottom: 5px;
 
     // 생성될때 모션
-    animation: appear 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    animation: appear 2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 
     // 1. 깃대 (Pole)
     .pole {
@@ -267,7 +269,9 @@ input {
         opacity: 0.7;
 
         // 발가락 3개 구현 (사이즈 업)
-        box-shadow: -5px -6px 0 -1px #8b572a, 0.5px -8px 0 -1px #8b572a,
+        box-shadow:
+          -5px -6px 0 -1px #8b572a,
+          0.5px -8px 0 -1px #8b572a,
           6px -6px 0 -1px #8b572a;
       }
 
@@ -383,7 +387,8 @@ input {
     filter: blur(2px) !important;
     background-color: rgba(0, 0, 0, 0.4);
     border-radius: 50%;
-    animation: shadow-pulse $walk-duration ease-in-out infinite alternate,
+    animation:
+      shadow-pulse $walk-duration ease-in-out infinite alternate,
       shadow-jump $swim-duration linear infinite;
     animation-delay: 0s, var(--jump-delay, 0s); // 점프 시 작아지고 흐려짐
   }
@@ -505,117 +510,73 @@ input {
 }
 
 .papyrus-explosion {
-  // 변수 설정
-  $piece-count: 40;
-  $explosion-radius: 120px;
+  $piece-count: 50;
   $duration: 3s;
-  $piece-size: 12px;
-
-  $fragment-colors: (
-    #ff3d00,
-    #ff0000,
-    #ffae00,
-    #5500ff,
-    #0073ff,
-    #00ffff,
-    #02ee29,
-    #ea00ff,
-    #ffe100,
-    #ffffff,
-    #ff6b6b,
-    #48dbfb
-  );
 
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
-  width: 0;
-  height: 0;
-  z-index: 999;
+  z-index: 1000;
+  pointer-events: none;
 
   .central-flash {
     position: absolute;
-    width: 20px;
-    height: 20px;
-    background: radial-gradient(circle, #fff 0%, rgba(255, 255, 255, 0) 70%);
+    width: 10px;
+    height: 10px;
+    background-color: #ffffff;
+    box-shadow: 0 0 50px 15px #ffffff;
     border-radius: 50%;
-    transform: translate(-50%, -50%) scale(0);
     animation: flash-burst 0.5s ease-out forwards;
   }
 
-  @keyframes flash-burst {
-    0% {
-      transform: translate(-50%, -50%) scale(0);
-      opacity: 1;
-      filter: brightness(2);
-    }
-    50% {
-      transform: translate(-50%, -50%) scale(15);
-      opacity: 0.8;
-    }
-    100% {
-      transform: translate(-50%, -50%) scale(25);
-      opacity: 0;
-    }
-  }
-
   .piece {
-    z-index: 999;
     position: absolute;
-    width: $piece-size;
-    height: $piece-size * 1.5;
-    background-color: #fff;
-    border-radius: 2px;
+    width: 30px;
+    height: 30px;
+    border-radius: 30px;
     opacity: 0;
-
-    animation: papyrus-scatter $duration cubic-bezier(0.075, 0.82, 0.165, 1)
-      forwards;
     will-change: transform, opacity;
+    animation: papyrus-scatter $duration cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
 
     @for $i from 1 through $piece-count {
       &:nth-child(#{$i}) {
-        $angle: calc(360deg / $piece-count) *
-          ($i - 1) +
-          (math.random(20) - 10deg);
-        $random-r: $explosion-radius + math.random(100);
-
-        $qx: cos($angle) * $random-r;
-        $qy: sin($angle) * $random-r;
-
-        --qx: #{$qx};
-        --qy: #{$qy} - 20px; // 위로 살짝 솟구치게
-        --rot: #{(math.random(1000) - 500)}deg;
-
-        $color: list.nth(
-          $fragment-colors,
-          (math.random(list.length($fragment-colors)))
-        );
+        $color: hsl(math.random(360), 85%, 65%);
         background-color: $color;
-        box-shadow: 0 0 ($piece-size * 1.5) $color;
+        box-shadow: 0 0 12px $color;
 
-        animation-delay: #{math.random(15) * 0.02s};
+        --tx: #{(math.random(360) - 180)}px;
+        --ty: #{(math.random(360) - 220)}px;
+        --tr: #{(math.random(1200) - 600)}deg;
+
+        animation-delay: #{calc(math.random(250) / 1000)}s;
       }
     }
   }
 
   @keyframes papyrus-scatter {
     0% {
-      transform: translate(-50%, -50%) rotate(0deg) scale(0);
-      opacity: 0;
-      filter: blur(5px) brightness(2);
-    }
-    10% {
+      transform: translate(0, 0) scale(1) rotate(0);
       opacity: 1;
-      transform: translate(-50%, -50%) rotate(20deg) scale(2.5);
-      filter: blur(0) brightness(1.5);
+    }
+    20% {
+      opacity: 1;
     }
     100% {
-      transform: translate(
-          calc(-50% + var(--qx)),
-          calc(-50% + var(--qy) + 120px) // 중력 효과 강화
-        )
-        rotate(var(--rot)) scale(0.2);
+      transform: translate(var(--tx), var(--ty)) scale(0.3) rotate(var(--tr));
+      opacity: 0;
+    }
+  }
+
+  @keyframes flash-burst {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      transform: scale(3);
       opacity: 0;
     }
   }
@@ -651,7 +612,8 @@ input {
         rgba(100, 0, 200, 0.4) 75%,
         rgba(60, 0, 120, 0) 100%
       );
-      box-shadow: 0 0 4px 2px rgba(220, 180, 255, 1),
+      box-shadow:
+        0 0 4px 2px rgba(220, 180, 255, 1),
         0 0 12px 6px rgba(180, 80, 255, 0.95),
         0 0 26px 12px rgba(130, 0, 255, 0.65),
         0 0 46px 20px rgba(80, 0, 180, 0.3);
@@ -687,7 +649,8 @@ input {
       rgba(255, 120, 0, 0.4) 75%,
       rgba(255, 60, 0, 0) 100%
     );
-    box-shadow: 0 0 4px 2px rgba(255, 255, 150, 1),
+    box-shadow:
+      0 0 4px 2px rgba(255, 255, 150, 1),
       0 0 12px 6px rgba(255, 230, 0, 0.95),
       0 0 26px 12px rgba(255, 170, 0, 0.65),
       0 0 46px 20px rgba(255, 100, 0, 0.3);
