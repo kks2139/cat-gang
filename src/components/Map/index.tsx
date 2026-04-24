@@ -87,7 +87,7 @@ function MapContent({
   const centerPositionOfCats = useRef<L.LatLng>(undefined);
 
   const catMarkersRef = useRef<L.Marker[]>([]);
-  const ownCatMarkersRef = useRef<L.Marker[]>([]);
+  const ownCatMarkersRef = useRef<Record<string, L.Marker>>({});
   const myCatRef = useRef<L.Marker>(null);
   const walkTimerRef = useRef<ReturnType<typeof setInterval> | undefined>(
     undefined,
@@ -288,25 +288,38 @@ function MapContent({
   }, [isShowStage, map, onClickCat, setSelectedCat]);
 
   const drawOwnCats = useCallback(() => {
-    // 이전에 생성한 랜덤 마커들 해제
-    ownCatMarkersRef.current.forEach((marker) => {
-      removeMarkerWithMotion(marker);
+    if (!map) return;
+
+    // 현재 전달받은 고양이들의 고유 키 셋 생성
+    const currentCatKeys = new Set(
+      ownCats?.map((cat) => `${cat.name}_${cat.createdAt}`) || [],
+    );
+
+    // 1. 제거 대상: 현재 데이터에 없는 마커들을 지도에서 삭제
+    Object.entries(ownCatMarkersRef.current).forEach(([key, marker]) => {
+      if (!currentCatKeys.has(key)) {
+        removeMarkerWithMotion(marker);
+        delete ownCatMarkersRef.current[key];
+      }
     });
-    ownCatMarkersRef.current = [];
 
-    // 잡은 고양이들(깃발) 그리기
+    // 2. 추가 대상: 현재 마커 객체에 없는 고양이들만 새로 생성
     ownCats?.forEach((cat) => {
-      const { position } = cat;
+      const key = `${cat.name}_${cat.createdAt}`;
 
-      const marker = createMarker({
-        position: [position.lat, position.lng],
-        type: "owned",
-        map,
-      }).on("click", () => {
-        onClickOwnCat?.(cat);
-      });
+      if (!ownCatMarkersRef.current[key]) {
+        const { position } = cat;
 
-      ownCatMarkersRef.current.push(marker);
+        const marker = createMarker({
+          position: [position.lat, position.lng],
+          type: "owned",
+          map,
+        }).on("click", () => {
+          onClickOwnCat?.(cat);
+        });
+
+        ownCatMarkersRef.current[key] = marker;
+      }
     });
   }, [map, onClickOwnCat, ownCats]);
 
