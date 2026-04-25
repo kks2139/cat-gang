@@ -11,7 +11,7 @@ import styles from "./index.module.scss";
 const cn = classNames.bind(styles);
 
 export default function Entry() {
-  const { addToastMessage } = useViewStore((s) => s.actions);
+  const { addToastMessage, setIsStopFocusMe } = useViewStore((s) => s.actions);
   const navigate = useNavigate();
 
   useMyCatsQuery();
@@ -42,6 +42,7 @@ export default function Entry() {
           <Button
             className={cn("start")}
             onClick={() => {
+              setIsStopFocusMe(false);
               navigate("/find-cat");
             }}
           >

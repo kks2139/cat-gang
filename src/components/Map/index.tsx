@@ -70,11 +70,16 @@ function MapContent({
   ref: myMarkerRef,
 }: Props) {
   const isStopFocusMe = useViewStore((s) => s.isStopFocusMe);
+  const isBattleOn = useViewStore((s) => s.isBattleOn);
   const { setIsStopFocusMe } = useViewStore((s) => s.actions);
 
   // 최신 isStopFocusMe 값을 ref에 동기화 (클로저 스코프 문제 방지)
   const isStopFocusMeRef = useRef(isStopFocusMe);
   isStopFocusMeRef.current = isStopFocusMe;
+
+  // 전투중 여부 ref 동기화
+  const isBattleOnRef = useRef(isBattleOn);
+  isBattleOnRef.current = isBattleOn;
 
   const isShowStage = useCatStore((s) => s.isShowStage);
   const { setSelectedCat } = useCatStore((s) => s.actions);
@@ -296,6 +301,10 @@ function MapContent({
 
   const createMeAndCats = useCallback(
     async (usePanTo?: boolean) => {
+      if (isBattleOnRef.current) {
+        return;
+      }
+
       await drawMe(usePanTo);
       drawCats();
     },

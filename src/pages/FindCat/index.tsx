@@ -29,7 +29,7 @@ const cn = classNames.bind(styles);
 export default function FindCat() {
   const navigate = useNavigate();
 
-  const { setIsStopFocusMe } = useViewStore((s) => s.actions);
+  const { setIsStopFocusMe, setIsBattleOn } = useViewStore((s) => s.actions);
   const isShowStage = useCatStore((s) => s.isShowStage);
   const { setSelectedCat, setIsShowStage } = useCatStore((s) => s.actions);
 
@@ -58,6 +58,7 @@ export default function FindCat() {
           setIsShowStage(true);
           setSelectedMenu(undefined);
           setIsStopFocusMe(true);
+          setIsBattleOn(true);
         }}
         onClickOwnCat={(cat) => {
           setOwnCatInfo(cat);
@@ -179,12 +180,12 @@ export default function FindCat() {
 
           // 폭죽 duration 대기
           await wait(1500);
-
-          fetchMyCats();
+          await fetchMyCats();
 
           // 잡은 고양이 overlay 지도에서 제거
           removeMarkerWithMotion(catchedCat.marker);
           setCatchedCat(undefined);
+          setIsBattleOn(false);
         }}
       />
 
