@@ -4,11 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "granite dev",
+    "build": "ait build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "update-types": "npx supabase gen types typescript --project-id \"vvdwvymzsuezknmfuoza\" > src/utils/db/types.ts"
+    "update-types": "npx supabase gen types typescript --project-id \"vvdwvymzsuezknmfuoza\" > src/utils/db/types.ts",
+    "deploy": "ait deploy"
   },
   "dependencies": {
     "@apps-in-toss/web-framework": "^2.4.5",
