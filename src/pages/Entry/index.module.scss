@@ -42,6 +42,11 @@
     }
   }
 
+  .dialog-input {
+    width: 200px;
+    padding: 20px 0 10px 0;
+  }
+
   .paw {
     z-index: 10;
     position: absolute;
@@ -124,6 +129,20 @@
       row-gap: 15px;
       width: 240px;
     }
+  }
+
+  .loading {
+    z-index: 1000;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background-color: rgba(0, 0, 0, 0.7);
   }
 
   @keyframes bg-enter {

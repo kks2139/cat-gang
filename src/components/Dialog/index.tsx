@@ -12,6 +12,9 @@ interface Props {
   subTitle?: React.ReactNode;
   buttonLable?: string;
   onButtonClick?: () => void;
+  subButtonLable?: string;
+  onSubButtonClick?: () => void;
+  children?: React.ReactNode;
 }
 
 export default function Dialog({
@@ -20,6 +23,9 @@ export default function Dialog({
   subTitle,
   buttonLable = "확인",
   onButtonClick,
+  subButtonLable,
+  onSubButtonClick,
+  children,
 }: Props) {
   return (
     <AnimatePresence>
@@ -32,9 +38,18 @@ export default function Dialog({
         >
           <div className={cn("content")}>
             <div className={cn("wrapper")}>
-              <h3 className={cn("title")}>{title}</h3>
-              <h5 className={cn("sub-title")}>{subTitle}</h5>
+              {title && <h3 className={cn("title")}>{title}</h3>}
+              {subTitle && <h5 className={cn("sub-title")}>{subTitle}</h5>}
+              {children && <div className={cn("body")}>{children}</div>}
+            </div>
+
+            <div className={cn("buttons")}>
               <Button onClick={onButtonClick}>{buttonLable}</Button>
+              {onSubButtonClick && (
+                <Button color="secondary" onClick={onSubButtonClick}>
+                  {subButtonLable}
+                </Button>
+              )}
             </div>
           </div>
         </motion.div>

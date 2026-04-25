@@ -1,0 +1,94 @@
+.Loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px 20px 10px 20px;
+  border-radius: 50px;
+  background-color: rgba(255, 255, 255, 0.9);
+  // box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  // border: 2px solid var(--main-border);
+
+  box-shadow: 0 0 25px -8px var(--main-border);
+
+  .paw-animation {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    column-gap: 12px;
+
+    .paw {
+      position: relative;
+      width: 12px;
+      height: 10px;
+      background-color: var(--main-1);
+      border-radius: 50% 50% 45% 45%;
+      opacity: 0;
+      animation: paw-step 1.5s infinite;
+
+      &::after {
+        content: "";
+        position: absolute;
+        width: 4px;
+        height: 5px;
+        background-color: var(--main-1);
+        border-radius: 50%;
+        top: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        box-shadow:
+          -6px 2px 0 var(--main-1),
+          6px 2px 0 var(--main-1);
+      }
+
+      @for $i from 1 through 3 {
+        &:nth-child(#{$i}) {
+          animation-delay: ($i - 1) * 0.3s;
+        }
+      }
+    }
+  }
+
+  .loading-text {
+    display: flex;
+    column-gap: 1px;
+    align-items: center;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--main-shadow);
+    margin-left: 15px;
+    transform: translateY(-3px);
+
+    span {
+      animation: text-bounce 1.3s ease-in-out infinite;
+      @for $i from 1 through 6 {
+        &:nth-child(#{$i}) {
+          animation-delay: ($i - 1) * 0.1s;
+        }
+      }
+    }
+  }
+
+  @keyframes paw-step {
+    0%,
+    100% {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    30%,
+    60% {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+  }
+
+  @keyframes text-bounce {
+    0%,
+    100% {
+      transform: translateY(-2px);
+    }
+    50% {
+      transform: translateY(2px);
+    }
+  }
+}

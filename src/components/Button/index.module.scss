@@ -12,11 +12,24 @@
   text-shadow: 0px 1px 3px rgba(0, 0, 0, 0.7); // 더 강한 그림자로 텍스트를 확실히 분리
   box-shadow: 0 4px 0 var(--main-shadow); // 더 어두운 그림자로 대비 강화
   text-align: center;
-  transition: transform 0.1s, box-shadow 0.1s;
+  transition:
+    transform 0.1s,
+    box-shadow 0.1s;
   overflow: hidden;
 
   // 봉제선 (Stitch line)
   @include plush-stitch(4px, 16px, 0.6, 1);
+
+  &.secondary {
+    background: linear-gradient(
+      135deg,
+      var(--secondary-1) 0%,
+      var(--secondary-2) 100%
+    );
+    color: #fff;
+    border: 3px solid var(--secondary-border);
+    box-shadow: 0 4px 0 var(--secondary-shadow);
+  }
 
   &.small {
     padding: 6px 16px;

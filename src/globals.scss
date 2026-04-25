@@ -76,6 +76,12 @@ input {
   --main-shadow: #bf360c; // 깊은 오렌지 그림자
   --main-map-border: #ffcc80; // 지도용 연한 오렌지
   --main-map-shadow: #ffb74d; // 지도용 오렌지 그림자
+
+  // Secondary Color (Stylish Red/Rose)
+  --secondary-1: #ff6b6b;
+  --secondary-2: #ee5253;
+  --secondary-border: #c0392b;
+  --secondary-shadow: #962121;
 }
 
 .marker-container {
@@ -206,13 +212,26 @@ input {
     $waving-speed: 1.8s;
 
     position: relative;
-    display: inline-block;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     width: 45px;
     height: 50px;
     margin-bottom: 5px;
 
     // 생성될때 모션
-    animation: appear 2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    animation: appear 2s cubic-bezier(0.175, 0.885, 0.32, 1) forwards;
+
+    @keyframes appear {
+      from {
+        opacity: 0;
+        transform: translateY(-160px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
 
     // 1. 깃대 (Pole)
     .pole {
@@ -298,17 +317,6 @@ input {
       }
       75% {
         transform: rotateY(-15deg) skewY(3deg) scaleX(1.05);
-      }
-    }
-
-    @keyframes appear {
-      from {
-        opacity: 0;
-        transform: translateY(-20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
       }
     }
   }

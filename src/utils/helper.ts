@@ -321,3 +321,14 @@ export const getNightTime = (date: Date) => {
 
   return { isNightTime, hours: h };
 };
+
+/**
+ * 1. 모든 공백 제거
+ * 2. 특수문자 및 기호 제거 (영문, 한글, 숫자만 남김)
+ * 3. 최대 10자리까지 제한
+ */
+export const safeText = (input: string): string => {
+  const cleaned = input.replace(/[\s/!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/g, "");
+
+  return cleaned.slice(0, 10);
+};

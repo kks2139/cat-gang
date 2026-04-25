@@ -33,6 +33,7 @@ import {
   watchPosition,
 } from "@/utils/helper";
 
+import Loading from "../Loading";
 import styles from "./index.module.scss";
 import SkyLayer from "./SkyLayer";
 import ZoomButton from "./ZoomButton";
@@ -467,19 +468,11 @@ export default function Map({ className, ...rest }: Props) {
             exit={{ opacity: 0, y: -5, translateX: "-50%" }}
             transition={{ duration: 0.2 }}
           >
-            <div className={cn("paw-animation")}>
-              {Array.from({ length: 3 }, (_, i) => (
-                <div key={i} className={cn("paw")} />
-              ))}
-            </div>
-            <div className={cn("loading-text")}>
-              {["찾", "는", "중", ".", ".", "."].map((ch, i) => (
-                <span key={i}>{ch}</span>
-              ))}
-            </div>
+            <Loading text="찾는중..." />
           </motion.div>
         )}
       </AnimatePresence>
+      <Loading />
     </div>
   );
 }

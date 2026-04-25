@@ -1,0 +1,93 @@
+@use "@/styles/mixins" as *;
+
+.Input-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  row-gap: 6px;
+}
+
+.Input {
+  position: relative;
+  width: 100%;
+  background-color: #ffffff;
+  border: 3px solid var(--main-border);
+  border-radius: 18px;
+  box-shadow: 0 2px 0 var(--main-shadow);
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  overflow: hidden;
+
+  &:focus-within {
+    transform: translateY(2px);
+    box-shadow: 0 0 0 var(--main-shadow);
+    border-color: var(--main-1);
+    background-color: #fffcf9;
+  }
+
+  // 에러 상태 스타일
+  &.error {
+    border-color: var(--secondary-border);
+    box-shadow: 0 2px 0 var(--secondary-shadow);
+    background-color: #fff5f5;
+
+    &:focus-within {
+      border-color: var(--secondary-1);
+      box-shadow: 0 0 0 var(--secondary-shadow);
+    }
+
+    .field {
+      color: var(--secondary-shadow);
+      caret-color: var(--secondary-1);
+
+      &::placeholder {
+        color: #ffcdd2;
+      }
+    }
+  }
+
+  .field {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--main-border);
+    caret-color: var(--main-1);
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: inherit;
+    letter-spacing: -0.5px;
+
+    &::placeholder {
+      color: #cbd5e1;
+      font-weight: bold;
+    }
+  }
+
+  &:has(.field:disabled) {
+    opacity: 0.6;
+    background-color: #f1f5f9;
+    cursor: not-allowed;
+  }
+}
+
+.error-message {
+  margin-left: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--secondary-2);
+  letter-spacing: -0.2px;
+  animation: error-appear 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes error-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
