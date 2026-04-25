@@ -7,11 +7,14 @@ const cn = classNames.bind(styles);
 interface Props {
   text?: string;
   className?: string;
+  noBackground?: boolean;
 }
 
-export default function Loading({ text, className }: Props) {
+export default function Loading({ text, className, noBackground }: Props) {
   return (
-    <div className={cn("Loading", className)}>
+    <div
+      className={cn("Loading", className, { "no-background": noBackground })}
+    >
       <div className={cn("paw-animation")}>
         {Array.from({ length: 3 }, (_, i) => (
           <div key={i} className={cn("paw")} />

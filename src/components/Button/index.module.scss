@@ -14,7 +14,8 @@
   text-align: center;
   transition:
     transform 0.1s,
-    box-shadow 0.1s;
+    box-shadow 0.1s,
+    filter 0.2s;
   overflow: hidden;
 
   // 봉제선 (Stitch line)
@@ -48,11 +49,7 @@
   }
 
   &:disabled {
-    background: #f0f0f0;
-    border-color: #ccc;
-    box-shadow: 0 4px 0 #bbb;
-    color: #aaa;
-    @include plush-stitch(4px, 16px, 0.1, 1);
+    filter: brightness(0.8) grayscale(1);
   }
 
   // 모바일 터치(Active) 시 꾹 눌리는 인형 느낌

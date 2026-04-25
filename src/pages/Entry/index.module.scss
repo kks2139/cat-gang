@@ -18,6 +18,14 @@
     }
   }
 
+  .init-loading {
+    z-index: 20;
+    position: absolute;
+    left: 50%;
+    bottom: 40px;
+    transform: translateX(-50%);
+  }
+
   .title {
     z-index: 20;
     position: absolute;
@@ -40,11 +48,6 @@
         font-size: 58px; // 좁은 화면을 위해 폰트 크기 축소
       }
     }
-  }
-
-  .dialog-input {
-    width: 200px;
-    padding: 20px 0 10px 0;
   }
 
   .paw {
@@ -87,8 +90,9 @@
         border-radius: 50%;
         background: radial-gradient(
           circle,
-          var(--main-1) 0%,
-          var(--main-map-border) 100%
+          var(--main-border) 0%,
+          var(--main-map-border) 70%,
+          transparent 100%
         );
 
         &::after {
@@ -129,20 +133,6 @@
       row-gap: 15px;
       width: 240px;
     }
-  }
-
-  .loading {
-    z-index: 1000;
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    background-color: rgba(0, 0, 0, 0.7);
   }
 
   @keyframes bg-enter {

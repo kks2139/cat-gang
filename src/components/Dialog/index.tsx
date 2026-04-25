@@ -15,6 +15,7 @@ interface Props {
   subButtonLable?: string;
   onSubButtonClick?: () => void;
   children?: React.ReactNode;
+  buttonDisabled?: boolean;
 }
 
 export default function Dialog({
@@ -26,6 +27,7 @@ export default function Dialog({
   subButtonLable,
   onSubButtonClick,
   children,
+  buttonDisabled,
 }: Props) {
   return (
     <AnimatePresence>
@@ -44,7 +46,9 @@ export default function Dialog({
             </div>
 
             <div className={cn("buttons")}>
-              <Button onClick={onButtonClick}>{buttonLable}</Button>
+              <Button disabled={buttonDisabled} onClick={onButtonClick}>
+                {buttonLable}
+              </Button>
               {onSubButtonClick && (
                 <Button color="secondary" onClick={onSubButtonClick}>
                   {subButtonLable}

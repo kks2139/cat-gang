@@ -18,7 +18,7 @@ export const useUsersQuery = () => {
       const { data, error } = await supabase
         .from("users")
         .select("*")
-        .eq("id", 1) // 유저 아이디로 교체
+        .eq("id", 1) // TODO: 유저 아이디로 교체
         .single<Result>();
 
       if (error) {

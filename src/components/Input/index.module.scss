@@ -11,15 +11,15 @@
   position: relative;
   width: 100%;
   background-color: #ffffff;
-  border: 3px solid var(--main-border);
+  border: 3px solid var(--main-1);
   border-radius: 18px;
-  box-shadow: 0 2px 0 var(--main-shadow);
+  box-shadow: 0 2px 0 var(--main-border);
   transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   overflow: hidden;
 
   &:focus-within {
     transform: translateY(2px);
-    box-shadow: 0 0 0 var(--main-shadow);
+    box-shadow: 0 0 0 var(--main-border);
     border-color: var(--main-1);
     background-color: #fffcf9;
   }
@@ -51,7 +51,7 @@
     padding: 8px 12px;
     font-size: 18px;
     font-weight: bold;
-    color: var(--main-border);
+    color: var(--main-shadow);
     caret-color: var(--main-1);
     background: transparent;
     border: none;
@@ -60,14 +60,15 @@
     letter-spacing: -0.5px;
 
     &::placeholder {
-      color: #cbd5e1;
-      font-weight: bold;
+      color: #bbbbbb;
+      font-weight: 400;
+      font-size: 14px;
     }
   }
 
   &:has(.field:disabled) {
     opacity: 0.6;
-    background-color: #f1f5f9;
+    filter: grayscale(1);
     cursor: not-allowed;
   }
 }
@@ -75,7 +76,7 @@
 .error-message {
   margin-left: 8px;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: bold;
   color: var(--secondary-2);
   letter-spacing: -0.2px;
   animation: error-appear 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
