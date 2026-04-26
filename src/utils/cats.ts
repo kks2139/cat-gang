@@ -56,10 +56,10 @@ export interface CatInfo {
   };
 }
 
-export const myCat: CatInfo = {
+const myCat: CatInfo = {
   rarity: "common",
-  name: "나비",
-  crying: "냐아앙! (끝까지 간다!)",
+  name: "",
+  crying: "",
   img: ImgCatMe,
   hp: 10,
   punchPower: 6,
@@ -90,6 +90,32 @@ export const myCat: CatInfo = {
     ],
   },
 };
+
+export class MyCat {
+  private static instance: MyCat;
+  private cat: CatInfo;
+
+  private constructor() {
+    this.cat = myCat;
+  }
+
+  static getInstance() {
+    if (!MyCat.instance) {
+      MyCat.instance = new MyCat();
+    }
+
+    return MyCat.instance;
+  }
+
+  getMyCat() {
+    return this.cat;
+  }
+
+  setMyCat(name: string, crying: string) {
+    this.cat.name = name;
+    this.cat.crying = crying;
+  }
+}
 
 export const catCharacters: CatInfo[] = [
   {

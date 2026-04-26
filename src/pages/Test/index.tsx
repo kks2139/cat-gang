@@ -1,11 +1,10 @@
 import {
-  getAnonymousKey,
   getCurrentLocation,
   startUpdateLocation,
 } from "@apps-in-toss/web-framework";
 
 import Button from "@/components/Button";
-import { getCurrentPosition, watchPosition } from "@/utils/native";
+import { getCurrentPosition, UserKey, watchPosition } from "@/utils/native";
 
 export default function Test() {
   return (
@@ -22,28 +21,9 @@ export default function Test() {
       <div>
         <Button
           onClick={async () => {
-            try {
-              const res = await getAnonymousKey();
+            const res = await UserKey.getInstance().getKey();
 
-              if (!res) {
-                alert("지원하지 않는 앱 버전이에요.");
-                return;
-              }
-
-              if (res === "ERROR") {
-                alert("사용자 키 조회 중 오류가 발생했어요.");
-                return;
-              }
-
-              if (res.type === "HASH") {
-                alert(`사용자 키: ${res.hash}`);
-                // 여기에서 사용자 키를 사용해 데이터를 관리할 수 있어요.
-              }
-            } catch (e) {
-              const err = e as Error;
-
-              alert(`${err.name} : ${err.message}`);
-            }
+            alert(res);
           }}
         >
           {"getAnonymousKey()"}

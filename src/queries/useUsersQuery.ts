@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 
+import { MyCat } from "@/utils/cats";
 import { supabase } from "@/utils/db/supabase";
+import { UserKey } from "@/utils/native";
 
 import { QUERY_KEY } from "./config";
 
@@ -12,21 +14,31 @@ interface Result {
 }
 
 export const useUsersQuery = () => {
-  return useQuery({
+  const queryData = useQuery({
     queryKey: [QUERY_KEY.USERS],
     queryFn: async () => {
+      const userKey = await UserKey.getInstance().getKey();
+
       const { data, error } = await supabase
         .from("users")
         .select("*")
-        .eq("id", 1) // TODO: 유저 아이디로 교체
+        .eq("user_id", userKey || "")
         .single<Result>();
 
       if (error) {
-        alert(error);
+        console.error(
+          `${error.message}, ${error.cause}, ${error.name}, ${error.code}`,
+        );
+      }
+
+      if (data) {
+        MyCat.getInstance().setMyCat(data.name, data.crying);
       }
 
       return data;
     },
     staleTime: Infinity,
   });
+
+  return queryData;
 };

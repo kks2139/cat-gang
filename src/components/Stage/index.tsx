@@ -2,7 +2,7 @@ import classNames from "classnames/bind";
 import { useEffect, useState } from "react";
 
 import { useCatStore } from "@/store/cat";
-import { type CatInfo, myCat } from "@/utils/cats";
+import { type CatInfo, MyCat } from "@/utils/cats";
 import { getPostposition, getRandomNumber, wait } from "@/utils/helper";
 
 import Dialog from "../Dialog";
@@ -29,8 +29,7 @@ interface Props {
 
 export default function Stage({ onClose, onWin }: Props) {
   const selectedCat = useCatStore((s) => s.selectedCat);
-
-  const [me] = useState(myCat);
+  const myCat = MyCat.getInstance().getMyCat();
 
   const [dialogInfo, setDialogInfo] = useState<DialogInfo | undefined>({
     side: "enemy",
@@ -248,7 +247,7 @@ export default function Stage({ onClose, onWin }: Props) {
         {/* 나 */}
         <Player
           side="me"
-          cat={me}
+          cat={myCat}
           hp={hpInfo.myHp}
           defense={defenseInfo.myDefense}
           effectType={myEffect}

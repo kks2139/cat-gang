@@ -45,7 +45,6 @@ export default function AddUserDialog({ isShow, onSuccess, onCancel }: Props) {
 
           const [err] = await Promise.all([
             addUser({
-              id: Date.now(),
               catName: inputName,
               crying: inputCrying,
             }),

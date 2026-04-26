@@ -26,3 +26,8 @@ dist-ssr
 # environment variable files
 .env*
 .granite
+
+# Supabase
+supabase/.temp/
+supabase/.branches/
+

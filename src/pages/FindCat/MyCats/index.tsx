@@ -71,7 +71,7 @@ export default function MyCats({ className }: Props) {
                       <span>{crying}</span>
                     </div>
                     <div className={cn("row")}>
-                      <span>잡은 날 :</span>
+                      <span>잡은 날:</span>
                       <span>
                         {format(
                           createdAt || new Date(),

@@ -206,7 +206,7 @@ export default function FindCat() {
                     locale: ko,
                   })}
                   <div>
-                    {format(ownCatInfo.createdAt, "HH:mm:dd", {
+                    {format(ownCatInfo.createdAt, "HH:mm", {
                       locale: ko,
                     })}
                   </div>

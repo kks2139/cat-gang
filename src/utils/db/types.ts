@@ -17,21 +17,21 @@ export type Database = {
       own_cats: {
         Row: {
           cat_name: string
-          created_at: string | null
+          created_at: string
           position: Json
-          user_id: number
+          user_id: string
         }
         Insert: {
           cat_name: string
-          created_at?: string | null
+          created_at?: string
           position: Json
-          user_id: number
+          user_id: string
         }
         Update: {
           cat_name?: string
-          created_at?: string | null
+          created_at?: string
           position?: Json
-          user_id?: number
+          user_id?: string
         }
         Relationships: []
       }
@@ -39,20 +39,20 @@ export type Database = {
         Row: {
           created_at: string
           crying: string
-          id: number
           name: string
+          user_id: string
         }
         Insert: {
           created_at?: string
           crying: string
-          id?: number
           name: string
+          user_id: string
         }
         Update: {
           created_at?: string
           crying?: string
-          id?: number
           name?: string
+          user_id?: string
         }
         Relationships: []
       }

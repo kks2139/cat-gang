@@ -1,5 +1,6 @@
 import {
   Accuracy,
+  getAnonymousKey,
   getCurrentLocation,
   type LocationCoords,
   startUpdateLocation,
@@ -7,6 +8,53 @@ import {
 } from "@apps-in-toss/web-framework";
 
 import { wait } from "./helper";
+
+export class UserKey {
+  private static instance: UserKey;
+  private key: string;
+
+  private constructor() {
+    this.key = "";
+  }
+
+  static getInstance() {
+    if (!UserKey.instance) {
+      UserKey.instance = new UserKey();
+    }
+
+    return UserKey.instance;
+  }
+
+  async getKey() {
+    if (this.key) {
+      return this.key;
+    }
+
+    try {
+      const res = await getAnonymousKey();
+
+      if (!res) {
+        // 지원하지 않는 앱 버전
+        return;
+      }
+
+      if (res === "ERROR") {
+        //사용자 키 조회 중 오류가 발생
+        return;
+      }
+
+      if (res.type === "HASH") {
+        this.key = res.hash;
+
+        return this.key;
+      }
+    } catch (e) {
+      const err = e as Error;
+
+      console.error(`${err.name} : ${err.message}`);
+    }
+  }
+}
 
 export const getCurrentPosition = async () => {
   try {
@@ -37,6 +85,8 @@ export const getCurrentPosition = async () => {
     if (error instanceof StartUpdateLocationPermissionError) {
       console.error("위치 권한이 필요합니다. 설정에서 허용해주세요.");
     }
+
+    console.error("getCurrentLocation 에러:", error);
   }
 };
 
@@ -72,7 +122,7 @@ export const watchPosition = async (
       },
       onError: (error) => {
         if (error instanceof StartUpdateLocationPermissionError) {
-          console.error("watchPosition error:", error);
+          console.error("startUpdateLocation onError:", error);
         }
       },
     });
@@ -83,6 +133,6 @@ export const watchPosition = async (
       }
     };
   } catch (error) {
-    console.error("watchPosition setup error:", error);
+    console.error("startUpdateLocation 에러:", error);
   }
 };
