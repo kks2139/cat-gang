@@ -9,6 +9,7 @@ import Button from "@/components/Button";
 import Dialog from "@/components/Dialog";
 import Map, { type OwnCat } from "@/components/Map";
 import Stage from "@/components/Stage";
+import { useCustomBack } from "@/hooks/useCustomBack";
 import { useCatchCatMutation } from "@/queries/useCatchCatMutation";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
 import { useCatStore } from "@/store/cat";
@@ -48,6 +49,10 @@ export default function FindCat() {
   })) as OwnCat[];
 
   const selectedOwnCat = getCat(ownCatInfo?.name || "");
+
+  useCustomBack(isShowStage, () => {
+    // 뒤로가기 막기
+  });
 
   return (
     <main className={cn("FindCat")}>
@@ -120,7 +125,7 @@ export default function FindCat() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {!!isShowStage && (
+        {isShowStage && (
           <motion.div
             className={cn("img-popup")}
             initial={{ opacity: 0, scale: 0 }}
