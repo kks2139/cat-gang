@@ -15,6 +15,11 @@ export default defineConfig({
       build: "tsc -b && vite build",
     },
   },
-  permissions: [],
+  permissions: [
+    {
+      name: "geolocation",
+      access: "access",
+    },
+  ],
   outdir: "dist",
 });

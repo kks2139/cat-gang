@@ -26,12 +26,11 @@ import { catCharacters } from "@/utils/cats";
 import {
   animateMarker,
   createMarker,
-  getCurrentPosition,
   getRandomLocationInCircle,
   getRandomNumber,
   removeMarkerWithMotion,
-  watchPosition,
 } from "@/utils/helper";
+import { getCurrentPosition, watchPosition } from "@/utils/native";
 
 import Loading from "../Loading";
 import styles from "./index.module.scss";
@@ -148,6 +147,7 @@ function MapContent({
   const drawMe = useCallback(
     async (usePanTo?: boolean) => {
       const coords = await getCurrentPosition();
+
 
       if (!coords) {
         return;
@@ -348,9 +348,12 @@ function MapContent({
 
     isWatchPositionReady.current = true;
 
+    let stopWatch: (() => void) | undefined;
+
     (async () => {
       // 위치변화 감지 시, 다시 그리기
-      const watchId = await watchPosition(() => {
+
+      const stop = await watchPosition(() => {
         if (!myCatRef.current) {
           return;
         }
@@ -358,10 +361,14 @@ function MapContent({
         createMeAndCats(true);
       });
 
-      return () => {
-        navigator.geolocation.clearWatch(watchId || 0);
-      };
+      stopWatch = stop;
     })();
+
+    return () => {
+      if (stopWatch) {
+        stopWatch();
+      }
+    };
   }, [createMeAndCats, isInitLoading]);
 
   useEffect(() => {

@@ -1,11 +1,13 @@
-import { getAnonymousKey } from "@apps-in-toss/web-framework";
-import { useState } from "react";
+import {
+  getAnonymousKey,
+  getCurrentLocation,
+  startUpdateLocation,
+} from "@apps-in-toss/web-framework";
 
 import Button from "@/components/Button";
+import { getCurrentPosition, watchPosition } from "@/utils/native";
 
 export default function Test() {
-  const [anon, setAnon] = useState<unknown>();
-
   return (
     <div
       style={{
@@ -23,18 +25,78 @@ export default function Test() {
             try {
               const res = await getAnonymousKey();
 
-              setAnon(res);
+              if (!res) {
+                alert("지원하지 않는 앱 버전이에요.");
+                return;
+              }
+
+              if (res === "ERROR") {
+                alert("사용자 키 조회 중 오류가 발생했어요.");
+                return;
+              }
+
+              if (res.type === "HASH") {
+                alert(`사용자 키: ${res.hash}`);
+                // 여기에서 사용자 키를 사용해 데이터를 관리할 수 있어요.
+              }
             } catch (e) {
               const err = e as Error;
 
-              setAnon(`${err.name} : ${err.message}`);
+              alert(`${err.name} : ${err.message}`);
             }
           }}
         >
           {"getAnonymousKey()"}
         </Button>
 
-        <div>{anon as React.ReactNode}</div>
+        <Button
+          onClick={async () => {
+            const res = await getCurrentLocation.getPermission();
+
+            alert(res);
+
+            getCurrentLocation.openPermissionDialog();
+          }}
+        >
+          {"getCurrentLocation permission"}
+        </Button>
+
+        <Button
+          onClick={async () => {
+            const res = await startUpdateLocation.getPermission();
+
+            alert(res);
+
+            startUpdateLocation.openPermissionDialog();
+          }}
+        >
+          {"startUpdateLocation permission"}
+        </Button>
+
+        <Button
+          onClick={async () => {
+            const res = await getCurrentPosition();
+
+            alert(`${res?.latitude}, ${res?.longitude}`);
+          }}
+        >
+          {"getCurrentLocation()"}
+        </Button>
+
+        <Button
+          onClick={async () => {
+            const cancelWatch = await watchPosition((coords) => {
+              alert(`${coords.latitude}, ${coords.longitude}`);
+            });
+
+            setTimeout(() => {
+              // cancelWatch?.();
+              console.log(cancelWatch);
+            }, 2000);
+          }}
+        >
+          {"watchPosition()"}
+        </Button>
       </div>
     </div>
   );
