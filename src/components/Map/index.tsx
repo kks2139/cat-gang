@@ -148,7 +148,6 @@ function MapContent({
     async (usePanTo?: boolean) => {
       const coords = await getCurrentPosition();
 
-
       if (!coords) {
         return;
       }

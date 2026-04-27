@@ -134,7 +134,12 @@ export default function FindCat() {
             transition={{ duration: 0.2 }}
           >
             <Stage
-              onClose={() => {
+              onRun={() => {
+                setIsBattleOn(false);
+                setIsShowStage(false);
+              }}
+              onLose={() => {
+                setIsBattleOn(false);
                 setIsShowStage(false);
               }}
               onWin={(cat) => {

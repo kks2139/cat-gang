@@ -56,7 +56,7 @@ export interface CatInfo {
   };
 }
 
-const myCat: CatInfo = {
+export const myCat: CatInfo = {
   rarity: "common",
   name: "",
   crying: "",

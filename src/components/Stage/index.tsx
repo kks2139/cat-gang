@@ -23,11 +23,12 @@ const PROVOKE_DURATION = 1;
 const DELAY_OF_ACTIONS = 0.5;
 
 interface Props {
-  onClose?: () => void;
   onWin: (cat: CatInfo) => void;
+  onLose?: () => void;
+  onRun?: () => void;
 }
 
-export default function Stage({ onClose, onWin }: Props) {
+export default function Stage({ onWin, onLose, onRun }: Props) {
   const selectedCat = useCatStore((s) => s.selectedCat);
   const myCat = MyCat.getInstance().getMyCat();
 
@@ -437,7 +438,7 @@ export default function Stage({ onClose, onWin }: Props) {
                   setIsShowFinishPopup(true);
                   break;
                 case "run":
-                  onClose?.();
+                  onRun?.();
                   break;
               }
 
@@ -460,7 +461,7 @@ export default function Stage({ onClose, onWin }: Props) {
           if (isVictory && selectedCat) {
             onWin(selectedCat);
           } else {
-            onClose?.();
+            onLose?.();
           }
         }}
       />
