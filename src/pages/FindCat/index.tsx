@@ -31,7 +31,9 @@ const cn = classNames.bind(styles);
 export default function FindCat() {
   const navigate = useNavigate();
 
-  const { setIsStopFocusMe, setIsBattleOn } = useViewStore((s) => s.actions);
+  const { setIsStopFocusMe, setIsBattleOn, addToastMessage } = useViewStore(
+    (s) => s.actions,
+  );
   const isShowStage = useCatStore((s) => s.isShowStage);
   const { setSelectedCat, setIsShowStage, setClickedOwnCat } = useCatStore(
     (s) => s.actions,
@@ -53,8 +55,18 @@ export default function FindCat() {
 
   const selectedOwnCat = getCat(ownCatInfo?.name || "");
 
-  useCustomBack(isShowStage, () => {
-    // 뒤로가기 막기
+  useCustomBack(isShowStage || isShowMyCatPopup, () => {
+    if (isShowStage) {
+      addToastMessage({ message: "어딜가냐옹" });
+      return;
+    }
+
+    if (isShowMyCatPopup) {
+      setIsShowMyCatPopup(false);
+      return;
+    }
+
+    navigate(-1);
   });
 
   return (
@@ -95,7 +107,7 @@ export default function FindCat() {
       </div>
 
       <AnimatePresence>
-        {!!isShowMyCatPopup && (
+        {isShowMyCatPopup && (
           <motion.div
             className={cn("my-cats-modal")}
             initial={{ opacity: 0 }}
