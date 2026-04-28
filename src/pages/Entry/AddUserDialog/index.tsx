@@ -51,8 +51,12 @@ export default function AddUserDialog({ isShow, onSuccess, onCancel }: Props) {
             wait(1000),
           ]);
 
-          if (err?.code === "23505") {
-            setInputErrorMessage("이미 있다옹.");
+          if (err) {
+            if (err.code === "23505") {
+              setInputErrorMessage("이미 있다옹.");
+            } else {
+              setInputErrorMessage("문제가 발생했다옹.");
+            }
           } else {
             onSuccess();
           }

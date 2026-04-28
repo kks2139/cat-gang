@@ -23,7 +23,7 @@ export const useUsersQuery = () => {
         .from("users")
         .select("*")
         .eq("user_id", userKey || "")
-        .single<Result>();
+        .maybeSingle<Result>();
 
       if (error) {
         console.error(
@@ -38,6 +38,7 @@ export const useUsersQuery = () => {
       return data;
     },
     staleTime: Infinity,
+    retry: false,
   });
 
   return queryData;

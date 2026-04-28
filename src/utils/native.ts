@@ -7,6 +7,7 @@ import {
   StartUpdateLocationPermissionError,
 } from "@apps-in-toss/web-framework";
 
+import { isDev } from "./constants";
 import { wait } from "./helper";
 
 export class UserKey {
@@ -28,6 +29,10 @@ export class UserKey {
   async getKey() {
     if (this.key) {
       return this.key;
+    }
+
+    if (isDev) {
+      return "test";
     }
 
     try {
@@ -56,7 +61,32 @@ export class UserKey {
   }
 }
 
+const getGeolocation = () => {
+  return new Promise<LocationCoords | undefined>((res) => {
+    navigator.geolocation.getCurrentPosition(
+      (e) => {
+        const { latitude, longitude } = e.coords;
+
+        res({
+          latitude,
+          longitude,
+          altitude: 0,
+          accuracy: 0,
+          altitudeAccuracy: 0,
+          heading: 0,
+        });
+      },
+      () => res(undefined),
+      { enableHighAccuracy: true },
+    );
+  });
+};
+
 export const getCurrentPosition = async () => {
+  if (isDev) {
+    return await getGeolocation();
+  }
+
   try {
     let status = await getCurrentLocation.getPermission();
 

@@ -1,10 +1,13 @@
+import { closeView } from "@apps-in-toss/web-framework";
 import classNames from "classnames/bind";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import TitleCatImg from "@/assets/img/title/main-title-cat.png";
 import Button from "@/components/Button";
+import Dialog from "@/components/Dialog";
 import Loading from "@/components/Loading";
+import { useCheckKeypad } from "@/hooks/useCheckKeypad";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
 import { useUsersQuery } from "@/queries/useUsersQuery";
 import { useViewStore } from "@/store/view";
@@ -23,7 +26,25 @@ export default function Entry() {
   useMyCatsQuery();
 
   // TODO: 토스 아이디로 유저 정보 가져오기
-  const { data: user, isLoading: isUserLoading } = useUsersQuery();
+  const {
+    data: user,
+    isError,
+    isLoading: isUserLoading,
+    refetch,
+  } = useUsersQuery();
+
+  const titleRef = useRef<HTMLDivElement>(null);
+
+  const { isKeypadOpen } = useCheckKeypad();
+
+  useEffect(() => {
+    if (isKeypadOpen) {
+      titleRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [isKeypadOpen]);
 
   const startGame = () => {
     setIsStopFocusMe(false);
@@ -36,7 +57,7 @@ export default function Entry() {
         <img src={TitleCatImg} width={100} height={100} alt="title-cat" />
       </div>
 
-      {isUserLoading ? (
+      {isUserLoading || (!user && isError) ? (
         <div className={cn("init-loading")}>
           <Loading noBackground />
         </div>
@@ -53,7 +74,7 @@ export default function Entry() {
             </div>
           ))}
 
-          <div className={cn("title")}>
+          <div ref={titleRef} className={cn("title")}>
             <h1>냥만시대</h1>
           </div>
 
@@ -89,6 +110,20 @@ export default function Entry() {
         onSuccess={startGame}
         onCancel={() => {
           setIsShowNewCatDialog(false);
+        }}
+      />
+
+      <Dialog
+        isShow={isError}
+        title="로딩 실패"
+        subTitle="문제가 발생했다옹"
+        buttonLable="재시도"
+        subButtonLable="종료"
+        onButtonClick={() => {
+          refetch();
+        }}
+        onSubButtonClick={() => {
+          closeView();
         }}
       />
     </main>
