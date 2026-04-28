@@ -1,3 +1,4 @@
+import { generateHapticFeedback } from "@apps-in-toss/web-framework";
 import classNames from "classnames/bind";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -32,11 +33,13 @@ export default function FindCat() {
 
   const { setIsStopFocusMe, setIsBattleOn } = useViewStore((s) => s.actions);
   const isShowStage = useCatStore((s) => s.isShowStage);
-  const { setSelectedCat, setIsShowStage } = useCatStore((s) => s.actions);
+  const { setSelectedCat, setIsShowStage, setClickedOwnCat } = useCatStore(
+    (s) => s.actions,
+  );
 
   const [isShowVictoryDialog, setIsShowVictoryDialog] = useState(false);
   const [catchedCat, setCatchedCat] = useState<CatInfo>();
-  const [selectedMenu, setSelectedMenu] = useState<"catched" | "all">();
+  const [isShowMyCatPopup, setIsShowMyCatPopup] = useState(false);
   const [ownCatInfo, setOwnCatInfo] = useState<OwnCat>();
 
   const { mutate: postCatMutate } = useCatchCatMutation();
@@ -61,9 +64,10 @@ export default function FindCat() {
         ownCats={ownCats}
         onClickCat={() => {
           setIsShowStage(true);
-          setSelectedMenu(undefined);
           setIsStopFocusMe(true);
           setIsBattleOn(true);
+
+          generateHapticFeedback({ type: "wiggle" });
         }}
         onClickOwnCat={(cat) => {
           setOwnCatInfo(cat);
@@ -75,7 +79,7 @@ export default function FindCat() {
           <Button
             onClick={() => {
               setIsStopFocusMe(true);
-              setSelectedMenu("catched");
+              setIsShowMyCatPopup(true);
             }}
           >
             내 부하
@@ -91,33 +95,49 @@ export default function FindCat() {
       </div>
 
       <AnimatePresence>
-        {!!selectedMenu && (
+        {!!isShowMyCatPopup && (
           <motion.div
             className={cn("my-cats-modal")}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
+            onClick={(e) => {
+              const target = e.target as HTMLElement;
+              const el = target.closest("[data-bottom-sheet]");
+
+              if (!el) {
+                setIsShowMyCatPopup(false);
+              }
+            }}
           >
             <motion.div
+              data-bottom-sheet
               className={cn("wrapper")}
-              initial={{ opacity: 0, scale: 0.7 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.7 }}
-              transition={{ duration: 0.2 }}
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ duration: 0.3 }}
             >
               <div className={cn("content")}>
                 <div className={cn("close-button")}>
                   <Button
                     size="small"
                     onClick={() => {
-                      setSelectedMenu(undefined);
+                      setIsShowMyCatPopup(false);
                     }}
                   >
                     ×
                   </Button>
                 </div>
-                <MyCats className={cn("cats")} />
+                <MyCats
+                  className={cn("cats")}
+                  onClickCat={(info) => {
+                    setClickedOwnCat(info);
+
+                    setTimeout(() => setClickedOwnCat(undefined));
+                  }}
+                />
               </div>
             </motion.div>
           </motion.div>

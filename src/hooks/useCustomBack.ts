@@ -1,11 +1,11 @@
 import { graniteEvent } from "@apps-in-toss/web-framework";
 import { useEffect } from "react";
 
-import { isDev } from "@/utils/constants";
+import { operEnv } from "@/utils/constants";
 
 export const useCustomBack = (enabled: boolean, callback: () => void) => {
   useEffect(() => {
-    if (!enabled || isDev) {
+    if (!enabled || !operEnv) {
       return;
     }
 

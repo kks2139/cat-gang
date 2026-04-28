@@ -7,7 +7,7 @@ import {
   StartUpdateLocationPermissionError,
 } from "@apps-in-toss/web-framework";
 
-import { isDev } from "./constants";
+import { operEnv } from "./constants";
 import { wait } from "./helper";
 
 export class UserKey {
@@ -31,7 +31,7 @@ export class UserKey {
       return this.key;
     }
 
-    if (isDev) {
+    if (!operEnv) {
       return "test";
     }
 
@@ -83,7 +83,7 @@ const getGeolocation = () => {
 };
 
 export const getCurrentPosition = async () => {
-  if (isDev) {
+  if (!operEnv) {
     return await getGeolocation();
   }
 

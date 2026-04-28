@@ -26,6 +26,7 @@ import { catCharacters } from "@/utils/cats";
 import {
   animateMarker,
   createMarker,
+  getCatchedCatElement,
   getRandomLocationInCircle,
   getRandomNumber,
   removeMarkerWithMotion,
@@ -43,6 +44,7 @@ export const MAX_ZOOM_LEVEL = 19;
 export const MIN_ZOOM_LEVEL = 17;
 export const INIT_ZOOM_LEVEL = 19;
 const BOUNDARY_METER_OF_ME = 50;
+const OWN_CAT_KEY_TOKEN = "_";
 
 export interface OwnCat {
   name: string;
@@ -82,6 +84,7 @@ function MapContent({
   isBattleOnRef.current = isBattleOn;
 
   const isShowStage = useCatStore((s) => s.isShowStage);
+  const clickedOwnCat = useCatStore((s) => s.clickedOwnCat);
   const { setSelectedCat } = useCatStore((s) => s.actions);
 
   const [isInitLoading, setIsInitLoading] = useState(false);
@@ -281,7 +284,7 @@ function MapContent({
 
     // 2. 추가 대상: 현재 마커 객체에 없는 고양이들만 새로 생성
     ownCats?.forEach((cat) => {
-      const key = `${cat.name}_${cat.createdAt}`;
+      const key = `${cat.name}${OWN_CAT_KEY_TOKEN}${cat.createdAt}`;
 
       if (!ownCatMarkersRef.current[key]) {
         const { position } = cat;
@@ -310,6 +313,48 @@ function MapContent({
     },
     [drawCats, drawMe],
   );
+
+  useEffect(() => {
+    if (clickedOwnCat) {
+      const cat = Object.entries(ownCatMarkersRef.current).find(
+        ([key, marker]) => {
+          const { lat, lng } = marker.getLatLng();
+
+          return (
+            key.includes(clickedOwnCat.createdAt) &&
+            lat === clickedOwnCat.lat &&
+            lng === clickedOwnCat.lng
+          );
+        },
+      );
+
+      if (cat) {
+        const [key, marker] = cat;
+        const catName = key.split(OWN_CAT_KEY_TOKEN)[0];
+        const markerElement = marker.getElement();
+        const catchedCat = markerElement?.querySelector("[data-catched-cat]");
+
+        if (!catName || catchedCat) {
+          return;
+        }
+
+        const catData = catCharacters.find(({ name }) => name === catName);
+
+        if (catData) {
+          const catElement = getCatchedCatElement(
+            catData.img,
+            catData.dialog.greeting[getRandomNumber(3)],
+          );
+
+          markerElement?.appendChild(catElement);
+
+          setTimeout(() => {
+            markerElement?.removeChild(catElement);
+          }, 2000);
+        }
+      }
+    }
+  }, [clickedOwnCat]);
 
   useEffect(() => {
     if (!isRendered.current) {

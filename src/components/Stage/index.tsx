@@ -1,3 +1,4 @@
+import { generateHapticFeedback } from "@apps-in-toss/web-framework";
 import classNames from "classnames/bind";
 import { useEffect, useState } from "react";
 
@@ -101,6 +102,7 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
 
       setPunchedBy("me");
       setTimeout(() => setPunchedBy(undefined), 1000);
+      generateHapticFeedback({ type: "tickMedium" });
 
       await wait(actionDelay);
 
@@ -114,6 +116,7 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
 
       setPunchedBy("enemy");
       setTimeout(() => setPunchedBy(undefined), 1000);
+      generateHapticFeedback({ type: "tickMedium" });
 
       await wait(actionDelay);
 

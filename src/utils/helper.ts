@@ -267,3 +267,21 @@ export const safeText = (input: string): string => {
 
   return cleaned.slice(0, 10);
 };
+
+export const getCatchedCatElement = (imgUrl: string, greet: string) => {
+  const container = document.createElement("div");
+  container.className = "click-catched-cat";
+  container.dataset.catchedCat = "ture";
+
+  const comment = document.createElement("div");
+  comment.className = "comment";
+  comment.textContent = greet;
+
+  const img = document.createElement("img");
+  img.src = imgUrl;
+
+  container.appendChild(comment);
+  container.appendChild(img);
+
+  return container;
+};

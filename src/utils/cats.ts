@@ -53,6 +53,7 @@ export interface CatInfo {
     seduce: string; // 유혹공격
     punch: string[]; // 펀치공격
     run: string[]; // 도망
+    greeting: string[]; // 인사말
   };
 }
 
@@ -88,6 +89,7 @@ export const myCat: CatInfo = {
       "승부는 뒤로 미루마. 주인공의 반격은 이제부터 시작이니까!",
       "이, 이건 도망이 아니야! 더 높은 도약을 위한 추진력을 얻으려는 거다!",
     ],
+    greeting: [],
   },
 };
 
@@ -128,6 +130,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "야옹! 냐앙",
+      greeting: [
+        "부르셨습니까, 형님!",
+        "종로 바닥은 제가 지키고 있습니다.",
+        "식사는 하셨습니까, 형님!",
+      ],
       meet: [
         "사딸라로 협상해주지. 싫다면 주먹뿐이다.",
         "종로 바닥에 발을 들였으면 각오는 했겠지?",
@@ -163,6 +170,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "애오오옹냥",
+      greeting: [
+        "형님, 내래 왔시오.",
+        "기케 오실 줄 알았음둥.",
+        "무슨 일입네까, 형님?",
+      ],
       meet: [
         "내래 이북에서 온 시라소니야. 맛 좀 볼라우?",
         "함 붙어보자우, 누가 진짜 호랭이인지!",
@@ -198,6 +210,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "끄응, 야옹",
+      greeting: [
+        "어, 형님 오셨어요?",
+        "식사는 하셨습니까?",
+        "진실의 방 청소해놨습니다.",
+      ],
       meet: [
         "어, 왔니? 진실의 방으로 갈까?",
         "나 아트박스 사장인데, 너 귀엽게 생겼다?",
@@ -233,6 +250,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "가오! 냐앙",
+      greeting: [
+        "가오 있게 인사드립니다!",
+        "형님, 오늘 좀 멋지십니다?",
+        "포스 여전하시네요, 형님.",
+      ],
       meet: [
         "어이, 가오가이가 왔다. 쫄았냐?",
         "가오 떨어지게 말 길게 안 한다. 덤벼.",
@@ -268,6 +290,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "rrr.. 야옹",
+      greeting: [
+        "Yo, 형님. 왓썹?",
+        "식사는 리듬 있게 하셨습니까?",
+        "오늘 비트 죽이네요, 형님.",
+      ],
       meet: [
         "리듬 타기 전에 한 대 맞을래?",
         "네 펀치는 비트가 없어. 내가 가르쳐주지.",
@@ -303,6 +330,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "하암, 냐앙",
+      greeting: [
+        "형님... 하암... 오셨어요?",
+        "자고 싶다... 냥.",
+        "형님도 한숨 주무실래요?",
+      ],
       meet: [
         "아... 졸린데 그냥 가면 안 돼?",
         "하암... 빨리 끝내고 자게 해줘.",
@@ -338,6 +370,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "크르릉, 야옹",
+      greeting: [
+        "형님, 곽철용이 소식 들었습니까?",
+        "형님께 거수경례!",
+        "무슨 일로 호출하셨습니까?",
+      ],
       meet: [
         "너, 고니라는 놈 아니? 곽철용이 죽었어... 아주 처참하게 죽었다고.",
         "신분증 좀 볼까? 아, 주먹으로 확인하자고?",
@@ -373,6 +410,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "끄아앙! 냐옹",
+      greeting: [
+        "우미관은 평안합니다, 형님!",
+        "부르셨습니까, 우미관 대장 구마적입니다.",
+        "식사는 하셨습니까, 형님!",
+      ],
       meet: [
         "여기가 어디라고 발을 들여? 우미관이다!",
         "종로의 왕이 누군지 다시 각인시켜 주마.",
@@ -408,6 +450,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "뇸뇸, 야옹",
+      greeting: [
+        "형님, 츄르 하나 드릴까요?",
+        "뇸뇸... 형님 오셨습니까?",
+        "배고픕니다, 형님!",
+      ],
       meet: [
         "맛있는 냄새 나는데? 너 혹시 간식 있니?",
         "배고파서 예민해. 츄르 안 주면 팬다!",
@@ -443,6 +490,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "불쉿! 냐앙",
+      greeting: [
+        "형님, 누가 또 Bullsh*t합니까?",
+        "식사는 든든하게 하셨습니까, 형님!",
+        "뭉치, 인사 올립니다!",
+      ],
       meet: [
         "Bullsh*t! 다 비켜, 뭉치가 간다!",
         "닥치고 주먹이나 받아! 다른 건 다 필요 없어!",
@@ -478,6 +530,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "푸르르 냐옹",
+      greeting: [
+        "Yo, Big 형님!",
+        "식사 하셨습니까? God Damn!",
+        "형님 텐션 죽이네요!",
+      ],
       meet: [
         "Yo, I'm 죽이는 무게! 느낌 좀 있나?",
         "네 무게감으론 내 상대가 안 돼. 갓댐!",
@@ -513,6 +570,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "애오옹, 야옹",
+      greeting: [
+        "형님을 위해 일어서겠습니다!",
+        "대의를 명하시겠습니까?",
+        "준비는 끝났습니다, 형님!",
+      ],
       meet: [
         "모든 고양이여, 나를 따르라! 반역은 용납 못 한다!",
         "감히 내 권위에 도전하려느냐? 무릎 꿇어라!",
@@ -548,6 +610,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "바삭, 냐앙",
+      greeting: [
+        "형님, 고소하게 오셨습니까?",
+        "짠맛 제대로 준비했습니다, 형님!",
+        "오늘도 바삭하게 모시겠습니다.",
+      ],
       meet: [
         "겉은 바삭하고 속은 촉촉한 무서움 맛을 보여주지.",
         "고소한 냄새에 취해서 방심하면 끝장이야.",
@@ -583,6 +650,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "메-에스트로옹",
+      greeting: [
+        "덕소에서 인사 올립니다, 형님!",
+        "마에스트로, 형님 곁에 왔습니다.",
+        "오늘 박자 좋네요, 형님.",
+      ],
       meet: [
         "덕소에서 여기까지 왔다. 리듬 좀 타볼까?",
         "내 마에스트로의 지휘봉(앞발)은 매섭다구.",
@@ -608,9 +680,6 @@ export const catCharacters: CatInfo[] = [
       ],
     },
   },
-
-  // +++++++++++++++++++++++++++++++++
-
   {
     rarity: "unique",
     name: "하야시",
@@ -621,6 +690,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "혼또니, 냐앙",
+      greeting: [
+        "오랜만입네다, 형님.",
+        "형님, 식사는 하셨습네까?",
+        "명령만 내리시우.",
+      ],
       meet: [
         "긴자에서 온 하야시다. 이 구역의 질서를 바로잡으러 왔지.",
         "예의 없는 고양이는 싫어한다. 주먹으로 예법을 가르쳐주마.",
@@ -656,6 +730,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "샤아악, 냐앙",
+      greeting: [
+        "부르셨습니까, 형님!",
+        "연장 챙겨왔습니다, 형님.",
+        "종로 소식 궁금하십니까?",
+      ],
       meet: [
         "종로엔 주먹만 있는 게 아니야. 날카로운 발톱도 있지.",
         "내 앞발은 두 개다. 그래서 쌍칼이지.",
@@ -691,6 +770,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "번쩍, 냐앙",
+      greeting: [
+        "빛의 속도로 달려왔습니다, 형님!",
+        "형님, 식사 벌써 끝내셨습니까?",
+        "부르셨습니까!",
+      ],
       meet: [
         "내가 왜 번개인 줄 알아? 한 번 보고 말 거거든.",
         "눈 깜빡이지 마. 그 사이에 넌 누워있을 테니까.",
@@ -726,6 +810,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "그오오, 냐앙",
+      greeting: [
+        "형님, 기가 느껴지십니까?",
+        "각성하고 돌아왔습니다, 형님.",
+        "오늘도 우주는 평안합니까?",
+      ],
       meet: [
         "드디어... 내 안의 흑염룡(흑묘)이 깨어났다.",
         "이 모습이 된 이상, 곱게 돌아가긴 힘들 거다.",
@@ -761,6 +850,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "조센징, 냐앙",
+      greeting: [
+        "형님, 사상 검증 끝났습니까?",
+        "긴또깡 소식은 제가 맡겠습니다.",
+        "충성! 형님!",
+      ],
       meet: [
         "김두한! 아니, 너 김두한 친구지?!",
         "순순히 츄르를 내놓으면 목숨만은 살려주지.",
@@ -796,6 +890,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "쉿, 냐앙",
+      greeting: [
+        "형님, 독기는 충분합니다.",
+        "조용히 처리할까요, 형님?",
+        "식사는 조용히 하셨습니까?",
+      ],
       meet: [
         "한 번 물면 절대 놓지 않는다. 그게 내 스타일이지.",
         "내 주먹엔 독이 서려 있다. 스치기만 해도 아플 걸?",
@@ -827,6 +926,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "안되겠소, 냐앙",
+      greeting: [
+        "동무 형님, 잘 오셨소!",
+        "안되겠소, 형님 인사 좀 받으시오!",
+        "식사는 혁명적으로 하셨습니까?",
+      ],
       meet: [
         "안되겠소, 쏩시다! 아니, 때립시다!",
         "상하이에서 온 매운맛을 보여주지.",
@@ -858,6 +962,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "왈왈, 냐앙",
+      greeting: [
+        "형님! 꼬리 치러 왔습니다!",
+        "식사 하셨습니까? 멍냥!",
+        "무슨 일이십니까, 형님!",
+      ],
       meet: [
         "이름이 왜 개고기냐고? 끈질기게 물고 늘어지니까!",
         "난 한 놈만 팬다. 그게 너야.",
@@ -893,6 +1002,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "으아아, 냐앙",
+      greeting: [
+        "부르셨습니까, 형님!",
+        "종로 소식 전해드립니다.",
+        "식사는 시원하게 하셨습니까?",
+      ],
       meet: [
         "구마적은 갔다. 이제 내가 새로운 왕이다!",
         "학생 주제에 까불지 마라. 아, 난 고양이지?",
@@ -924,6 +1038,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "삐비빅, 냐앙",
+      greeting: [
+        "전파로 인사드립니다, 형님.",
+        "형님의 아우라가 보입니다.",
+        "우주의 기운이 형님께!",
+      ],
       meet: [
         "난 손을 쓰지 않고도 널 이길 수 있다.",
         "우주의 기운이 내 앞발에 집중되고 있어.",
@@ -955,6 +1074,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "애오옹, 냐앙",
+      greeting: [
+        "명동에서 인사 올립니다, 형님.",
+        "품격 있게 오셨군요, 형님.",
+        "식사 대접하겠습니다, 형님.",
+      ],
       meet: [
         "명동의 백호, 이화룡이다.",
         "품격 있게 싸워보자고. 난 신사거든.",
@@ -986,6 +1110,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "어서오세냥, 냐앙",
+      greeting: [
+        "어서 오십시오, 형님! 1+1입니다!",
+        "시급 올랐습니다, 형님!",
+        "부르셨습니까, 알바생입니다!",
+      ],
       meet: [
         "아, 손님! 대결은 메뉴에 없는데요?",
         "빨리 때리고 퇴근하고 싶습니다.",
@@ -1017,6 +1146,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "악! 악! 냐앙",
+      greeting: [
+        "형님! 인사 실시! 악!",
+        "훈련 이상 무! 형님!",
+        "식사 든든히 했습니다! 악!",
+      ],
       meet: [
         "102번 교육생 고양이! 전투 준비 완료!",
         "목소리 봐라? 다시 한다! 야옹!",
@@ -1048,6 +1182,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "흐흐흐, 냐앙",
+      greeting: [
+        "형님, 모든 게 계획대로입니다.",
+        "다음 시나리오 보시겠습니까?",
+        "식사도 제 설계 안에 있습니다.",
+      ],
       meet: [
         "이 모든 대결은 나의 시나리오대로다.",
         "네가 여기까지 올 줄 알고 있었지.",
@@ -1079,6 +1218,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "슉슉, 냐앙",
+      greeting: [
+        "가드 올리고 인사드립니다, 형님!",
+        "식사 하셨습니까? 원투!",
+        "컨디션 최고입니다, 형님!",
+      ],
       meet: [
         "왼발은 거들 뿐. 오른발은 핵주먹이지.",
         "원투! 원투! 넌 이미 가드 불능이다.",
@@ -1110,6 +1254,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "따끈따끈, 냐앙",
+      greeting: [
+        "형님, 따끈하게 인사 올립니다!",
+        "식사 전이시면 절 드시겠습니까?",
+        "부르셨습니까, 붕어빵입니다!",
+      ],
       meet: [
         "머리부터 먹을래, 꼬리부터 먹을래?",
         "내 안에는 달콤한 팥 대신 독기가 들어있지.",
@@ -1141,6 +1290,11 @@ export const catCharacters: CatInfo[] = [
     defense: 2,
     dialog: {
       chat: "어흥, 냐앙",
+      greeting: [
+        "형님, 금 가져왔습니다 뚝딱!",
+        "부르셨습니까, 형님 도깨비입니다!",
+        "식사는 메밀묵으로 하셨습니까?",
+      ],
       meet: [
         "고양이 방망이 맛 좀 볼테냐?",
         "장난질치러 왔다. 엉덩이 조심해라!",

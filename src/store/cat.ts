@@ -1,31 +1,42 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
+import type { CatCatched } from "@/pages/FindCat/MyCats";
+
 import { type CatInfo } from "../utils/cats";
 
 interface CatStore {
-  selectedCat?: CatInfo;
   isShowStage: boolean;
+  selectedCat?: CatInfo;
+  clickedOwnCat?: CatCatched;
   actions: {
-    setSelectedCat: (value: CatInfo | undefined) => void;
     setIsShowStage: (value: boolean) => void;
+    setSelectedCat: (value: CatInfo | undefined) => void;
+    setClickedOwnCat: (value: CatCatched | undefined) => void;
   };
 }
 
 export const useCatStore = create<CatStore>()(
   immer((set) => ({
-    selectedCat: undefined,
     isShowStage: false,
+    selectedCat: undefined,
+    clickedOwnCat: undefined,
     actions: {
+      setIsShowStage(value) {
+        set((state) => {
+          state.isShowStage = value;
+        });
+      },
       setSelectedCat(value) {
         set((state) => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           state.selectedCat = value as any;
         });
       },
-      setIsShowStage(value) {
+      setClickedOwnCat(value) {
         set((state) => {
-          state.isShowStage = value;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          state.clickedOwnCat = value as any;
         });
       },
     },

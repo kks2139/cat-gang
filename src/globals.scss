@@ -793,3 +793,101 @@ input {
   justify-content: center;
   align-items: center;
 }
+
+// 부하 목록에서 고양이 클릭 시 효과
+.click-catched-cat {
+  z-index: 9999;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 120px;
+  animation: fade-in-out 2s forwards;
+
+  .comment {
+    position: absolute;
+    top: -40px;
+    left: -55px;
+    font-weight: bold;
+    font-size: 15px;
+    color: var(--main-border);
+    white-space: nowrap;
+    border-radius: 50px;
+    background-color: white;
+    box-shadow: 0 0 10px 10px white;
+
+    // 외치는 효과 애니메이션 적용
+    animation: shout-spread 2s ease-out forwards;
+  }
+
+  img {
+    position: absolute;
+    top: -20px;
+    left: -50px;
+    width: 100% !important;
+    transform-origin: bottom center;
+    animation: hello-swing 2s ease-in-out infinite;
+  }
+
+  // 그림자
+  &::after {
+    content: "";
+    z-index: 1;
+    position: absolute;
+    top: 85px;
+    left: -13px;
+    width: 45px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: hsla(0, 0%, 0%, 0.4);
+    filter: blur(2px);
+  }
+
+  @keyframes hello-swing {
+    0% {
+      transform: rotate(0deg);
+    }
+    20% {
+      transform: rotate(-15deg);
+    }
+    40% {
+      transform: rotate(10deg);
+    }
+    60% {
+      transform: rotate(-10deg);
+    }
+    80% {
+      transform: rotate(5deg);
+    }
+    100% {
+      transform: rotate(0deg);
+    }
+  }
+
+  @keyframes shout-spread {
+    0% {
+      opacity: 0;
+      transform: scale(0.5) translateY(10px);
+    }
+    20%,
+    80% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.5) translateY(-20px);
+    }
+  }
+
+  @keyframes fade-in-out {
+    0% {
+      opacity: 0;
+    }
+    20%,
+    80% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+}
