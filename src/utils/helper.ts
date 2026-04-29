@@ -101,7 +101,13 @@ export const createMarker = ({
   // 최상위 컨테이너
   const container = document.createElement("div");
   container.dataset.status = "none";
-  container.classList.add("marker-container");
+  container.dataset.markerContainer = "true";
+  container.className = "marker-container";
+
+  // 클릭 시 골골대는 모션 적용을 위함
+  const golgolWrapper = document.createElement("div");
+  golgolWrapper.dataset.golgol = "true";
+  golgolWrapper.className = "golgol";
 
   if (imgUrl) {
     // 고양이 이미지
@@ -109,7 +115,12 @@ export const createMarker = ({
     catImg.dataset.catImg = "true";
     catImg.src = imgUrl;
 
-    container.appendChild(catImg);
+    if (type === "me") {
+      container.appendChild(golgolWrapper);
+      golgolWrapper.appendChild(catImg);
+    } else {
+      container.appendChild(catImg);
+    }
   }
 
   // 내 고양이일때
@@ -122,12 +133,13 @@ export const createMarker = ({
     const arrow = document.createElement("div");
     arrow.className = "arrow-3d";
 
-    const tip = document.createElement("div");
-    tip.className = "tip";
+    const speak = document.createElement("div");
+    speak.dataset.speak = "true";
+    speak.className = "speak";
 
-    arrow.appendChild(tip);
     wrapper.appendChild(arrow);
     container.appendChild(wrapper);
+    container.appendChild(speak);
   }
 
   // 잡은 고양이일때(깃발)

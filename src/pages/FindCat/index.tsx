@@ -40,8 +40,8 @@ export default function FindCat() {
   );
 
   const [isShowVictoryDialog, setIsShowVictoryDialog] = useState(false);
-  const [catchedCat, setCatchedCat] = useState<CatInfo>();
   const [isShowMyCatPopup, setIsShowMyCatPopup] = useState(false);
+  const [catchedCat, setCatchedCat] = useState<CatInfo>();
   const [ownCatInfo, setOwnCatInfo] = useState<OwnCat>();
 
   const { mutate: postCatMutate } = useCatchCatMutation();
@@ -55,7 +55,7 @@ export default function FindCat() {
 
   const selectedOwnCat = getCat(ownCatInfo?.name || "");
 
-  useCustomBack(isShowStage || isShowMyCatPopup, () => {
+  useCustomBack(true, () => {
     if (isShowStage) {
       addToastMessage({ message: "어딜가냐옹" });
       return;
@@ -63,6 +63,11 @@ export default function FindCat() {
 
     if (isShowMyCatPopup) {
       setIsShowMyCatPopup(false);
+      return;
+    }
+
+    if (isShowVictoryDialog) {
+      setIsShowVictoryDialog(false);
       return;
     }
 
@@ -142,12 +147,13 @@ export default function FindCat() {
                     ×
                   </Button>
                 </div>
+
                 <MyCats
                   className={cn("cats")}
                   onClickCat={(info) => {
                     setClickedOwnCat(info);
 
-                    setTimeout(() => setClickedOwnCat(undefined));
+                    setTimeout(() => setClickedOwnCat(undefined), 2000);
                   }}
                 />
               </div>

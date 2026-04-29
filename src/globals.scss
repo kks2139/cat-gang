@@ -103,6 +103,80 @@ input {
     animation-delay: 0s, var(--jump-delay, 0s); // 점프 타이밍 랜덤화
   }
 
+  &.me-clicked {
+    .speak {
+      z-index: 9999;
+      position: absolute;
+      top: 100px;
+      left: -10px;
+      white-space: nowrap;
+      font-size: 16px;
+      color: var(--main-border);
+      font-weight: bold;
+      background-color: white;
+      box-shadow: 0 0 10px 10px white;
+      border-radius: 50%;
+      animation: fade-in-out2 3s forwards;
+
+      @keyframes fade-in-out2 {
+        0% {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        10%,
+        90% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(0);
+        }
+      }
+    }
+
+    .golgol {
+      &.bounce {
+        animation: happy-bounce 1s infinite;
+      }
+
+      &.purr {
+        animation: purring 1s infinite;
+      }
+
+      @keyframes happy-bounce {
+        0%,
+        100% {
+          transform: translateY(0) scale(1);
+        }
+        50% {
+          transform: translateY(-10px) scale(1.05); /* 위로 살짝 뜨며 커짐 */
+        }
+      }
+
+      @keyframes purring {
+        0% {
+          transform: translate(0, 0) rotate(0deg);
+        }
+        20% {
+          transform: translate(-2px, 1px) rotate(-1.5deg);
+        }
+        40% {
+          transform: translate(-2px, -1px) rotate(1.5deg);
+        }
+        60% {
+          transform: translate(2px, 1px) rotate(-1.5deg);
+        }
+        80% {
+          transform: translate(2px, -1px) rotate(1.5deg);
+        }
+        100% {
+          transform: translate(0, 0) rotate(0deg);
+        }
+      }
+    }
+  }
+
   &.no-animation {
     animation: none;
     img {
@@ -355,10 +429,6 @@ input {
       }
 
       &::after {
-        display: none;
-      }
-
-      .tip {
         display: none;
       }
     }
@@ -804,6 +874,7 @@ input {
   animation: fade-in-out 2s forwards;
 
   .comment {
+    z-index: 9;
     position: absolute;
     top: -40px;
     left: -55px;
@@ -821,8 +892,8 @@ input {
 
   img {
     position: absolute;
-    top: -20px;
-    left: -50px;
+    top: -25px;
+    left: -30px;
     width: 100% !important;
     transform-origin: bottom center;
     animation: hello-swing 2s ease-in-out infinite;
@@ -834,7 +905,7 @@ input {
     z-index: 1;
     position: absolute;
     top: 85px;
-    left: -13px;
+    left: 4px;
     width: 45px;
     height: 6px;
     border-radius: 50%;
@@ -874,7 +945,7 @@ input {
     }
     100% {
       opacity: 0;
-      transform: scale(1.5) translateY(-20px);
+      transform: scale(1.6) translateY(-20px);
     }
   }
 

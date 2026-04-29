@@ -17,12 +17,14 @@ import {
 } from "react-leaflet";
 
 import ImgCatMe from "@/assets/img/character/cat-me.png";
+import ImgCatMeJump from "@/assets/img/character/cat-me-jump.png";
+import ImgCatLaugh from "@/assets/img/character/cat-me-laugh.png";
 import ImgCatMeWalk1 from "@/assets/img/character/cat-me-walk-1.png";
 import ImgCatMeWalk2 from "@/assets/img/character/cat-me-walk-2.png";
 import { useDayAndNight } from "@/hooks/useDayAndNight";
 import { useCatStore } from "@/store/cat";
 import { useViewStore } from "@/store/view";
-import { catCharacters } from "@/utils/cats";
+import { catCharacters, myCat } from "@/utils/cats";
 import {
   animateMarker,
   createMarker,
@@ -97,9 +99,8 @@ function MapContent({
   const catMarkersRef = useRef<L.Marker[]>([]);
   const ownCatMarkersRef = useRef<Record<string, L.Marker>>({});
   const myCatRef = useRef<L.Marker>(null);
-  const walkTimerRef = useRef<ReturnType<typeof setInterval> | undefined>(
-    undefined,
-  );
+  const walkTimerRef = useRef<number>(undefined);
+  const meClickedTimerRef = useRef<number>(undefined);
 
   // 부모의 myMarkerRef.current에 그 값을 동기화합니다.
   useImperativeHandle<L.Marker | null, L.Marker | null>(myMarkerRef, () => {
@@ -133,7 +134,7 @@ function MapContent({
     let frameIndex = 0;
     catImg.src = walkFrames[frameIndex];
 
-    walkTimerRef.current = setInterval(() => {
+    walkTimerRef.current = window.setInterval(() => {
       frameIndex++;
 
       if (frameIndex >= walkFrames.length) {
@@ -168,6 +169,44 @@ function MapContent({
           imgUrl: ImgCatMe,
           map,
           position: [coords.latitude, coords.longitude],
+        }).on("click", (e) => {
+          const target = e.originalEvent.target as HTMLElement;
+          const container = target.closest("[data-marker-container]");
+          const catImg = container?.querySelector(
+            "[data-cat-img]",
+          ) as HTMLImageElement;
+          const golgolWrapper = container?.querySelector(
+            "[data-golgol]",
+          ) as HTMLElement;
+
+          if (!container || meClickedTimerRef.current) {
+            return;
+          }
+
+          container.classList.add("me-clicked");
+
+          const speak = container.querySelector("[data-speak]");
+          if (speak) {
+            speak.textContent = myCat.dialog.greeting[getRandomNumber(10)];
+          }
+
+          const catMotion =
+            (getRandomNumber(2) + 1) % 2 === 0 ? "bounce" : "purr";
+          golgolWrapper.classList.add(catMotion);
+          catImg.src = catMotion === "bounce" ? ImgCatMeJump : ImgCatLaugh;
+
+          meClickedTimerRef.current = setTimeout(() => {
+            if (speak) {
+              speak.textContent = null;
+            }
+
+            container.classList.remove("me-clicked");
+            golgolWrapper.classList.remove(catMotion);
+            catImg.src = ImgCatMe;
+
+            meClickedTimerRef.current = undefined;
+            clearTimeout(meClickedTimerRef.current);
+          }, 3000);
         });
 
         marker.setZIndexOffset(99);
@@ -315,6 +354,7 @@ function MapContent({
   );
 
   useEffect(() => {
+    // 잡은 고양이목록 클릭 리액션
     if (clickedOwnCat) {
       const cat = Object.entries(ownCatMarkersRef.current).find(
         ([key, marker]) => {
@@ -433,6 +473,7 @@ export default function Map({ className, ...rest }: Props) {
   const map = useViewStore((s) => s.map);
   const isStopFocusMe = useViewStore((s) => s.isStopFocusMe);
   const { setMap, setIsStopFocusMe } = useViewStore((s) => s.actions);
+  const clickedOwnCat = useCatStore((s) => s.clickedOwnCat);
 
   const [isLoading, setisLoading] = useState(true);
 
@@ -454,7 +495,16 @@ export default function Map({ className, ...rest }: Props) {
 
   return (
     <div className={cn("map-wrapper", { night: isNight })}>
-      <SkyLayer isNight={isNight} hours={hours} />
+      <AnimatePresence>
+        {!clickedOwnCat && (
+          <motion.div
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 1 } }}
+          >
+            <SkyLayer isNight={isNight} hours={hours} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <MapContainer
         className={cn("Map", className)}

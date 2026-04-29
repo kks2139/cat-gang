@@ -1,6 +1,7 @@
 import classNames from "classnames/bind";
 import { format } from "date-fns";
 
+import { MAX_ZOOM_LEVEL } from "@/components/Map";
 import Skeleton from "@/components/Skeleton";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
 import { useViewStore } from "@/store/view";
@@ -65,10 +66,14 @@ export default function MyCats({ className, onClickCat }: Props) {
                   <button
                     type="button"
                     onClick={() => {
-                      const offsetLat = 30 / 111320; // 30m만큼 위로
+                      if (!map) {
+                        return;
+                      }
 
-                      map?.setView([lat - offsetLat, lng]);
+                      const zoom = MAX_ZOOM_LEVEL - (map.getZoom() || 0);
+                      const offsetLat = (30 + zoom * 30) / 111320; // xx m만큼 위로
 
+                      map.setView([lat - offsetLat, lng]);
                       onClickCat({ lat, lng, createdAt });
                     }}
                   >
