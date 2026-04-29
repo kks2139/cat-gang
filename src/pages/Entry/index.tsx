@@ -57,6 +57,9 @@ export default function Entry() {
         <img src={TitleCatImg} width={100} height={100} alt="title-cat" />
       </div>
 
+      {/* TODO: id발급 */}
+      {/* <AdBanner adGroupId="" /> */}
+
       {isUserLoading || (!user && isError) ? (
         <div className={cn("init-loading")}>
           <Loading noBackground />
