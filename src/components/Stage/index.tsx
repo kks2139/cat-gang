@@ -1,7 +1,10 @@
 import { generateHapticFeedback } from "@apps-in-toss/web-framework";
 import classNames from "classnames/bind";
+import { AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 
+import { useCustomBack } from "@/hooks/useCustomBack";
+import { useItemQuery } from "@/queries/useItemQuery";
 import { useCatStore } from "@/store/cat";
 import { type CatInfo, MyCat } from "@/utils/cats";
 import { getPostposition, getRandomNumber, wait } from "@/utils/helper";
@@ -10,6 +13,7 @@ import Dialog from "../Dialog";
 import Control, { type DialogInfo, type Side } from "./Control";
 import Effects, { type EffectType } from "./Effects";
 import styles from "./index.module.scss";
+import ItemBox from "./itemBox";
 import Player from "./Player";
 
 const cn = classNames.bind(styles);
@@ -58,6 +62,10 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
   const [seducedBy, setSeducedBy] = useState<Side>();
   const [provokedBy, setProvokedBy] = useState<Side>();
   const [isRun, setIsRun] = useState(false);
+  const [isShowItems, setIsShowItems] = useState(false);
+
+  // 아이템 조회
+  useItemQuery();
 
   const isVictory = !!winner && winner === "me";
 
@@ -216,8 +224,24 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
     );
   }, []);
 
+  useCustomBack(isShowItems, () => {
+    setIsShowItems(false);
+  });
+
   return (
     <div className={cn("Stage")}>
+      <AnimatePresence>
+        {isShowItems && (
+          <ItemBox
+            onClose={() => setIsShowItems(false)}
+            onSelect={(item) => {
+              console.log(item);
+              setIsShowItems(false);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
       <div className={cn("view")}>
         {/* 적 고양이 */}
         <Player
@@ -293,13 +317,6 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
             text: myCat.dialog.punch,
           });
         }}
-        onProvoke={() => {
-          setDialogInfo({
-            type: "provoke",
-            speaker: myCat.name,
-            text: myCat.dialog.provoke,
-          });
-        }}
         onSeduce={() => {
           setDialogInfo({
             type: "seduce",
@@ -313,6 +330,9 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
             speaker: myCat.name,
             text: myCat.dialog.run,
           });
+        }}
+        onShowItems={() => {
+          setIsShowItems(true);
         }}
         // 대화상자 클릭 후 액션 정의
         onDialogConfirmClick={async ({ type, causedBy }) => {

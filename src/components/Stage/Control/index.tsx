@@ -2,7 +2,6 @@ import classNames from "classnames/bind";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 
-import { useViewStore } from "@/store/view";
 import { type CatInfo } from "@/utils/cats";
 import { getRandomNumber } from "@/utils/helper";
 
@@ -60,9 +59,9 @@ export interface DialogInfo {
 interface Props {
   isShow: boolean;
   onPunch: () => void;
-  onProvoke: () => void;
   onSeduce: () => void;
   onRun: () => void;
+  onShowItems: () => void;
   dialogInfo?: DialogInfo;
   onDialogConfirmClick: (info: { type?: DialogType; causedBy: Side }) => void;
 }
@@ -70,14 +69,12 @@ interface Props {
 export default function Control({
   isShow,
   onPunch,
-  // onProvoke,
   onSeduce,
   onRun,
+  onShowItems,
   dialogInfo,
   onDialogConfirmClick,
 }: Props) {
-  const { addToastMessage } = useViewStore((s) => s.actions);
-
   const [menuType, setMenuType] = useState<"default" | "battle">();
 
   const content = useMemo(() => {
@@ -137,22 +134,11 @@ export default function Control({
                       유혹
                     </Button>
                   </li>
-                  {/* <li>
-                    <Button
-                      size="large"
-                      onClick={() => {
-                        onProvoke();
-                      }}
-                    >
-                      도발
-                    </Button>
-                  </li> */}
                   <li>
                     <Button
                       size="large"
                       onClick={() => {
-                        // TODO: 장비창 open
-                        addToastMessage({ message: "개발중" });
+                        onShowItems();
                       }}
                     >
                       장비

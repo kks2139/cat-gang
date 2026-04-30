@@ -119,7 +119,9 @@ function MapContent({
       ?.getElement()
       ?.querySelector("[data-cat-img]") as HTMLImageElement | null;
 
-    if (!catImg) return;
+    if (!catImg || meClickedTimerRef.current) {
+      return;
+    }
 
     if (walkTimerRef.current) {
       clearInterval(walkTimerRef.current);
@@ -473,7 +475,6 @@ export default function Map({ className, ...rest }: Props) {
   const map = useViewStore((s) => s.map);
   const isStopFocusMe = useViewStore((s) => s.isStopFocusMe);
   const { setMap, setIsStopFocusMe } = useViewStore((s) => s.actions);
-  const clickedOwnCat = useCatStore((s) => s.clickedOwnCat);
 
   const [isLoading, setisLoading] = useState(true);
 
@@ -495,16 +496,8 @@ export default function Map({ className, ...rest }: Props) {
 
   return (
     <div className={cn("map-wrapper", { night: isNight })}>
-      <AnimatePresence>
-        {!clickedOwnCat && (
-          <motion.div
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: 1 } }}
-          >
-            <SkyLayer isNight={isNight} hours={hours} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <SkyLayer isNight={isNight} hours={hours} />
+      {/* <AdBanner adGroupId="123" /> */}
 
       <MapContainer
         className={cn("Map", className)}

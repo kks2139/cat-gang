@@ -2,7 +2,12 @@ import {
   TossAds,
   type TossAdsAttachBannerOptions,
 } from "@apps-in-toss/web-framework";
+import classNames from "classnames/bind";
 import { useCallback, useEffect, useRef, useState } from "react";
+
+import styles from "./index.module.scss";
+
+const cn = classNames.bind(styles);
 
 export default function AdBanner({ adGroupId }: { adGroupId: string }) {
   const [isInitialized, setIsInitialized] = useState(false);
@@ -41,7 +46,7 @@ export default function AdBanner({ adGroupId }: { adGroupId: string }) {
     const attached = attachBanner(adGroupId, containerRef.current, {
       theme: "auto", // 시스템 설정에 따라 자동 전환
       tone: "blackAndWhite", // 흰색/검정색 배경
-      variant: "expanded", // 전체 너비 확장 형태
+      variant: "card", // 전체 너비 확장 형태
       callbacks: {
         onAdRendered: (payload) => {
           console.log("광고 렌더링 완료:", payload.slotId);
@@ -71,10 +76,5 @@ export default function AdBanner({ adGroupId }: { adGroupId: string }) {
   }, [isInitialized, adGroupId, attachBanner]);
 
   // 고정형 배너: width 100% + height 96px
-  return (
-    <div
-      ref={containerRef}
-      style={{ width: "100%", height: "96px", boxShadow: "0 0 0 1px red" }}
-    />
-  );
+  return <div className={cn("AdBanner")} ref={containerRef} />;
 }

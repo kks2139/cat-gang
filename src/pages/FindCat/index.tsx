@@ -67,7 +67,11 @@ export default function FindCat() {
     }
 
     if (isShowVictoryDialog) {
-      setIsShowVictoryDialog(false);
+      return;
+    }
+
+    if (ownCatInfo) {
+      setOwnCatInfo(undefined);
       return;
     }
 
