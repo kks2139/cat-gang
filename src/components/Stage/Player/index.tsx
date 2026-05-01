@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { type CatInfo } from "@/utils/cats";
 
 import { type EffectType } from "../Effects";
+import type { ItemType } from "../Inventory";
 import styles from "./index.module.scss";
 import { Status, type StatusProps } from "./Status";
 
@@ -17,6 +18,7 @@ interface CatVisualProps {
   seduceDuraion?: number;
   catImgIntroMotion?: MotionNodeAnimationOptions;
   children?: React.ReactNode;
+  usedItem?: ItemType;
 }
 
 function CatVisual({
@@ -24,11 +26,15 @@ function CatVisual({
   effectType,
   catImgIntroMotion,
   children,
+  usedItem,
 }: CatVisualProps) {
   return (
-    <motion.div {...catImgIntroMotion} className={cn("visual-wrap")}>
+    <motion.div
+      {...catImgIntroMotion}
+      className={cn("visual-wrap", { [usedItem || ""]: true })}
+    >
       {!!cat && (
-        <>
+        <div className={cn("wrapper")}>
           <img
             className={cn("cat-img", {
               [effectType || ""]: true,
@@ -37,7 +43,7 @@ function CatVisual({
             alt={cat.name || ""}
           />
           <div className={cn("cat-shadow")} />
-        </>
+        </div>
       )}
       {children}
     </motion.div>
@@ -62,6 +68,7 @@ export default function Player({
   children,
   side,
   isSpeaking,
+  usedItem,
 }: Props) {
   const [hpEffect, setHpEffect] = useState<StatusProps["hpEffect"]>();
   const prevHp = useRef(hp);
@@ -97,13 +104,19 @@ export default function Player({
     <div className={cn("Player")}>
       {!isMe && status}
 
-      <div className={cn("cat", { speaking: isSpeaking })}>
+      <div
+        className={cn("cat", {
+          speaking: isSpeaking,
+          "item-effect": effectType === "item",
+        })}
+      >
         <CatVisual
           cat={cat}
           effectType={effectType}
           punchDuraion={punchDuraion}
           seduceDuraion={seduceDuraion}
           catImgIntroMotion={catImgIntroMotion}
+          usedItem={effectType && usedItem}
         />
         {children}
       </div>

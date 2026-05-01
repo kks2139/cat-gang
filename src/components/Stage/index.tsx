@@ -13,7 +13,7 @@ import Dialog from "../Dialog";
 import Control, { type DialogInfo, type Side } from "./Control";
 import Effects, { type EffectType } from "./Effects";
 import styles from "./index.module.scss";
-import Inventory from "./Inventory";
+import Inventory, { type ItemType } from "./Inventory";
 import Player from "./Player";
 
 const cn = classNames.bind(styles);
@@ -23,7 +23,6 @@ const MY_MOTION_DELAY = 1;
 const MY_MOTION_DURATION = 0.2;
 const PUNCH_DURATION = 0.2;
 const SEDUCE_DURATION = 2;
-const PROVOKE_DURATION = 1;
 // 행동 후 딜레이
 const DELAY_OF_ACTIONS = 0.5;
 
@@ -60,9 +59,9 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
   });
   const [punchedBy, setPunchedBy] = useState<Side>();
   const [seducedBy, setSeducedBy] = useState<Side>();
-  const [provokedBy, setProvokedBy] = useState<Side>();
   const [isRun, setIsRun] = useState(false);
   const [isShowItems, setIsShowItems] = useState(false);
+  const [usedItem, setUsedItem] = useState<ItemType>();
 
   // 아이템 조회
   useItemQuery();
@@ -72,24 +71,24 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
   const enemyEffect: EffectType | undefined =
     winner === "me"
       ? "lose"
-      : provokedBy === "me"
-        ? "provoke"
-        : seducedBy === "enemy"
-          ? "seduce"
-          : punchedBy === "me"
-            ? "punch"
+      : seducedBy === "enemy"
+        ? "seduce"
+        : punchedBy === "me"
+          ? "punch"
+          : usedItem === "fish"
+            ? "item"
             : undefined;
 
   const myEffect: EffectType | undefined = isRun
     ? "run"
     : winner === "enemy"
       ? "lose"
-      : provokedBy === "enemy"
-        ? "provoke"
-        : seducedBy === "me"
-          ? "seduce"
-          : punchedBy === "enemy"
-            ? "punch"
+      : seducedBy === "me"
+        ? "seduce"
+        : punchedBy === "enemy"
+          ? "punch"
+          : usedItem === "catnip" || usedItem === "gukbab"
+            ? "item"
             : undefined;
 
   // return: 승리한 사이드
@@ -163,18 +162,6 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
     await wait((SEDUCE_DURATION + DELAY_OF_ACTIONS) * 1000);
   };
 
-  const provoke = async (by: Side) => {
-    if (by === "me") {
-      setProvokedBy("enemy");
-      setTimeout(() => setProvokedBy(undefined), PROVOKE_DURATION * 1000);
-    } else {
-      setProvokedBy("me");
-      setTimeout(() => setProvokedBy(undefined), PROVOKE_DURATION * 1000);
-    }
-
-    await wait((PROVOKE_DURATION + DELAY_OF_ACTIONS) * 1000);
-  };
-
   const enemyAction = () => {
     // 상대는 랜덤으로 액션을 취한다
     const action = getRandomNumber(8);
@@ -195,14 +182,6 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
           text: selectedCat!.dialog.punch,
         });
         break;
-      // case 6: // 도발
-      //   setDialogInfo({
-      //     side,
-      //     type: "provoke",
-      //     speaker: selectedCat!.name,
-      //     text: selectedCat!.dialog.provoke,
-      //   });
-      //   break;
       case 6:
       case 7: // 유혹
         setDialogInfo({
@@ -234,9 +213,47 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
         {isShowItems && (
           <Inventory
             onClose={() => setIsShowItems(false)}
-            onSelect={(item) => {
-              console.log(item);
+            onSelect={async (item) => {
               setIsShowItems(false);
+              setIsShowControl(false);
+              setUsedItem(item);
+
+              await wait(3000);
+
+              setIsShowControl(true);
+
+              // TODO: 아이템 소모 db 호출
+
+              switch (item) {
+                case "gukbab":
+                  setHpInfo({
+                    ...hpInfo,
+                    myHp: Math.max(hpInfo.myHp + 5, myCat.hp),
+                  });
+                  setDialogInfo({
+                    type: "system",
+                    speaker: "",
+                    text: `국밥으로 체력충전!`,
+                  });
+                  break;
+                case "catnip":
+                  // TOOD: 상태이상 효과 (공격력 증가) 3턴 동안
+                  setDialogInfo({
+                    type: "system",
+                    speaker: "",
+                    text: `캣닢 효과로 데미지 증폭!`,
+                  });
+                  break;
+                case "fish":
+                  // TOOD: 상태이상 효과 (상대방 무대응) 2턴 동안
+                  setDialogInfo({
+                    type: "system",
+                    speaker: "",
+                    text: `${getPostposition(selectedCat?.name, "sub")}가 생선에 정신이 팔렸다!`,
+                  });
+              }
+
+              setUsedItem(undefined);
             }}
           />
         )}
@@ -263,12 +280,14 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
             transition: { duration: 0.3, delay: 0.2 },
           }}
           isSpeaking={dialogInfo?.side === "enemy" && enemyEffect !== "lose"}
+          usedItem={usedItem}
         >
           <Effects
             target="enemy"
             enabled={!!enemyEffect}
             effectType={enemyEffect}
             punchDuration={PUNCH_DURATION}
+            usedItem={usedItem}
           />
         </Player>
 
@@ -297,12 +316,18 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
               delay: MY_MOTION_DURATION + MY_MOTION_DELAY,
             },
           }}
-          isSpeaking={dialogInfo && dialogInfo.side === undefined}
+          isSpeaking={
+            dialogInfo &&
+            dialogInfo.type !== "system" &&
+            dialogInfo.side === undefined
+          }
+          usedItem={usedItem}
         >
           <Effects
             enabled={!!myEffect}
             effectType={myEffect}
             punchDuration={PUNCH_DURATION}
+            usedItem={usedItem}
           />
         </Player>
       </div>
@@ -369,11 +394,6 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
 
                   break;
                 }
-                case "provoke":
-                  await provoke("me");
-
-                  enemyAction();
-                  break;
                 case "seduce":
                   await seduce("me");
 
@@ -441,10 +461,6 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
                     speaker: "",
                     text: `으.. ${selectedCat?.name}의 유혹에 넘어갔다..!`,
                   });
-
-                  break;
-                case "provoke":
-                  await provoke("enemy");
 
                   break;
                 case "win":

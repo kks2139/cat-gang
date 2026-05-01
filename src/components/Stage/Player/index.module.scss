@@ -1,3 +1,5 @@
+$item-delay: 1s;
+
 .Player {
   width: 100%;
   display: flex;
@@ -18,6 +20,12 @@
       }
     }
 
+    &.item-effect {
+      .wrapper {
+        animation: item-received 0.5s ease-out;
+      }
+    }
+
     .visual-wrap {
       position: relative;
       display: flex;
@@ -26,6 +34,111 @@
       animation: floating 3s infinite ease-in-out;
       width: 160px;
       height: 160px;
+
+      .wrapper {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      &.gukbab {
+        &::after {
+          content: "";
+          position: absolute;
+          inset: -40px;
+          background: radial-gradient(
+            circle,
+            rgba(74, 222, 128, 0.8) 0%,
+            rgba(34, 197, 94, 0.5) 40%,
+            transparent 70%
+          );
+          border-radius: 50%;
+          filter: blur(5px);
+          animation: aura-pulse 0.6s infinite alternate;
+          animation-delay: $item-delay;
+          opacity: 0;
+          animation-fill-mode: backwards;
+          z-index: 1;
+        }
+
+        &::before {
+          content: "+";
+          position: absolute;
+          top: -50px;
+          left: 45%;
+          color: #4ade80;
+          font-family: "Fredoka", sans-serif;
+          font-weight: bold;
+          font-size: 60px;
+          text-shadow: 0 0 10px rgba(74, 222, 128, 0.8);
+          animation: float-up 1s infinite;
+          animation-delay: $item-delay;
+          opacity: 0;
+          animation-fill-mode: backwards;
+          z-index: 10;
+          pointer-events: none;
+        }
+      }
+
+      &.fish {
+        .cat-img {
+          animation: curious-tilt 0.3s infinite alternate ease-in-out !important;
+          animation-delay: $item-delay !important;
+        }
+
+        &::after {
+          content: "!";
+          position: absolute;
+          top: -20px;
+          left: 48%;
+          background: #fbbf24;
+          color: white;
+          width: 24px;
+          height: 24px;
+          border: 1px solid white;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
+          font-size: 16px;
+          box-shadow: 0 4px 0 rgba(0, 0, 0, 0.1);
+          animation: pop-up 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)
+            infinite alternate;
+          animation-delay: $item-delay;
+          opacity: 0;
+          animation-fill-mode: backwards;
+          z-index: 10;
+        }
+      }
+
+      &.catnip {
+        &::after {
+          content: "";
+          position: absolute;
+          inset: -40px;
+          background: radial-gradient(
+            circle,
+            rgba(239, 68, 68, 0.6) 0%,
+            rgba(245, 158, 11, 0.4) 50%,
+            transparent 80%
+          );
+          border-radius: 50%;
+          animation: fire-aura 0.4s infinite alternate;
+          animation-delay: $item-delay;
+          opacity: 0;
+          animation-fill-mode: backwards;
+          z-index: 1;
+        }
+
+        .cat-img {
+          filter: drop-shadow(0 0 20px #ef4444) brightness(1.2) !important;
+          animation: rage-shake 0.1s infinite;
+          animation-delay: $item-delay;
+        }
+      }
     }
 
     .cat-img {
@@ -59,13 +172,15 @@
     }
 
     .cat-shadow {
-      width: 60px;
+      z-index: 1;
+      position: absolute;
+      width: 100px;
       height: 10px;
-      background: rgba(0, 0, 0, 0.1);
+      bottom: -10px;
+      background: rgba(255, 255, 255, 0.5);
       border-radius: 50%;
-      margin-top: -5px;
+      filter: blur(3px);
       animation: shadow-pulse 3s infinite ease-in-out;
-      filter: blur(2px);
     }
   }
 }
@@ -87,7 +202,7 @@
     opacity: 1;
   }
   50% {
-    transform: scale(0.8);
+    transform: scale(0.9);
     opacity: 0.5;
   }
 }
@@ -139,5 +254,102 @@
   }
   75% {
     transform: rotate(5deg) scale(1.05);
+  }
+}
+@keyframes item-received {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+    filter: brightness(1.3) contrast(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes aura-pulse {
+  from {
+    transform: scale(0.9);
+    opacity: 0.4;
+  }
+  to {
+    transform: scale(1.3);
+    opacity: 0.9;
+  }
+}
+
+@keyframes sparkle-pop {
+  0% {
+    transform: scale(0.8) rotate(0deg);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.3) rotate(20deg);
+    opacity: 1;
+  }
+}
+
+@keyframes pop-up {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes fire-aura {
+  0% {
+    opacity: 0;
+    transform: scale(1);
+    filter: hue-rotate(0deg) blur(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.2);
+    filter: hue-rotate(15deg) blur(5px);
+  }
+}
+
+@keyframes float-up {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+}
+
+@keyframes curious-tilt {
+  from {
+    transform: rotate(-8deg) scale(1.1);
+  }
+  to {
+    transform: rotate(8deg) scale(1.1);
+  }
+}
+
+@keyframes rage-shake {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(-2px, 2px);
+  }
+  50% {
+    transform: translate(2px, -2px);
+  }
+  75% {
+    transform: translate(-2px, -2px);
   }
 }

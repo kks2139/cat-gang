@@ -31,9 +31,7 @@ const cn = classNames.bind(styles);
 export default function FindCat() {
   const navigate = useNavigate();
 
-  const { setIsStopFocusMe, setIsBattleOn, addToastMessage } = useViewStore(
-    (s) => s.actions,
-  );
+  const { setIsStopFocusMe, setIsBattleOn } = useViewStore((s) => s.actions);
   const isShowStage = useCatStore((s) => s.isShowStage);
   const { setSelectedCat, setIsShowStage, setClickedOwnCat } = useCatStore(
     (s) => s.actions,
@@ -57,7 +55,6 @@ export default function FindCat() {
 
   useCustomBack(true, () => {
     if (isShowStage) {
-      addToastMessage({ message: "어딜가냐옹" });
       return;
     }
 
