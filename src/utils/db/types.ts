@@ -16,21 +16,24 @@ export type Database = {
     Tables: {
       items: {
         Row: {
+          catnip: number;
           created_at: string;
-          fish: number | null;
-          gukbab: number | null;
+          fish: number;
+          gukbab: number;
           user_id: string;
         };
         Insert: {
+          catnip?: number;
           created_at?: string;
-          fish?: number | null;
-          gukbab?: number | null;
+          fish?: number;
+          gukbab?: number;
           user_id: string;
         };
         Update: {
+          catnip?: number;
           created_at?: string;
-          fish?: number | null;
-          gukbab?: number | null;
+          fish?: number;
+          gukbab?: number;
           user_id?: string;
         };
         Relationships: [];

@@ -13,7 +13,7 @@ import Dialog from "../Dialog";
 import Control, { type DialogInfo, type Side } from "./Control";
 import Effects, { type EffectType } from "./Effects";
 import styles from "./index.module.scss";
-import ItemBox from "./itemBox";
+import Inventory from "./Inventory";
 import Player from "./Player";
 
 const cn = classNames.bind(styles);
@@ -232,7 +232,7 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
     <div className={cn("Stage")}>
       <AnimatePresence>
         {isShowItems && (
-          <ItemBox
+          <Inventory
             onClose={() => setIsShowItems(false)}
             onSelect={(item) => {
               console.log(item);

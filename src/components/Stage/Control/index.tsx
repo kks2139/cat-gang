@@ -141,7 +141,7 @@ export default function Control({
                         onShowItems();
                       }}
                     >
-                      장비
+                      인벤토리
                     </Button>
                   </li>
                   <li>

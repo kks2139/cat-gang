@@ -6,9 +6,9 @@ import { UserKey } from "@/utils/native";
 import { QUERY_KEY } from "./config";
 
 interface ResponseData {
-  gukbab?: number;
-  fish?: number;
-  catnip?: number;
+  gukbab: number;
+  fish: number;
+  catnip: number;
 }
 
 export const useItemQuery = () => {
