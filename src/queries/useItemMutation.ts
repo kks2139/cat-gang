@@ -14,21 +14,22 @@ interface RequestData {
 export const useItemMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<undefined, Error, RequestData>({
+  return useMutation<boolean, Error, RequestData>({
     mutationFn: async ({ itemType, count }) => {
       const userKey = await UserKey.getInstance().getKey();
 
-      const { error } = await supabase
-        .from("items")
-        .update({
-          [itemType]: count,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any)
-        .eq("user_id", userKey || "");
+      const { error } = await supabase.from("items").upsert({
+        [itemType]: count,
+        user_id: userKey,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any);
 
       if (error) {
         console.error(error);
+        return false;
       }
+
+      return true;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [QUERY_KEY.ITEMS] });

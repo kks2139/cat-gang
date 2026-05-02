@@ -103,6 +103,23 @@ input {
     animation-delay: 0s, var(--jump-delay, 0s); // 점프 타이밍 랜덤화
   }
 
+  &[data-type="item"] {
+    .item {
+      animation: item-appear 1.2s ease-out forwards;
+    }
+
+    img {
+      animation: item-float 2s ease-in-out infinite alternate !important;
+      filter: drop-shadow(0 8px 3px rgba(58, 58, 58, 0.4));
+    }
+
+    &.clicked {
+      z-index: 1000;
+      animation: item-collected 2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+      pointer-events: none;
+    }
+  }
+
   &.me-clicked {
     .speak {
       z-index: 9999;
@@ -960,5 +977,42 @@ input {
     100% {
       opacity: 0;
     }
+  }
+}
+
+@keyframes item-appear {
+  from {
+    opacity: 0;
+    transform: scale(0) translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1.2) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes item-float {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes item-collected {
+  0% {
+    transform: scale(1) translateY(0);
+  }
+  30% {
+    transform: scale(1.4) translateY(-30px);
+  }
+  100% {
+    transform: scale(0) translateY(-150px);
+    opacity: 0;
   }
 }

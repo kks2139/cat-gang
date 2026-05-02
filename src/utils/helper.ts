@@ -1,6 +1,8 @@
 import { getHours } from "date-fns";
 import L from "leaflet";
 
+import type { ItemType } from "@/components/Stage/Inventory";
+
 import { getCat } from "./cats";
 
 export const wait = (delay: number) =>
@@ -77,13 +79,14 @@ export const getFireworkElement = () => {
   return explosion;
 };
 
-type OverlayType = "me" | "owned" | "enemy";
+type MarkerType = "me" | "owned" | "enemy" | "item";
 
 interface CreateOverlayOptions {
   map: L.Map;
   position: L.LatLngExpression;
   imgUrl?: string;
-  type?: OverlayType;
+  type?: MarkerType;
+  itemType?: ItemType;
   catName?: string;
 }
 
@@ -100,14 +103,10 @@ export const createMarker = ({
 
   // 최상위 컨테이너
   const container = document.createElement("div");
+  container.dataset.type = type;
   container.dataset.status = "none";
   container.dataset.markerContainer = "true";
   container.className = "marker-container";
-
-  // 클릭 시 골골대는 모션 적용을 위함
-  const golgolWrapper = document.createElement("div");
-  golgolWrapper.dataset.golgol = "true";
-  golgolWrapper.className = "golgol";
 
   if (imgUrl) {
     // 고양이 이미지
@@ -116,8 +115,20 @@ export const createMarker = ({
     catImg.src = imgUrl;
 
     if (type === "me") {
+      // 클릭 시 골골대는 모션 적용을 위함
+      const golgolWrapper = document.createElement("div");
+      golgolWrapper.dataset.golgol = "true";
+      golgolWrapper.className = "golgol";
+
       container.appendChild(golgolWrapper);
       golgolWrapper.appendChild(catImg);
+    } else if (type === "item") {
+      // 클릭 시 골골대는 모션 적용을 위함
+      const itemWrapper = document.createElement("div");
+      itemWrapper.className = "item";
+
+      container.appendChild(itemWrapper);
+      itemWrapper.appendChild(catImg);
     } else {
       container.appendChild(catImg);
     }
@@ -195,11 +206,15 @@ export const createMarker = ({
     container.appendChild(wrapper);
   }
 
+  if (type === "item") {
+    container.classList.add("item", "no-animation", "no-shadow");
+  }
+
   // 마커 생성
   const icon = L.divIcon({
     html: container,
     className: "",
-    iconSize: [100, 100],
+    iconSize: type === "item" ? [60, 60] : [100, 100],
   });
 
   // 맵에 마커 추가

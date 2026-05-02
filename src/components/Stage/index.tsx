@@ -6,7 +6,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useCustomBack } from "@/hooks/useCustomBack";
 import { useItemMutation } from "@/queries/useItemMutation";
-import { useItemQuery } from "@/queries/useItemQuery";
 import { useCatStore } from "@/store/cat";
 import { type CatInfo, MyCat } from "@/utils/cats";
 import { getPostposition, getRandomNumber, wait } from "@/utils/helper";
@@ -79,8 +78,6 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
     enemy: 0,
   });
 
-  // 아이템 조회
-  useItemQuery();
   const { mutateAsync: updateItemCount } = useItemMutation();
 
   const isVictory = !!winner && winner === "me";

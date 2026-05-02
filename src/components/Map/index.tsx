@@ -21,7 +21,12 @@ import ImgCatMeJump from "@/assets/img/character/cat-me-jump.png";
 import ImgCatLaugh from "@/assets/img/character/cat-me-laugh.png";
 import ImgCatMeWalk1 from "@/assets/img/character/cat-me-walk-1.png";
 import ImgCatMeWalk2 from "@/assets/img/character/cat-me-walk-2.png";
+import ImgCatnip from "@/assets/img/item/catnip.png";
+import ImgFish from "@/assets/img/item/fish.png";
+import ImgGukbab from "@/assets/img/item/gukbab.png";
 import { useDayAndNight } from "@/hooks/useDayAndNight";
+import { useItemMutation } from "@/queries/useItemMutation";
+import { useItemQuery } from "@/queries/useItemQuery";
 import { useCatStore } from "@/store/cat";
 import { useViewStore } from "@/store/view";
 import { catCharacters, myCat } from "@/utils/cats";
@@ -32,6 +37,7 @@ import {
   getRandomLocationInCircle,
   getRandomNumber,
   removeMarkerWithMotion,
+  wait,
 } from "@/utils/helper";
 import { getCurrentPosition, watchPosition } from "@/utils/native";
 
@@ -101,6 +107,14 @@ function MapContent({
   const myCatRef = useRef<L.Marker>(null);
   const walkTimerRef = useRef<number>(undefined);
   const meClickedTimerRef = useRef<number>(undefined);
+  const itemSpawnTimerRef = useRef<number>(undefined);
+
+  const { data: itemCount } = useItemQuery();
+  const { mutateAsync: updateItemCount } = useItemMutation();
+
+  // 최신 itemCount를 참조하기 위한 Ref
+  const itemCountRef = useRef(itemCount);
+  itemCountRef.current = itemCount;
 
   // 부모의 myMarkerRef.current에 그 값을 동기화합니다.
   useImperativeHandle<L.Marker | null, L.Marker | null>(myMarkerRef, () => {
@@ -467,6 +481,83 @@ function MapContent({
 
     onMapReady?.(map);
   }, [map, onMapReady]);
+
+  useEffect(() => {
+    if (itemSpawnTimerRef.current) {
+      return;
+    }
+
+    const spwanItem = () => {
+      const myPosition = myCatRef.current?.getLatLng();
+
+      if (!myPosition) return;
+
+      const randomLatLng = getRandomLocationInCircle(
+        myPosition.lat,
+        myPosition.lng,
+        70,
+      );
+      const randomNum = getRandomNumber(10);
+      const itemType =
+        randomNum === 0
+          ? "catnip"
+          : randomNum === 1
+            ? "gukbab"
+            : randomNum === 2
+              ? "fish"
+              : null;
+      const imgUrl =
+        itemType === "catnip"
+          ? ImgCatnip
+          : itemType === "gukbab"
+            ? ImgGukbab
+            : ImgFish;
+
+      if (!itemType) {
+        return;
+      }
+
+      const marker = createMarker({
+        type: "item",
+        position: randomLatLng,
+        imgUrl,
+        map: map,
+      }).on("click", async (e) => {
+        const target = e.target as L.Marker;
+        const container = target
+          .getElement()
+          ?.querySelector("[data-type='item']");
+
+        if (container && itemCountRef.current) {
+          container.classList.add("clicked");
+
+          const [updateResult] = await Promise.allSettled([
+            updateItemCount({
+              itemType,
+              count: (itemCountRef.current[itemType] || 0) + 1,
+            }),
+            wait(2000),
+          ]);
+
+          if (updateResult.status === "fulfilled" && updateResult.value) {
+            marker.remove();
+          }
+        }
+      });
+    };
+
+    const timerId = setInterval(() => {
+      spwanItem();
+    }, 5000);
+
+    itemSpawnTimerRef.current = timerId;
+
+    return () => {
+      clearInterval(timerId);
+      itemSpawnTimerRef.current = undefined;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, myCatRef.current]);
 
   return <div className={className}></div>;
 }

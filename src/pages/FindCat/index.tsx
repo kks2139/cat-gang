@@ -12,6 +12,7 @@ import Map, { type OwnCat } from "@/components/Map";
 import Stage from "@/components/Stage";
 import { useCustomBack } from "@/hooks/useCustomBack";
 import { useCatchCatMutation } from "@/queries/useCatchCatMutation";
+import { useItemQuery } from "@/queries/useItemQuery";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
 import { useCatStore } from "@/store/cat";
 import { useViewStore } from "@/store/view";
@@ -44,6 +45,8 @@ export default function FindCat() {
 
   const { mutate: postCatMutate } = useCatchCatMutation();
   const { data: catList, refetch: fetchMyCats } = useMyCatsQuery();
+  // 아이템 조회
+  useItemQuery();
 
   const ownCats = catList?.map((c) => ({
     name: c.cat_name,
