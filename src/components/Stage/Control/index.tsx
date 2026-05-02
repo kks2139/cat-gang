@@ -45,7 +45,7 @@ const Typing = ({ text, speed = 60 }: { text: string; speed?: number }) => {
   );
 };
 
-type DialogType = keyof CatInfo["dialog"] | "system";
+export type DialogType = keyof CatInfo["dialog"] | "system";
 
 export type Side = "me" | "enemy";
 
@@ -54,6 +54,7 @@ export interface DialogInfo {
   type: DialogType;
   speaker: string;
   text: string | string[];
+  nextTurn?: Side;
 }
 
 interface Props {
@@ -63,7 +64,11 @@ interface Props {
   onRun: () => void;
   onShowItems: () => void;
   dialogInfo?: DialogInfo;
-  onDialogConfirmClick: (info: { type?: DialogType; causedBy: Side }) => void;
+  onDialogConfirmClick: (info: {
+    type?: DialogType;
+    causedBy: Side;
+    nextTurn?: Side;
+  }) => void;
 }
 
 export default function Control({
@@ -101,6 +106,7 @@ export default function Control({
                 onDialogConfirmClick({
                   type: dialogInfo.type,
                   causedBy: dialogInfo.side || "me",
+                  nextTurn: dialogInfo.nextTurn,
                 });
               }}
             >

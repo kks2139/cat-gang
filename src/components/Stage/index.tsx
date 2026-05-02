@@ -1,7 +1,8 @@
 import { generateHapticFeedback } from "@apps-in-toss/web-framework";
 import classNames from "classnames/bind";
 import { AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
+import { produce } from "immer";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useCustomBack } from "@/hooks/useCustomBack";
 import { useItemMutation } from "@/queries/useItemMutation";
@@ -16,6 +17,12 @@ import Effects, { type EffectType } from "./Effects";
 import styles from "./index.module.scss";
 import Inventory, { type ItemType } from "./Inventory";
 import Player from "./Player";
+import type { BuffAndDebuff, StatusEffectInfo } from "./Player/StatusEffect";
+
+interface StatusEffect {
+  my: StatusEffectInfo[];
+  enemy: StatusEffectInfo[];
+}
 
 const cn = classNames.bind(styles);
 
@@ -63,6 +70,14 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
   const [isRun, setIsRun] = useState(false);
   const [isShowItems, setIsShowItems] = useState(false);
   const [usedItem, setUsedItem] = useState<ItemType>();
+  const [statusEffects, setStatusEffects] = useState<StatusEffect>({
+    my: [],
+    enemy: [],
+  });
+  const turnCountRef = useRef<{ my: number; enemy: number }>({
+    my: 0,
+    enemy: 0,
+  });
 
   // 아이템 조회
   useItemQuery();
@@ -93,13 +108,29 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
             ? "item"
             : undefined;
 
+  const checkHasStatusEffect = useCallback(
+    (effect: BuffAndDebuff) => {
+      const me = !!statusEffects.my.find((e) => e.effect === effect);
+      const enemy = !!statusEffects.enemy.find((e) => e.effect === effect);
+
+      return {
+        me,
+        enemy,
+      };
+    },
+    [statusEffects.enemy, statusEffects.my],
+  );
+
   // return: 승리한 사이드
   const punch = async (by: Side): Promise<Side | void> => {
     let winnerSide: Side | undefined;
     const actionDelay = (PUNCH_DURATION + DELAY_OF_ACTIONS) * 1000;
     const isByMe = by === "me";
+    const hasCatnip = checkHasStatusEffect("catnip");
+    const plusDamage = hasCatnip.me ? 2 : 0;
+
     const damage = isByMe
-      ? myCat.punchPower - (defenseInfo.enemyDefense || 0)
+      ? myCat.punchPower + plusDamage - (defenseInfo.enemyDefense || 0)
       : selectedCat!.punchPower - (defenseInfo.myDefense || 0);
 
     if (isByMe) {
@@ -115,7 +146,11 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
 
       await wait(actionDelay);
 
-      setHpInfo({ ...hpInfo, enemyHp });
+      setHpInfo(
+        produce((draft) => {
+          draft.enemyHp = enemyHp;
+        }),
+      );
     } else {
       const myHp = Math.max(hpInfo.myHp - damage, 0);
 
@@ -129,7 +164,11 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
 
       await wait(actionDelay);
 
-      setHpInfo({ ...hpInfo, myHp });
+      setHpInfo(
+        produce((draft) => {
+          draft.myHp = myHp;
+        }),
+      );
     }
 
     // hp감소 효과 대기
@@ -140,34 +179,83 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
 
   const seduce = async (by: Side) => {
     const isByMe = by === "me";
-    const defense = Math.max(
-      (isByMe ? defenseInfo.enemyDefense : defenseInfo.myDefense) - 1,
-      0,
-    );
+    const hasSeduce = checkHasStatusEffect("seduce");
+
+    // 유혹: 방어력 -2
+    const defense = isByMe
+      ? Math.max(defenseInfo.enemyDefense - 2, 0)
+      : Math.max(defenseInfo.myDefense - 2, 0);
 
     if (isByMe) {
       setSeducedBy("enemy");
-      setTimeout(() => setSeducedBy(undefined), SEDUCE_DURATION * 1000);
-      setDefenseInfo({
-        ...defenseInfo,
-        enemyDefense: defense,
-      });
+      await wait(SEDUCE_DURATION * 1000);
+      setSeducedBy(undefined);
+
+      // 중첩효과 x
+      if (!hasSeduce.enemy) {
+        setDefenseInfo(
+          produce((draft) => {
+            draft.enemyDefense = defense;
+          }),
+        );
+      }
+
+      // 상대 유혹 상태 3턴 지속
+      setStatusEffects(
+        produce((draft) => {
+          draft.enemy = draft.enemy.filter((e) => e.effect !== "seduce");
+          draft.enemy.push({
+            effect: "seduce",
+            endTurn: turnCountRef.current.enemy + 3,
+          });
+        }),
+      );
     } else {
       setSeducedBy("me");
-      setTimeout(() => setSeducedBy(undefined), SEDUCE_DURATION * 1000);
-      setDefenseInfo({
-        ...defenseInfo,
-        myDefense: defense,
-      });
+      await wait(SEDUCE_DURATION * 1000);
+      setSeducedBy(undefined);
+
+      // 중첩효과 x
+      if (!hasSeduce.me) {
+        setDefenseInfo(
+          produce((draft) => {
+            draft.myDefense = defense;
+          }),
+        );
+      }
+
+      // 나 유혹 상태 3턴 지속
+      setStatusEffects(
+        produce((draft) => {
+          draft.my = draft.my.filter((e) => e.effect !== "seduce");
+          draft.my.push({
+            effect: "seduce",
+            endTurn: turnCountRef.current.my + 3,
+          });
+        }),
+      );
     }
 
-    await wait((SEDUCE_DURATION + DELAY_OF_ACTIONS) * 1000);
+    await wait(DELAY_OF_ACTIONS * 1000);
   };
 
   const enemyAction = () => {
     // 상대는 랜덤으로 액션을 취한다
     const action = getRandomNumber(8);
     const side = "enemy";
+    const hasFish = checkHasStatusEffect("fish");
+
+    // 생선효과: 상대액션 건너뜀
+    if (hasFish.enemy) {
+      setDialogInfo({
+        side: "enemy",
+        type: "system",
+        speaker: "",
+        text: `${getPostposition(selectedCat!.name, "topic")} 생선에 정신이 팔려있다..!`,
+      });
+
+      return;
+    }
 
     switch (action) {
       // 냥냥펀치
@@ -205,12 +293,45 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
     );
   }, []);
 
+  useEffect(() => {
+    const myTurnCount = turnCountRef.current.my;
+    const enemyTurnCount = turnCountRef.current.enemy;
+
+    // 현재턴수랑 비교해서 상태이상 제거
+    setStatusEffects(
+      produce((draft) => {
+        draft.my = draft.my.filter((effect) => effect.endTurn > myTurnCount);
+        draft.enemy = draft.enemy.filter(
+          (effect) => effect.endTurn > enemyTurnCount,
+        );
+      }),
+    );
+
+    // eslint-disable-next-line react-hooks/refs
+  }, [turnCountRef.current.my, turnCountRef.current.enemy]);
+
   useCustomBack(isShowItems, () => {
     setIsShowItems(false);
   });
 
   return (
     <div className={cn("Stage")}>
+      {/* <div
+        style={{
+          color: "white",
+          fontSize: "20px",
+          position: "absolute",
+          zIndex: 9999,
+          top: 0,
+          left: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+        }}
+      >
+        나 : {statusEffects.my.map((effect) => effect.endTurn)}
+        <div>------</div>
+        상대 : {statusEffects.enemy.map((effect) => effect.endTurn)}
+      </div> */}
+
       <AnimatePresence>
         {isShowItems && (
           <Inventory
@@ -233,10 +354,11 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
 
               switch (item) {
                 case "gukbab":
-                  setHpInfo({
-                    ...hpInfo,
-                    myHp: Math.min(hpInfo.myHp + 5, myCat.hp),
-                  });
+                  setHpInfo(
+                    produce((draft) => {
+                      draft.myHp = Math.min(hpInfo.myHp + 5, myCat.hp);
+                    }),
+                  );
                   setDialogInfo({
                     type: "system",
                     speaker: "",
@@ -244,7 +366,17 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
                   });
                   break;
                 case "catnip":
-                  // TOOD: 상태이상 효과 (공격력 증가) 3턴 동안
+                  // 캣닢 효과 나에게 3턴 지속
+                  setStatusEffects(
+                    produce((draft) => {
+                      draft.my = draft.my.filter((e) => e.effect !== "catnip");
+                      draft.my.push({
+                        effect: "catnip",
+                        endTurn: turnCountRef.current.my + 3,
+                      });
+                    }),
+                  );
+
                   setDialogInfo({
                     type: "system",
                     speaker: "",
@@ -252,15 +384,30 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
                   });
                   break;
                 case "fish":
-                  // TOOD: 상태이상 효과 (상대방 무대응) 2턴 동안
+                  // 물고기 효과 상대에게 2턴 지속
+                  setStatusEffects(
+                    produce((draft) => {
+                      draft.enemy = draft.enemy.filter(
+                        (e) => e.effect !== "fish",
+                      );
+                      draft.enemy.push({
+                        effect: "fish",
+                        endTurn: turnCountRef.current.enemy + 2,
+                      });
+                    }),
+                  );
+
                   setDialogInfo({
                     type: "system",
                     speaker: "",
-                    text: `${getPostposition(selectedCat?.name, "sub")}가 생선에 정신이 팔렸다!`,
+                    text: `${getPostposition(selectedCat?.name, "sub")} 생선에 정신이 팔렸다!`,
+                    nextTurn: "me",
                   });
               }
 
               setUsedItem(undefined);
+
+              turnCountRef.current.my += 1;
             }}
           />
         )}
@@ -288,6 +435,7 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
           }}
           isSpeaking={dialogInfo?.side === "enemy" && enemyEffect !== "lose"}
           usedItem={usedItem}
+          statusEffectInfos={statusEffects.enemy}
         >
           <Effects
             target="enemy"
@@ -329,6 +477,7 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
             dialogInfo.side === undefined
           }
           usedItem={usedItem}
+          statusEffectInfos={statusEffects.my}
         >
           <Effects
             enabled={!!myEffect}
@@ -367,7 +516,9 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
           setIsShowItems(true);
         }}
         // 대화상자 클릭 후 액션 정의
-        onDialogConfirmClick={async ({ type, causedBy }) => {
+        onDialogConfirmClick={async ({ type, causedBy, nextTurn }) => {
+          const turnCountActions = ["punch", "seduce"];
+
           if (dialogConfirmCount === 0) {
             setDialogInfo({
               type: "meet",
@@ -381,9 +532,16 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
             setIsShowControl(false);
 
             if (causedBy === "me") {
+              if (turnCountActions.includes(type || "")) {
+                // 턴 카운트 증가
+                turnCountRef.current.my += 1;
+              }
+
               switch (type) {
                 case "system":
-                  enemyAction();
+                  if (nextTurn !== "me") {
+                    enemyAction();
+                  }
 
                   break;
                 case "punch": {
@@ -444,6 +602,11 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
             }
 
             if (causedBy === "enemy") {
+              if (turnCountActions.includes(type || "")) {
+                // 턴 카운트 증가
+                turnCountRef.current.enemy += 1;
+              }
+
               switch (type) {
                 case "punch": {
                   const winner = await punch("enemy");
@@ -463,7 +626,6 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
                   await seduce("enemy");
 
                   setDialogInfo({
-                    side: "enemy",
                     type: "system",
                     speaker: "",
                     text: `으.. ${selectedCat?.name}의 유혹에 넘어갔다..!`,

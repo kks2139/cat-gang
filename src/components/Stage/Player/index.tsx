@@ -8,6 +8,7 @@ import { type EffectType } from "../Effects";
 import type { ItemType } from "../Inventory";
 import styles from "./index.module.scss";
 import { Status, type StatusProps } from "./Status";
+import StatusEffect, { type StatusEffectInfo } from "./StatusEffect";
 
 const cn = classNames.bind(styles);
 
@@ -51,9 +52,10 @@ function CatVisual({
 }
 
 interface Props extends StatusProps, CatVisualProps {
+  children?: React.ReactNode;
   side: "me" | "enemy";
   isSpeaking?: boolean;
-  children?: React.ReactNode;
+  statusEffectInfos: StatusEffectInfo[];
 }
 
 export default function Player({
@@ -69,6 +71,7 @@ export default function Player({
   side,
   isSpeaking,
   usedItem,
+  statusEffectInfos,
 }: Props) {
   const [hpEffect, setHpEffect] = useState<StatusProps["hpEffect"]>();
   const prevHp = useRef(hp);
@@ -102,6 +105,12 @@ export default function Player({
 
   return (
     <div className={cn("Player")}>
+      <div className={cn("status-effects", { me: isMe })}>
+        {statusEffectInfos.map(({ effect }) => (
+          <StatusEffect key={effect} effect={effect} />
+        ))}
+      </div>
+
       {!isMe && status}
 
       <div
