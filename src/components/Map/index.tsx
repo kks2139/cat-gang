@@ -548,7 +548,7 @@ function MapContent({
 
     const timerId = setInterval(() => {
       spwanItem();
-    }, 5000);
+    }, 10000);
 
     itemSpawnTimerRef.current = timerId;
 
