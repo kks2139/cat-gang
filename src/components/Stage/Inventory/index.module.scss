@@ -84,6 +84,10 @@
       padding-top: 8px;
       flex: 1;
 
+      .loading {
+        padding: 70px 0;
+      }
+
       .grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);

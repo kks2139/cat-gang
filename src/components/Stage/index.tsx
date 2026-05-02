@@ -4,6 +4,7 @@ import { AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 
 import { useCustomBack } from "@/hooks/useCustomBack";
+import { useItemMutation } from "@/queries/useItemMutation";
 import { useItemQuery } from "@/queries/useItemQuery";
 import { useCatStore } from "@/store/cat";
 import { type CatInfo, MyCat } from "@/utils/cats";
@@ -65,6 +66,7 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
 
   // 아이템 조회
   useItemQuery();
+  const { mutateAsync: updateItemCount } = useItemMutation();
 
   const isVictory = !!winner && winner === "me";
 
@@ -213,22 +215,27 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
         {isShowItems && (
           <Inventory
             onClose={() => setIsShowItems(false)}
-            onSelect={async (item) => {
+            onSelect={async (item, currCount) => {
               setIsShowItems(false);
               setIsShowControl(false);
               setUsedItem(item);
 
-              await wait(3000);
+              // 아이템 카운트 반영 + 사용 모션 대기
+              await Promise.allSettled([
+                updateItemCount({
+                  itemType: item,
+                  count: Math.max(currCount - 1, 0),
+                }),
+                wait(3000),
+              ]);
 
               setIsShowControl(true);
-
-              // TODO: 아이템 소모 db 호출
 
               switch (item) {
                 case "gukbab":
                   setHpInfo({
                     ...hpInfo,
-                    myHp: Math.max(hpInfo.myHp + 5, myCat.hp),
+                    myHp: Math.min(hpInfo.myHp + 5, myCat.hp),
                   });
                   setDialogInfo({
                     type: "system",

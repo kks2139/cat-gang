@@ -25,7 +25,6 @@ export default function Entry() {
 
   useMyCatsQuery();
 
-  // TODO: 토스 아이디로 유저 정보 가져오기
   const {
     data: user,
     isError,

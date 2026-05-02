@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import ImgCatnip from "@/assets/img/item/catnip.png";
 import ImgFish from "@/assets/img/item/fish.png";
 import ImgGukbab from "@/assets/img/item/gukbab.png";
+import Loading from "@/components/Loading";
 import { useItemQuery } from "@/queries/useItemQuery";
 
 import styles from "./index.module.scss";
@@ -35,36 +36,37 @@ export type ItemType = "gukbab" | "fish" | "catnip";
 
 interface Props {
   onClose: () => void;
-  onSelect: (item: ItemType) => void;
+  onSelect: (item: ItemType, currCount: number) => void;
 }
 
 export default function Inventory({ onClose, onSelect }: Props) {
-  const { data: itemCount } = useItemQuery();
+  const { data: itemCount, isLoading } = useItemQuery();
+  const { gukbab = 0, fish = 0, catnip = 0 } = itemCount || {};
 
   const slots = useMemo(() => {
     const arr = [];
 
-    if (itemCount?.gukbab)
+    if (gukbab)
       arr.push({
         img: ImgGukbab,
-        count: itemCount?.gukbab,
-        onClick: () => onSelect("gukbab"),
+        count: gukbab,
+        onClick: () => onSelect("gukbab", gukbab),
       });
-    if (itemCount?.fish)
+    if (fish)
       arr.push({
         img: ImgFish,
-        count: itemCount?.fish,
-        onClick: () => onSelect("fish"),
+        count: fish,
+        onClick: () => onSelect("fish", fish),
       });
-    if (itemCount?.catnip)
+    if (catnip)
       arr.push({
         img: ImgCatnip,
-        count: itemCount?.catnip,
-        onClick: () => onSelect("catnip"),
+        count: catnip,
+        onClick: () => onSelect("catnip", catnip),
       });
 
     return arr;
-  }, [itemCount?.catnip, itemCount?.fish, itemCount?.gukbab, onSelect]);
+  }, [catnip, fish, gukbab, onSelect]);
 
   return (
     <motion.div
@@ -91,20 +93,24 @@ export default function Inventory({ onClose, onSelect }: Props) {
         </div>
 
         <div className={cn("content")}>
-          <div className={cn("grid")}>
-            {slots.map((slot, i) => (
-              <Slot
-                key={i}
-                img={slot.img}
-                count={slot.count}
-                onClick={slot.onClick}
-              />
-            ))}
+          {isLoading ? (
+            <Loading className={cn("loading")} noBackground />
+          ) : (
+            <div className={cn("grid")}>
+              {slots.map((slot, i) => (
+                <Slot
+                  key={i}
+                  img={slot.img}
+                  count={slot.count}
+                  onClick={slot.onClick}
+                />
+              ))}
 
-            {Array.from({ length: 6 - slots.length }, (_, i) => (
-              <Slot key={i} img="" />
-            ))}
-          </div>
+              {Array.from({ length: 6 - slots.length }, (_, i) => (
+                <Slot key={i} img="" />
+              ))}
+            </div>
+          )}
         </div>
       </motion.div>
     </motion.div>
