@@ -170,8 +170,8 @@ export default function FindCat() {
         {isShowStage && (
           <motion.div
             className={cn("img-popup")}
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0, transition: { duration: 0.1 } }}
             transition={{ duration: 0.2 }}
           >
