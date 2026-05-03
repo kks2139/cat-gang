@@ -81,7 +81,7 @@ function MapContent({
 }: Props) {
   const isStopFocusMe = useViewStore((s) => s.isStopFocusMe);
   const isBattleOn = useViewStore((s) => s.isBattleOn);
-  const { setIsStopFocusMe } = useViewStore((s) => s.actions);
+  const { setIsStopFocusMe, addToastMessage } = useViewStore((s) => s.actions);
 
   // 최신 isStopFocusMe 값을 ref에 동기화 (클로저 스코프 문제 방지)
   const isStopFocusMeRef = useRef(isStopFocusMe);
@@ -494,6 +494,11 @@ function MapContent({
 
         if (container && itemCountRef.current) {
           container.classList.add("clicked");
+
+          addToastMessage({
+            duration: 3000,
+            message: `${itemType === "catnip" ? "캣닢" : itemType === "gukbab" ? "국밥" : "생선"} +1`,
+          });
 
           const [updateResult] = await Promise.allSettled([
             updateItemCount({
