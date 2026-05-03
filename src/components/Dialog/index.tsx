@@ -16,6 +16,7 @@ interface Props {
   onSubButtonClick?: () => void;
   children?: React.ReactNode;
   buttonDisabled?: boolean;
+  className?: string;
 }
 
 export default function Dialog({
@@ -28,12 +29,13 @@ export default function Dialog({
   onSubButtonClick,
   children,
   buttonDisabled,
+  className,
 }: Props) {
   return (
     <AnimatePresence>
       {isShow && (
         <motion.div
-          className={cn("Dialog")}
+          className={cn("Dialog", className)}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1, transition: { duration: 0.3 } }}
           exit={{ opacity: 0, transition: { duration: 0.1 } }}

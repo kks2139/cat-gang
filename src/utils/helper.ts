@@ -114,15 +114,7 @@ export const createMarker = ({
     catImg.dataset.catImg = "true";
     catImg.src = imgUrl;
 
-    if (type === "me") {
-      // 클릭 시 골골대는 모션 적용을 위함
-      const golgolWrapper = document.createElement("div");
-      golgolWrapper.dataset.golgol = "true";
-      golgolWrapper.className = "golgol";
-
-      container.appendChild(golgolWrapper);
-      golgolWrapper.appendChild(catImg);
-    } else if (type === "item") {
+    if (type === "item") {
       // 클릭 시 골골대는 모션 적용을 위함
       const itemWrapper = document.createElement("div");
       itemWrapper.className = "item";

@@ -17,8 +17,6 @@ import {
 } from "react-leaflet";
 
 import ImgCatMe from "@/assets/img/character/cat-me.png";
-import ImgCatMeJump from "@/assets/img/character/cat-me-jump.png";
-import ImgCatLaugh from "@/assets/img/character/cat-me-laugh.png";
 import ImgCatMeWalk1 from "@/assets/img/character/cat-me-walk-1.png";
 import ImgCatMeWalk2 from "@/assets/img/character/cat-me-walk-2.png";
 import ImgCatnip from "@/assets/img/item/catnip.png";
@@ -29,7 +27,7 @@ import { useItemMutation } from "@/queries/useItemMutation";
 import { useItemQuery } from "@/queries/useItemQuery";
 import { useCatStore } from "@/store/cat";
 import { useViewStore } from "@/store/view";
-import { catCharacters, myCat } from "@/utils/cats";
+import { catCharacters } from "@/utils/cats";
 import {
   animateMarker,
   createMarker,
@@ -68,6 +66,7 @@ interface Props {
   onMapReady?: (map: L.Map) => void;
   onCreateCatsComplete?: () => void;
   ref?: React.Ref<L.Marker | null>;
+  onClickMe?: () => void;
 }
 
 function MapContent({
@@ -78,6 +77,7 @@ function MapContent({
   onMapReady,
   onCreateCatsComplete,
   ref: myMarkerRef,
+  onClickMe,
 }: Props) {
   const isStopFocusMe = useViewStore((s) => s.isStopFocusMe);
   const isBattleOn = useViewStore((s) => s.isBattleOn);
@@ -185,44 +185,8 @@ function MapContent({
           imgUrl: ImgCatMe,
           map,
           position: [coords.latitude, coords.longitude],
-        }).on("click", (e) => {
-          const target = e.originalEvent.target as HTMLElement;
-          const container = target.closest("[data-marker-container]");
-          const catImg = container?.querySelector(
-            "[data-cat-img]",
-          ) as HTMLImageElement;
-          const golgolWrapper = container?.querySelector(
-            "[data-golgol]",
-          ) as HTMLElement;
-
-          if (!container || meClickedTimerRef.current) {
-            return;
-          }
-
-          container.classList.add("me-clicked");
-
-          const speak = container.querySelector("[data-speak]");
-          if (speak) {
-            speak.textContent = myCat.dialog.greeting[getRandomNumber(10)];
-          }
-
-          const catMotion =
-            (getRandomNumber(2) + 1) % 2 === 0 ? "bounce" : "purr";
-          golgolWrapper.classList.add(catMotion);
-          catImg.src = catMotion === "bounce" ? ImgCatMeJump : ImgCatLaugh;
-
-          meClickedTimerRef.current = setTimeout(() => {
-            if (speak) {
-              speak.textContent = null;
-            }
-
-            container.classList.remove("me-clicked");
-            golgolWrapper.classList.remove(catMotion);
-            catImg.src = ImgCatMe;
-
-            meClickedTimerRef.current = undefined;
-            clearTimeout(meClickedTimerRef.current);
-          }, 3000);
+        }).on("click", () => {
+          onClickMe?.();
         });
 
         marker.setZIndexOffset(99);
@@ -248,7 +212,7 @@ function MapContent({
         coords,
       };
     },
-    [map, startWalkAnimation],
+    [map, onClickMe, startWalkAnimation],
   );
 
   const drawCats = useCallback(() => {

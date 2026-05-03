@@ -1,7 +1,5 @@
 import { generateHapticFeedback } from "@apps-in-toss/web-framework";
 import classNames from "classnames/bind";
-import { format } from "date-fns";
-import { ko } from "date-fns/locale";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -16,7 +14,7 @@ import { useItemQuery } from "@/queries/useItemQuery";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
 import { useCatStore } from "@/store/cat";
 import { useViewStore } from "@/store/view";
-import { type CatInfo, getCat } from "@/utils/cats";
+import { type CatInfo } from "@/utils/cats";
 import {
   getFireworkElement,
   getPostposition,
@@ -26,6 +24,8 @@ import {
 
 import styles from "./index.module.scss";
 import MyCats from "./MyCats";
+import MyInfoDialog from "./MyInfoDialog";
+import OwnCatInfoDialog from "./OwnCatInfoDialog";
 
 const cn = classNames.bind(styles);
 
@@ -39,7 +39,8 @@ export default function FindCat() {
   );
 
   const [isShowVictoryDialog, setIsShowVictoryDialog] = useState(false);
-  const [isShowMyCatPopup, setIsShowMyCatPopup] = useState(false);
+  const [isShowCatchedCatPopup, setIsShowCatchedCatPopup] = useState(false);
+  const [isShowMyInfoPopup, setIsShowMyInfoPopup] = useState(false);
   const [catchedCat, setCatchedCat] = useState<CatInfo>();
   const [ownCatInfo, setOwnCatInfo] = useState<OwnCat>();
 
@@ -54,15 +55,13 @@ export default function FindCat() {
     createdAt: c.created_at,
   })) as OwnCat[];
 
-  const selectedOwnCat = getCat(ownCatInfo?.name || "");
-
   useCustomBack(true, () => {
     if (isShowStage) {
       return;
     }
 
-    if (isShowMyCatPopup) {
-      setIsShowMyCatPopup(false);
+    if (isShowCatchedCatPopup) {
+      setIsShowCatchedCatPopup(false);
       return;
     }
 
@@ -93,6 +92,9 @@ export default function FindCat() {
         onClickOwnCat={(cat) => {
           setOwnCatInfo(cat);
         }}
+        onClickMe={() => {
+          setIsShowMyInfoPopup(true);
+        }}
       />
 
       <div className={cn("menu")}>
@@ -100,7 +102,7 @@ export default function FindCat() {
           <Button
             onClick={() => {
               setIsStopFocusMe(true);
-              setIsShowMyCatPopup(true);
+              setIsShowCatchedCatPopup(true);
             }}
           >
             내 부하
@@ -115,8 +117,9 @@ export default function FindCat() {
         </div>
       </div>
 
+      {/* 부하 목록 바텀시트 */}
       <AnimatePresence>
-        {isShowMyCatPopup && (
+        {isShowCatchedCatPopup && (
           <motion.div
             className={cn("my-cats-modal")}
             initial={{ opacity: 0 }}
@@ -128,7 +131,7 @@ export default function FindCat() {
               const el = target.closest("[data-bottom-sheet]");
 
               if (!el) {
-                setIsShowMyCatPopup(false);
+                setIsShowCatchedCatPopup(false);
               }
             }}
           >
@@ -145,7 +148,7 @@ export default function FindCat() {
                   <Button
                     size="small"
                     onClick={() => {
-                      setIsShowMyCatPopup(false);
+                      setIsShowCatchedCatPopup(false);
                     }}
                   >
                     ×
@@ -166,6 +169,7 @@ export default function FindCat() {
         )}
       </AnimatePresence>
 
+      {/* 전투 팝업 */}
       <AnimatePresence>
         {isShowStage && (
           <motion.div
@@ -207,6 +211,7 @@ export default function FindCat() {
         )}
       </AnimatePresence>
 
+      {/* 승리 팝업 */}
       <Dialog
         isShow={isShowVictoryDialog}
         title="승리"
@@ -241,35 +246,20 @@ export default function FindCat() {
         }}
       />
 
-      <Dialog
+      {/* 잡은 고양이 팝업 */}
+      <OwnCatInfoDialog
         isShow={!!ownCatInfo}
-        title={selectedOwnCat?.name}
-        subTitle={
-          <div className={cn("own-cat")}>
-            <div className={cn("crying")}>{selectedOwnCat?.crying}</div>
-
-            <img src={selectedOwnCat?.img} alt="" />
-
-            <div className={cn("info")}>
-              <div className={cn("label")}>잡은 날</div>
-              {ownCatInfo?.createdAt && (
-                <div className={cn("created-at")}>
-                  {format(ownCatInfo.createdAt, "yyyy년 M월 d일 (eee)", {
-                    locale: ko,
-                  })}
-                  <div>
-                    {format(ownCatInfo.createdAt, "HH:mm", {
-                      locale: ko,
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        }
-        buttonLable="확인"
-        onButtonClick={() => {
+        onClose={() => {
           setOwnCatInfo(undefined);
+        }}
+        ownCat={ownCatInfo}
+      />
+
+      {/* 내 고양이 정보 팝업 */}
+      <MyInfoDialog
+        isShow={isShowMyInfoPopup}
+        onClose={() => {
+          setIsShowMyInfoPopup(false);
         }}
       />
     </main>

@@ -121,38 +121,4 @@
       }
     }
   }
-
-  .own-cat {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-
-    .crying {
-      display: flex;
-      justify-content: center;
-      margin: -20px 0 10px 0;
-    }
-
-    img {
-      width: 170px;
-    }
-
-    .info {
-      text-align: center;
-      justify-content: center;
-      font-size: 16px;
-      margin-top: 5px;
-
-      .label {
-        font-weight: bold;
-        margin-bottom: 5px;
-        color: var(--main-border);
-      }
-
-      .created-at {
-        font-size: 16px;
-        color: rgb(158, 158, 158);
-      }
-    }
-  }
 }
