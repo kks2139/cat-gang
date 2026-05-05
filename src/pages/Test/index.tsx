@@ -4,9 +4,13 @@ import {
 } from "@apps-in-toss/web-framework";
 
 import Button from "@/components/Button";
+import { useUsersQuery } from "@/queries/useUsersQuery";
+import { initAuth } from "@/utils/db/supabase";
 import { getCurrentPosition, UserKey, watchPosition } from "@/utils/native";
 
 export default function Test() {
+  const { refetch: fetchUser } = useUsersQuery({ enabled: false });
+
   return (
     <div
       style={{
@@ -76,6 +80,25 @@ export default function Test() {
           }}
         >
           {"watchPosition()"}
+        </Button>
+
+        <Button
+          onClick={async () => {
+            const userKey = await UserKey.getInstance().getKey();
+            const token = await initAuth(userKey || "");
+
+            console.log(token);
+          }}
+        >
+          토큰 받기
+        </Button>
+
+        <Button
+          onClick={async () => {
+            fetchUser();
+          }}
+        >
+          유저 조회
         </Button>
       </div>
     </div>

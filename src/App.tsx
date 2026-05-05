@@ -7,6 +7,7 @@ import {
   RouterProvider,
 } from "react-router-dom";
 
+import Auth from "./components/Auth";
 import NavigationBlocker from "./components/NavigationBlocker";
 import ReactQueryProvider from "./components/ReactQueryProvider";
 import ToastMessage from "./components/ToastMessage";
@@ -27,7 +28,11 @@ const router = createBrowserRouter(
       children: [
         {
           index: true,
-          element: <Entry />,
+          element: (
+            <Auth>
+              <Entry />
+            </Auth>
+          ),
         },
         {
           path: "find-cat",

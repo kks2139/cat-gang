@@ -21,9 +21,9 @@
   .init-loading {
     z-index: 20;
     position: absolute;
+    top: 50%;
     left: 50%;
-    bottom: 40px;
-    transform: translateX(-50%);
+    transform: translate(-50%, -50%);
   }
 
   .title {

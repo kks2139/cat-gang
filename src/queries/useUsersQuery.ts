@@ -13,8 +13,11 @@ interface Result {
   created_at: string;
 }
 
-export const useUsersQuery = () => {
+export const useUsersQuery = ({
+  enabled = true,
+}: { enabled?: boolean } = {}) => {
   const queryData = useQuery({
+    enabled,
     queryKey: [QUERY_KEY.USERS],
     queryFn: async () => {
       const userKey = await UserKey.getInstance().getKey();

@@ -1,12 +1,65 @@
 import { createClient } from "@supabase/supabase-js";
 
+import { UserKey } from "../native";
 import type { Database } from "./types";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-// 클라이언트 생성
+let accessToken: string | null = null;
+
+const isTokenExpired = (token: string) => {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const now = Math.floor(Date.now() / 1000);
+
+    return payload.exp - now < 60;
+  } catch {
+    return true;
+  }
+};
+
+const fetchToken = async (): Promise<string | null> => {
+  const userKey = await UserKey.getInstance().getKey();
+
+  if (!userKey) {
+    return null;
+  }
+
+  const { data, error } = await supabase.functions.invoke("auth", {
+    body: { userKey },
+  });
+
+  if (error) {
+    console.error("Failed to invoke auth function:", error);
+    throw error;
+  }
+
+  if (!data?.token) {
+    throw new Error("No token returned from auth function");
+  }
+
+  return data.token as string;
+};
+
 export const supabase = createClient<Database>(
   supabaseUrl,
   supabasePublishableKey,
+  {
+    // 매 요청마다 콜백 호출 (토큰 체크)
+    accessToken: async () => {
+      if (!accessToken || isTokenExpired(accessToken)) {
+        accessToken = await fetchToken();
+      }
+
+      return accessToken ?? "";
+    },
+  },
 );
+
+// 앱 시작 시 호출하는 초기화 함수
+export const initAuth = async () => {
+  accessToken = await fetchToken();
+
+  return accessToken;
+};
