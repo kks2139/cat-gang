@@ -84,10 +84,7 @@ export default function Test() {
 
         <Button
           onClick={async () => {
-            const userKey = await UserKey.getInstance().getKey();
-            const token = await initAuth(userKey || "");
-
-            console.log(token);
+            initAuth();
           }}
         >
           토큰 받기
