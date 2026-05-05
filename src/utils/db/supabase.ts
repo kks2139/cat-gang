@@ -10,6 +10,7 @@ const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 const authClient = createClient<Database>(supabaseUrl, supabasePublishableKey);
 
 let accessToken: string | null = null;
+let fetchingPromise: Promise<string | null> | null = null;
 
 const isTokenExpired = (token: string) => {
   try {
@@ -23,27 +24,40 @@ const isTokenExpired = (token: string) => {
 };
 
 const fetchToken = async (): Promise<string | null> => {
-  const userKey = await UserKey.getInstance().getKey();
-
-  if (!userKey) {
-    return null;
+  // 이미 진행 중인 요청이 있으면 재사용 (중복 호출 방지)
+  if (fetchingPromise) {
+    return fetchingPromise;
   }
 
-  // authClient를 사용하여 재귀 호출 방지
-  const { data, error } = await authClient.functions.invoke("auth", {
-    body: { userKey },
-  });
+  fetchingPromise = (async () => {
+    try {
+      const userKey = await UserKey.getInstance().getKey();
 
-  if (error) {
-    console.error("Failed to invoke auth function:", error);
-    throw error;
-  }
+      if (!userKey) {
+        return null;
+      }
 
-  if (!data?.token) {
-    throw new Error("No token returned from auth function");
-  }
+      // authClient를 사용하여 재귀 호출 방지
+      const { data, error } = await authClient.functions.invoke("auth", {
+        body: { userKey },
+      });
 
-  return data.token as string;
+      if (error) {
+        console.error("Failed to invoke auth function:", error);
+        throw error;
+      }
+
+      if (!data?.token) {
+        throw new Error("No token returned from auth function");
+      }
+
+      return data.token as string;
+    } finally {
+      fetchingPromise = null;
+    }
+  })();
+
+  return fetchingPromise;
 };
 
 export const supabase = createClient<Database>(
@@ -66,4 +80,3 @@ export const initAuth = async () => {
 
   return accessToken;
 };
-
