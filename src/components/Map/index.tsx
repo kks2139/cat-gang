@@ -492,7 +492,7 @@ function MapContent({
           .getElement()
           ?.querySelector("[data-type='item']");
 
-        if (container && itemCountRef.current) {
+        if (container) {
           container.classList.add("clicked");
 
           addToastMessage({
@@ -503,7 +503,7 @@ function MapContent({
           const [updateResult] = await Promise.allSettled([
             updateItemCount({
               itemType,
-              count: (itemCountRef.current[itemType] || 0) + 1,
+              count: (itemCountRef?.current?.[itemType] || 0) + 1,
             }),
             wait(2000),
           ]);
@@ -517,7 +517,7 @@ function MapContent({
 
     const timerId = setInterval(() => {
       spwanItem();
-    }, 10000);
+    }, 1000);
 
     itemSpawnTimerRef.current = timerId;
 
