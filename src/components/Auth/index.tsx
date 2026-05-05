@@ -27,11 +27,9 @@ export default function Auth({ children }: Props) {
 
       isInitialized.current = true;
 
-      // const isOk = await setAuth();
+      await setAuth();
 
       setIsLoading(false);
-      // if (true) {
-      // }
     })();
   }, [setAuth]);
 

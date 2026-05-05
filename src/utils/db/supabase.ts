@@ -6,6 +6,9 @@ import type { Database } from "./types";
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+// 인증 토큰 요청을 위한 별도의 클라이언트 (무한 루프 방지)
+const authClient = createClient<Database>(supabaseUrl, supabasePublishableKey);
+
 let accessToken: string | null = null;
 
 const isTokenExpired = (token: string) => {
@@ -26,7 +29,8 @@ const fetchToken = async (): Promise<string | null> => {
     return null;
   }
 
-  const { data, error } = await supabase.functions.invoke("auth", {
+  // authClient를 사용하여 재귀 호출 방지
+  const { data, error } = await authClient.functions.invoke("auth", {
     body: { userKey },
   });
 
@@ -46,7 +50,6 @@ export const supabase = createClient<Database>(
   supabaseUrl,
   supabasePublishableKey,
   {
-    // 매 요청마다 콜백 호출 (토큰 체크)
     accessToken: async () => {
       if (!accessToken || isTokenExpired(accessToken)) {
         accessToken = await fetchToken();
@@ -63,3 +66,4 @@ export const initAuth = async () => {
 
   return accessToken;
 };
+

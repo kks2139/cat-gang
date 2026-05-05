@@ -69,32 +69,34 @@ export default function AddUserDialog({ isShow, onSuccess, onCancel }: Props) {
         }}
       >
         <div className={cn("dialog-input")}>
-          <Input
-            autoFocus
-            placeholder="고양이 이름"
-            value={inputName}
-            isError={!!inputErrorMessage}
-            errorMessage={inputErrorMessage}
-            maxLength={10}
-            onChange={(e) => {
-              const value = e.target.value;
-              const input = safeText(value);
+          <div className={cn("inputs")}>
+            <Input
+              autoFocus
+              placeholder="고양이 이름"
+              value={inputName}
+              isError={!!inputErrorMessage}
+              errorMessage={inputErrorMessage}
+              maxLength={10}
+              onChange={(e) => {
+                const value = e.target.value;
+                const input = safeText(value);
 
-              setInputName(input);
-              setInputErrorMessage("");
-            }}
-          />
-          <Input
-            placeholder="울음 소리"
-            value={inputCrying}
-            maxLength={10}
-            onChange={(e) => {
-              const value = e.target.value;
-              const input = safeText(value);
+                setInputName(input);
+                setInputErrorMessage("");
+              }}
+            />
+            <Input
+              placeholder="울음 소리"
+              value={inputCrying}
+              maxLength={10}
+              onChange={(e) => {
+                const value = e.target.value;
+                const input = safeText(value);
 
-              setInputCrying(input);
-            }}
-          />
+                setInputCrying(input);
+              }}
+            />
+          </div>
         </div>
       </Dialog>
 
