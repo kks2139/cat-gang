@@ -605,11 +605,11 @@ export default function Map({ className, ...rest }: Props) {
         className={cn("focus-button", { "stop-focus": isStopFocusMe })}
         onClick={async () => {
           if (myMarkerRef.current) {
-            // flyTo 완료 후에 자동 추적 재개 (flyTo 도중 panTo/setView와 충돌 방지)
+            // panTo 완료 후에 자동 추적 재개 (panTo 도중 panTo/setView와 충돌 방지)
             map?.once("moveend", () => {
               setIsStopFocusMe(false);
             });
-            map?.flyTo(myMarkerRef.current.getLatLng(), map.getZoom());
+            map?.panTo(myMarkerRef.current.getLatLng());
           }
         }}
       ></button>
