@@ -22,7 +22,7 @@ export default function OwnCatInfoDialog({ onClose, isShow, ownCat }: Props) {
   return (
     <Dialog
       isShow={isShow}
-      title="내 부하 정보"
+      title="내 부하"
       buttonLable="확인"
       onButtonClick={() => {
         onClose?.();

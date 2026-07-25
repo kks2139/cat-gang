@@ -245,11 +245,11 @@ function MapContent({
 
       switch (rarity) {
         case "rare":
-          return num < 5; // 그릴 확률
+          return num < 3; // 그릴 확률
         case "unique":
-          return num < 2; //
+          return num < 1; //
         default:
-          return num < 20;
+          return num < 10;
       }
     });
 
@@ -517,7 +517,7 @@ function MapContent({
 
     const timerId = setInterval(() => {
       spwanItem();
-    }, 10000);
+    }, 60_000);
 
     itemSpawnTimerRef.current = timerId;
 

@@ -23,11 +23,13 @@ export default function MyInfoDialog({ onClose, isShow }: Props) {
 
   const myCat = MyCat.getInstance().getMyCat();
 
+  console.log(myCat);
+
   return (
     <Dialog
       className={cn("MyInfoDialog")}
       isShow={isShow}
-      title="내 고양이 정보"
+      title="내 고양이"
       buttonLable="확인"
       onButtonClick={() => {
         onClose?.();

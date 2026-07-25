@@ -618,8 +618,37 @@ input {
   &.rare {
     .glow-floor {
       &::before {
-        display: none;
+        // 작은 황금 불꽃
+        height: 40px;
+        width: 40px;
+        bottom: 85%;
+        background: radial-gradient(
+          ellipse at 50% 85%,
+          rgba(255, 255, 255, 1) 0%,
+          rgba(255, 255, 100, 0.95) 18%,
+          rgba(255, 220, 0, 0.85) 40%,
+          rgba(255, 140, 0, 0.5) 70%,
+          transparent 100%
+        );
       }
+    }
+    
+    // 은은한 후광
+    &::before {
+      content: "";
+      position: absolute;
+      top: -10px;
+      left: -10px;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        rgba(255, 200, 0, 0.2) 0%,
+        transparent 70%
+      );
+      animation: pulse-aura 2s ease-in-out infinite alternate;
+      pointer-events: none;
     }
   }
 
@@ -630,16 +659,20 @@ input {
         rgba(240, 220, 255, 1) 0%,
         rgba(200, 100, 255, 1) 20%,
         rgba(160, 40, 255, 0.9) 50%,
-        rgba(100, 0, 200, 0.4) 75%,
+        rgba(100, 0, 200, 0.6) 75%,
         rgba(60, 0, 120, 0) 100%
       );
       box-shadow:
-        0 0 4px 2px rgba(220, 180, 255, 1),
-        0 0 12px 6px rgba(180, 80, 255, 0.95),
-        0 0 26px 12px rgba(130, 0, 255, 0.65),
-        0 0 46px 20px rgba(80, 0, 180, 0.3);
+        0 0 6px 3px rgba(220, 180, 255, 1),
+        0 0 16px 8px rgba(180, 80, 255, 0.95),
+        0 0 32px 16px rgba(130, 0, 255, 0.8),
+        0 0 56px 25px rgba(80, 0, 180, 0.6);
 
       &::before {
+        // 크고 화려한 보라 불꽃
+        height: 65px;
+        width: 55px;
+        bottom: 85%;
         background: radial-gradient(
           ellipse at 50% 85%,
           rgba(255, 255, 255, 1) 0%,
@@ -648,7 +681,67 @@ input {
           rgba(100, 0, 200, 0.5) 70%,
           transparent 100%
         );
+        filter: blur(1px);
+        animation: flame-center 0.22s ease-in-out infinite alternate;
       }
+      
+      &::after {
+        // 좌우를 감싸는 보조 불꽃
+        content: "";
+        position: absolute;
+        bottom: 75%;
+        left: 50%;
+        width: 45px;
+        height: 45px;
+        border-radius: 50% 50% 25% 25% / 85% 85% 15% 15%;
+        transform-origin: center bottom;
+        background: radial-gradient(
+          ellipse at 50% 85%,
+          rgba(255, 255, 255, 0.9) 0%,
+          rgba(220, 150, 255, 0.85) 18%,
+          rgba(170, 50, 255, 0.75) 40%,
+          rgba(100, 0, 200, 0.4) 70%,
+          transparent 100%
+        );
+        filter: blur(1.5px);
+        animation: flame-sway-l 0.26s ease-in-out infinite alternate;
+        margin-left: -22px;
+      }
+    }
+    
+    // 폭발적인 펄스 링 효과
+    &::before {
+      content: "";
+      position: absolute;
+      top: -15px;
+      left: -15px;
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      border: 2px solid rgba(180, 80, 255, 0.8);
+      box-shadow: 0 0 15px rgba(180, 80, 255, 0.6), inset 0 0 15px rgba(180, 80, 255, 0.6);
+      animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+      pointer-events: none;
+    }
+
+    // 솟아오르는 빛기둥 효과
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: -5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 25px;
+      height: 120px;
+      background: linear-gradient(
+        to top,
+        rgba(220, 150, 255, 0.8) 0%,
+        rgba(170, 50, 255, 0.3) 40%,
+        transparent 100%
+      );
+      filter: blur(4px);
+      animation: light-pillar 2s ease-in-out infinite alternate;
+      pointer-events: none;
     }
   }
 
@@ -688,20 +781,48 @@ input {
       height: 50px;
       border-radius: 50% 50% 25% 25% / 85% 85% 15% 15%;
       transform-origin: center bottom;
-      // background: radial-gradient(
-      //   ellipse at 50% 85%,
-      //   rgba(255, 255, 255, 1) 0%,
-      //   rgba(255, 255, 100, 0.95) 18%,
-      //   rgba(255, 220, 0, 0.85) 40%,
-      //   rgba(255, 140, 0, 0.5) 70%,
-      //   transparent 100%
-      // );
       filter: blur(0.8px);
       animation: flame-center 0.26s ease-in-out infinite alternate;
     }
   }
 
   // ─── 애니메이션 ──────────────────────────────────
+
+  @keyframes pulse-aura {
+    0% {
+      transform: scale(0.9);
+      opacity: 0.5;
+    }
+    100% {
+      transform: scale(1.2);
+      opacity: 1;
+    }
+  }
+
+  @keyframes pulse-ring {
+    0% {
+      transform: scale(0.6);
+      opacity: 0;
+    }
+    30% {
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1.6);
+      opacity: 0;
+    }
+  }
+
+  @keyframes light-pillar {
+    0% {
+      transform: translateX(-50%) scaleY(0.8);
+      opacity: 0.5;
+    }
+    100% {
+      transform: translateX(-50%) scaleY(1.2);
+      opacity: 0.9;
+    }
+  }
 
   // 바닥 에너지 고동 (불규칙 진동)
   @keyframes saiyan-ki {
