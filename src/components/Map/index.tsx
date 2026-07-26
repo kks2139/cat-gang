@@ -43,6 +43,7 @@ import {
   setMockLocation,
   watchPosition,
 } from "@/utils/native";
+import { getTodayDistance, storeTodayDistance } from "@/utils/storage";
 
 import Loading from "../Loading";
 import styles from "./index.module.scss";
@@ -118,7 +119,7 @@ function MapContent({
 
   const trajectoryRef = useRef<L.Polyline | null>(null);
   const pathRef = useRef<L.LatLng[]>([]);
-  const totalDistanceRef = useRef<number>(0);
+  const totalDistanceRef = useRef<number>(getTodayDistance());
   const startPointRef = useRef<L.CircleMarker | null>(null);
 
   const { data: itemCount } = useItemQuery();
@@ -196,7 +197,8 @@ function MapContent({
         const lastLatLng = pathRef.current[pathRef.current.length - 1];
         const dist = lastLatLng.distanceTo(newLatLng);
 
-        if (dist > 0) {
+        // 5미터 넘게 이동했을때만 거리 추가
+        if (dist > 5) {
           totalDistanceRef.current += dist;
           onDistanceChange?.(totalDistanceRef.current);
           pathRef.current.push(newLatLng);
@@ -594,7 +596,7 @@ export default function Map({ className, ...rest }: Props) {
   const { setMap, setIsStopFocusMe } = useViewStore((s) => s.actions);
 
   const [isLoading, setisLoading] = useState(true);
-  const [totalDistance, setTotalDistance] = useState(0);
+  const [totalDistance, setTotalDistance] = useState(getTodayDistance());
 
   const myMarkerRef = useRef<L.Marker>(null);
 
@@ -613,7 +615,7 @@ export default function Map({ className, ...rest }: Props) {
   }, [isLoading, map]);
 
   return (
-    <div className={cn("map-wrapper", { night: isNight })}>
+    <div className={cn("map-wrapper")}>
       <SkyLayer useDayNight={false} isNight={isNight} hours={hours} />
       {/* <AdBanner adGroupId="123" /> */}
 
@@ -648,7 +650,10 @@ export default function Map({ className, ...rest }: Props) {
         {/* 맵 내부 마커생성, 이벤트 등록 등 */}
         <MapContent
           {...rest}
-          onDistanceChange={setTotalDistance}
+          onDistanceChange={(distance) => {
+            storeTodayDistance(distance);
+            setTotalDistance(distance);
+          }}
           ref={myMarkerRef}
           className={cn("map-content")}
           onMapReady={(map) => {
