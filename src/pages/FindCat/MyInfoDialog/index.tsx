@@ -23,8 +23,6 @@ export default function MyInfoDialog({ onClose, isShow }: Props) {
 
   const myCat = MyCat.getInstance().getMyCat();
 
-  console.log(myCat);
-
   return (
     <Dialog
       className={cn("MyInfoDialog")}

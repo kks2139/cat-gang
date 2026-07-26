@@ -594,7 +594,7 @@ export default function Map({ className, ...rest }: Props) {
       {/* <AdBanner adGroupId="123" /> */}
 
       <div className={cn("distance-display")}>
-        오늘의 산책 거리: {(totalDistance / 1000).toFixed(2)} km
+        오늘의 산책 거리 : {(totalDistance / 1000).toFixed(2)} km
       </div>
 
       <MapContainer
