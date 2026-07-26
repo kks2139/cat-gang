@@ -128,3 +128,11 @@
     letter-spacing: 0.5px;
   }
 }
+
+.tile-layer {
+  transition: filter 2s ease;
+
+  &.night {
+    filter: brightness(0.95);
+  }
+}

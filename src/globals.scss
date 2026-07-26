@@ -1082,7 +1082,7 @@ input {
 
 @keyframes trajectoryDash {
   to {
-    stroke-dashoffset: -30; // stroke-dasharray의 두배값으로 부드럽게 흐르도록
+    stroke-dashoffset: -40; // stroke dasharray 의 두배값으로 부드럽게 흐르도록
   }
 }
 

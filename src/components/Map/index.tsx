@@ -207,10 +207,10 @@ function MapContent({
             trajectoryRef.current.setLatLngs(pathRef.current);
           } else if (map) {
             trajectoryRef.current = L.polyline(pathRef.current, {
-              color: "var(--main-1, #ffd700)",
-              weight: 2,
-              opacity: 0.5,
-              dashArray: "15",
+              color: "var(--main-1)",
+              weight: 1,
+              opacity: 0.7,
+              dashArray: "20",
               lineJoin: "round",
               className: "trajectory-line",
             }).addTo(map);
@@ -222,9 +222,9 @@ function MapContent({
         if (map && !startPointRef.current) {
           startPointRef.current = L.circleMarker(newLatLng, {
             radius: 6,
-            color: "#fff",
+            color: "white",
             weight: 2,
-            fillColor: "var(--main-1, #ffd700)",
+            fillColor: "var(--main-1)",
             fillOpacity: 1,
             className: "trajectory-start-dot",
           }).addTo(map);
@@ -642,6 +642,7 @@ export default function Map({ className, ...rest }: Props) {
         maxBoundsViscosity={1}
       >
         <TileLayer
+          className={cn("tile-layer", { night: isNight })}
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
           maxZoom={20}
