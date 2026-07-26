@@ -28,6 +28,7 @@ import { useItemQuery } from "@/queries/useItemQuery";
 import { useCatStore } from "@/store/cat";
 import { useViewStore } from "@/store/view";
 import { catCharacters } from "@/utils/cats";
+import { isDev } from "@/utils/constants";
 import {
   animateMarker,
   createMarker,
@@ -37,7 +38,11 @@ import {
   removeMarkerWithMotion,
   wait,
 } from "@/utils/helper";
-import { getCurrentPosition, watchPosition } from "@/utils/native";
+import {
+  getCurrentPosition,
+  setMockLocation,
+  watchPosition,
+} from "@/utils/native";
 
 import Loading from "../Loading";
 import styles from "./index.module.scss";
@@ -114,6 +119,7 @@ function MapContent({
   const trajectoryRef = useRef<L.Polyline | null>(null);
   const pathRef = useRef<L.LatLng[]>([]);
   const totalDistanceRef = useRef<number>(0);
+  const startPointRef = useRef<L.CircleMarker | null>(null);
 
   const { data: itemCount } = useItemQuery();
   const { mutateAsync: updateItemCount } = useItemMutation();
@@ -131,6 +137,12 @@ function MapContent({
   const map = useMapEvents({
     dragstart() {
       setIsStopFocusMe(true);
+    },
+    click(e) {
+      if (isDev) {
+        setMockLocation(e.latlng.lat, e.latlng.lng);
+        createMeAndCats(true);
+      }
     },
   });
 
@@ -194,15 +206,27 @@ function MapContent({
           } else if (map) {
             trajectoryRef.current = L.polyline(pathRef.current, {
               color: "var(--main-1, #ffd700)",
-              weight: 5,
-              opacity: 0.8,
-              dashArray: "10, 10",
+              weight: 2,
+              opacity: 0.5,
+              dashArray: "15",
               lineJoin: "round",
+              className: "trajectory-line",
             }).addTo(map);
           }
         }
       } else {
         pathRef.current.push(newLatLng);
+
+        if (map && !startPointRef.current) {
+          startPointRef.current = L.circleMarker(newLatLng, {
+            radius: 6,
+            color: "#fff",
+            weight: 2,
+            fillColor: "var(--main-1, #ffd700)",
+            fillOpacity: 1,
+            className: "trajectory-start-dot",
+          }).addTo(map);
+        }
       }
 
       if (myCatRef.current) {
@@ -594,7 +618,11 @@ export default function Map({ className, ...rest }: Props) {
       {/* <AdBanner adGroupId="123" /> */}
 
       <div className={cn("distance-display")}>
-        오늘의 산책 거리 : {(totalDistance / 1000).toFixed(2)} km
+        오늘의 산책 거리 :{" "}
+        <span className={cn("distance")}>
+          {(totalDistance / 1000).toFixed(2)}
+        </span>{" "}
+        km
       </div>
 
       <MapContainer

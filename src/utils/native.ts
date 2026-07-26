@@ -7,7 +7,7 @@ import {
   StartUpdateLocationPermissionError,
 } from "@apps-in-toss/web-framework";
 
-import { operEnv } from "./constants";
+import { isDev, operEnv } from "./constants";
 import { wait } from "./helper";
 
 export class UserKey {
@@ -61,6 +61,23 @@ export class UserKey {
   }
 }
 
+let mockLocation: LocationCoords | null = null;
+
+export const setMockLocation = (lat: number, lng: number) => {
+  if (!isDev) {
+    return;
+  }
+
+  mockLocation = {
+    latitude: lat,
+    longitude: lng,
+    altitude: 0,
+    accuracy: 0,
+    altitudeAccuracy: 0,
+    heading: 0,
+  } as LocationCoords;
+};
+
 const getGeolocation = () => {
   return new Promise<LocationCoords | undefined>((res) => {
     navigator.geolocation.getCurrentPosition(
@@ -83,6 +100,10 @@ const getGeolocation = () => {
 };
 
 export const getCurrentPosition = async () => {
+  if (mockLocation) {
+    return mockLocation;
+  }
+
   if (!operEnv) {
     return await getGeolocation();
   }
