@@ -119,10 +119,6 @@
       top: 0;
       left: 0;
       filter: blur(1.2px);
-
-      &.night {
-        background-color: rgba(245, 245, 245, 0.8);
-      }
     }
 
     // 구름 그림자
@@ -133,10 +129,6 @@
       background-color: black;
       opacity: 0.08;
       filter: blur(4px);
-
-      &.night {
-        opacity: 0.04;
-      }
     }
   }
 }

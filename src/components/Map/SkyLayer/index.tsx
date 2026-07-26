@@ -28,11 +28,16 @@ const scaleUpBy = (scale: number, by = 0.3) => {
 };
 
 interface Props {
+  useDayNight?: boolean;
   isNight?: boolean;
   hours?: number;
 }
 
-export default function SkyLayer({ isNight, hours = 0 }: Props) {
+export default function SkyLayer({
+  useDayNight = true,
+  isNight,
+  hours = 0,
+}: Props) {
   const divRef = useRef<HTMLDivElement>(null);
 
   const map = useViewStore((s) => s.map);
@@ -189,7 +194,7 @@ export default function SkyLayer({ isNight, hours = 0 }: Props) {
   return (
     <div ref={divRef} className={cn("SkyLayer")}>
       <AnimatePresence>
-        {!isNight && (
+        {useDayNight && !isNight && (
           <motion.div
             style={{ left: `${((hours - 6) / 12) * 100}%` }}
             className={cn("sun")}
@@ -218,11 +223,8 @@ export default function SkyLayer({ isNight, hours = 0 }: Props) {
                 className={cn("floating-wrapper")}
                 style={{ animationDelay: `-${animationDelay}s` }}
               >
-                <div data-box className={cn("box", { night: isNight })}></div>
-                <div
-                  data-shadow
-                  className={cn("shadow", { night: isNight })}
-                ></div>
+                <div data-box className={cn("box")}></div>
+                <div data-shadow className={cn("shadow")}></div>
               </div>
             </motion.div>
           ),

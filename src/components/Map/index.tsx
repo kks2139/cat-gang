@@ -67,6 +67,7 @@ interface Props {
   onCreateCatsComplete?: () => void;
   ref?: React.Ref<L.Marker | null>;
   onClickMe?: () => void;
+  onDistanceChange?: (distance: number) => void;
 }
 
 function MapContent({
@@ -78,6 +79,7 @@ function MapContent({
   onCreateCatsComplete,
   ref: myMarkerRef,
   onClickMe,
+  onDistanceChange,
 }: Props) {
   const isStopFocusMe = useViewStore((s) => s.isStopFocusMe);
   const isBattleOn = useViewStore((s) => s.isBattleOn);
@@ -108,6 +110,10 @@ function MapContent({
   const walkTimerRef = useRef<number>(undefined);
   const meClickedTimerRef = useRef<number>(undefined);
   const itemSpawnTimerRef = useRef<number>(undefined);
+
+  const trajectoryRef = useRef<L.Polyline | null>(null);
+  const pathRef = useRef<L.LatLng[]>([]);
+  const totalDistanceRef = useRef<number>(0);
 
   const { data: itemCount } = useItemQuery();
   const { mutateAsync: updateItemCount } = useItemMutation();
@@ -172,6 +178,33 @@ function MapContent({
         return;
       }
 
+      const newLatLng = new L.LatLng(coords.latitude, coords.longitude);
+
+      if (pathRef.current.length > 0) {
+        const lastLatLng = pathRef.current[pathRef.current.length - 1];
+        const dist = lastLatLng.distanceTo(newLatLng);
+
+        if (dist > 0) {
+          totalDistanceRef.current += dist;
+          onDistanceChange?.(totalDistanceRef.current);
+          pathRef.current.push(newLatLng);
+
+          if (trajectoryRef.current) {
+            trajectoryRef.current.setLatLngs(pathRef.current);
+          } else if (map) {
+            trajectoryRef.current = L.polyline(pathRef.current, {
+              color: "var(--main-1, #ffd700)",
+              weight: 5,
+              opacity: 0.8,
+              dashArray: "10, 10",
+              lineJoin: "round",
+            }).addTo(map);
+          }
+        }
+      } else {
+        pathRef.current.push(newLatLng);
+      }
+
       if (myCatRef.current) {
         startWalkAnimation();
         animateMarker(
@@ -212,7 +245,7 @@ function MapContent({
         coords,
       };
     },
-    [map, onClickMe, startWalkAnimation],
+    [map, onClickMe, onDistanceChange, startWalkAnimation],
   );
 
   const drawCats = useCallback(() => {
@@ -537,6 +570,7 @@ export default function Map({ className, ...rest }: Props) {
   const { setMap, setIsStopFocusMe } = useViewStore((s) => s.actions);
 
   const [isLoading, setisLoading] = useState(true);
+  const [totalDistance, setTotalDistance] = useState(0);
 
   const myMarkerRef = useRef<L.Marker>(null);
 
@@ -556,8 +590,12 @@ export default function Map({ className, ...rest }: Props) {
 
   return (
     <div className={cn("map-wrapper", { night: isNight })}>
-      <SkyLayer isNight={isNight} hours={hours} />
+      <SkyLayer useDayNight={false} isNight={isNight} hours={hours} />
       {/* <AdBanner adGroupId="123" /> */}
+
+      <div className={cn("distance-display")}>
+        오늘의 산책 거리: {(totalDistance / 1000).toFixed(2)} km
+      </div>
 
       <MapContainer
         className={cn("Map", className)}
@@ -582,6 +620,7 @@ export default function Map({ className, ...rest }: Props) {
         {/* 맵 내부 마커생성, 이벤트 등록 등 */}
         <MapContent
           {...rest}
+          onDistanceChange={setTotalDistance}
           ref={myMarkerRef}
           className={cn("map-content")}
           onMapReady={(map) => {
