@@ -15,7 +15,7 @@ export const getTodayDistance = () => {
 
   const [distance, date] = value.split(SPLIT_TOKEN);
 
-  if (!date || !isToday(date)) {
+  if (!date || !isToday(new Date(date))) {
     return 0;
   }
 

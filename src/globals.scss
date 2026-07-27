@@ -98,9 +98,10 @@ input {
     position: relative;
     width: 100% !important;
     animation:
+      marker-appear 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
       walk-bounce $walk-duration ease-in-out infinite alternate,
       cat-jump $swim-duration linear infinite;
-    animation-delay: 0s, var(--jump-delay, 0s); // 점프 타이밍 랜덤화
+    animation-delay: 0s, 0s, var(--jump-delay, 0s); // 각 애니메이션별 딜레이
   }
 
   &[data-type="item"] {
@@ -526,6 +527,17 @@ input {
     to {
       filter: blur(2px);
       transform: translateX(-50%) scale(0.95);
+    }
+  }
+
+  @keyframes marker-appear {
+    from {
+      opacity: 0;
+      scale: 0.3;
+    }
+    to {
+      opacity: 1;
+      scale: 1;
     }
   }
 }
@@ -1069,7 +1081,7 @@ input {
 // ----- 지도 마커 경로 애니메이션 -----
 .trajectory-line {
   animation: trajectoryDash 1s linear infinite;
-  filter: drop-shadow(0 0 3px var(--main-1, #ffd700))
+  filter: drop-shadow(0 0 3px var(--main-1))
     drop-shadow(0 0 6px rgba(255, 215, 0, 0.5));
 }
 
@@ -1077,12 +1089,12 @@ input {
   transform-origin: center;
   transform-box: fill-box;
   animation: trajectory-dot-pulse 1.5s infinite ease-in-out;
-  filter: drop-shadow(0 0 4px var(--main-1, #ffd700));
+  filter: drop-shadow(0 0 4px var(--main-1));
 }
 
 @keyframes trajectoryDash {
   to {
-    stroke-dashoffset: -40; // stroke dasharray 의 두배값으로 부드럽게 흐르도록
+    stroke-dashoffset: -30; // stroke dasharray 의 두배값으로 부드럽게 흐르도록
   }
 }
 

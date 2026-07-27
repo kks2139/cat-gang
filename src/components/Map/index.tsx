@@ -1,3 +1,4 @@
+import NumberFlow from "@number-flow/react";
 import classNames from "classnames/bind";
 import { AnimatePresence, motion } from "framer-motion";
 import L from "leaflet";
@@ -105,23 +106,30 @@ function MapContent({
 
   const [isInitLoading, setIsInitLoading] = useState(false);
 
+  // 지도 관련
   const isRendered = useRef(false);
   const isMapReady = useRef(false);
   const isWatchPositionReady = useRef(false);
   const centerPositionOfCats = useRef<L.LatLng>(undefined);
 
+  // 마커
   const catMarkersRef = useRef<L.Marker[]>([]);
   const ownCatMarkersRef = useRef<Record<string, L.Marker>>({});
   const myCatRef = useRef<L.Marker>(null);
+
+  // 타이머
   const walkTimerRef = useRef<number>(undefined);
   const meClickedTimerRef = useRef<number>(undefined);
   const itemSpawnTimerRef = useRef<number>(undefined);
+  const catSpawnTimerRef = useRef<number>(undefined);
 
+  // 이동 궤적
   const trajectoryRef = useRef<L.Polyline | null>(null);
   const pathRef = useRef<L.LatLng[]>([]);
   const totalDistanceRef = useRef<number>(getTodayDistance());
   const startPointRef = useRef<L.CircleMarker | null>(null);
 
+  // 아이템
   const { data: itemCount } = useItemQuery();
   const { mutateAsync: updateItemCount } = useItemMutation();
 
@@ -197,8 +205,8 @@ function MapContent({
         const lastLatLng = pathRef.current[pathRef.current.length - 1];
         const dist = lastLatLng.distanceTo(newLatLng);
 
-        // 5미터 넘게 이동했을때만 거리 추가
-        if (dist > 5) {
+        // 10미터 이상 이동했을때만 거리 추가
+        if (dist > 10) {
           totalDistanceRef.current += dist;
           onDistanceChange?.(totalDistanceRef.current);
           pathRef.current.push(newLatLng);
@@ -210,7 +218,7 @@ function MapContent({
               color: "var(--main-1)",
               weight: 1,
               opacity: 0.7,
-              dashArray: "20",
+              dashArray: "15",
               lineJoin: "round",
               className: "trajectory-line",
             }).addTo(map);
@@ -274,75 +282,78 @@ function MapContent({
     [map, onClickMe, onDistanceChange, startWalkAnimation],
   );
 
-  const drawCats = useCallback(() => {
-    if (!myCatRef.current || isShowStage) {
-      return;
-    }
-
-    const myPosition = myCatRef.current.getLatLng();
-
-    // 내 고양이 이전좌표랑 일정m 이상 차이날때만 cats 새로 그린다
-    const canSkipDraw = centerPositionOfCats.current
-      ? myPosition.distanceTo(centerPositionOfCats.current) <= 40
-      : false;
-
-    if (canSkipDraw) {
-      return;
-    }
-
-    // 고양이들 그릴 중심점 업데이트
-    centerPositionOfCats.current = myPosition;
-
-    // 이전에 생성한 랜덤 마커들 해제
-    catMarkersRef.current.forEach((marker) => {
-      removeMarkerWithMotion(marker);
-    });
-    catMarkersRef.current = [];
-
-    const filteredCats = catCharacters.filter(({ rarity }) => {
-      const num = getRandomNumber(100);
-
-      switch (rarity) {
-        case "rare":
-          return num < 3; // 그릴 확률
-        case "unique":
-          return num < 1; //
-        default:
-          return num < 10;
+  const drawCats = useCallback(
+    (forceDraw?: boolean) => {
+      if (!myCatRef.current || isShowStage) {
+        return;
       }
-    });
 
-    filteredCats.forEach((cat) => {
-      const randomLatLng = getRandomLocationInCircle(
-        myPosition.lat,
-        myPosition.lng,
-        BOUNDARY_METER_OF_ME,
-      );
+      const myPosition = myCatRef.current.getLatLng();
 
-      const marker = createMarker({
-        type: "enemy",
-        catName: cat.name,
-        position: randomLatLng,
-        imgUrl: cat.img,
-        map: map,
-      }).on("click", (e) => {
-        const target = e.target as L.Marker;
-        const el = target.getElement()?.querySelector("[data-status]") as
-          | HTMLElement
-          | undefined;
+      // 내 고양이 이전좌표랑 일정m 이상 차이날때만 cats 새로 그린다
+      const canSkipDraw = centerPositionOfCats.current
+        ? myPosition.distanceTo(centerPositionOfCats.current) <= 40
+        : false;
 
-        if (el?.dataset.status !== "none") {
-          return;
+      if (canSkipDraw && !forceDraw) {
+        return;
+      }
+
+      // 고양이들 그릴 중심점 업데이트
+      centerPositionOfCats.current = myPosition;
+
+      // 이전에 생성한 랜덤 마커들 해제
+      catMarkersRef.current.forEach((marker) => {
+        removeMarkerWithMotion(marker);
+      });
+      catMarkersRef.current = [];
+
+      const filteredCats = catCharacters.filter(({ rarity }) => {
+        const num = getRandomNumber(1000);
+
+        switch (rarity) {
+          case "rare":
+            return num < 20; // 그릴 확률
+          case "unique":
+            return num < 10;
+          default:
+            return num < 50;
         }
-
-        setSelectedCat({ ...cat, marker });
-
-        onClickCat?.();
       });
 
-      catMarkersRef.current.push(marker);
-    });
-  }, [isShowStage, map, onClickCat, setSelectedCat]);
+      filteredCats.forEach((cat) => {
+        const randomLatLng = getRandomLocationInCircle(
+          myPosition.lat,
+          myPosition.lng,
+          BOUNDARY_METER_OF_ME,
+        );
+
+        const marker = createMarker({
+          type: "enemy",
+          catName: cat.name,
+          position: randomLatLng,
+          imgUrl: cat.img,
+          map: map,
+        }).on("click", (e) => {
+          const target = e.target as L.Marker;
+          const el = target.getElement()?.querySelector("[data-status]") as
+            | HTMLElement
+            | undefined;
+
+          if (el?.dataset.status !== "none") {
+            return;
+          }
+
+          setSelectedCat({ ...cat, marker });
+
+          onClickCat?.();
+        });
+
+        catMarkersRef.current.push(marker);
+      });
+    },
+    [isShowStage, map, onClickCat, setSelectedCat],
+  );
 
   const drawOwnCats = useCallback(() => {
     if (!map) return;
@@ -380,6 +391,19 @@ function MapContent({
     });
   }, [map, onClickOwnCat, ownCats]);
 
+  const checkSpawnedCats = useCallback(() => {
+    if (catSpawnTimerRef.current) {
+      clearInterval(catSpawnTimerRef.current);
+    }
+
+    // 일정 시간 동안 고양이가 하나도 없다면 다시 그린다
+    catSpawnTimerRef.current = setInterval(() => {
+      if (catMarkersRef.current.length === 0) {
+        drawCats(true);
+      }
+    }, 5 * 1000);
+  }, [drawCats]);
+
   const createMeAndCats = useCallback(
     async (usePanTo?: boolean) => {
       if (isBattleOnRef.current) {
@@ -388,8 +412,9 @@ function MapContent({
 
       await drawMe(usePanTo);
       drawCats();
+      checkSpawnedCats();
     },
-    [drawCats, drawMe],
+    [checkSpawnedCats, drawCats, drawMe],
   );
 
   useEffect(() => {
@@ -587,6 +612,12 @@ function MapContent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, myCatRef.current]);
 
+  useEffect(() => {
+    return () => {
+      clearInterval(catSpawnTimerRef.current);
+    };
+  }, []);
+
   return <div className={className}></div>;
 }
 
@@ -617,13 +648,16 @@ export default function Map({ className, ...rest }: Props) {
   return (
     <div className={cn("map-wrapper")}>
       <SkyLayer useDayNight={false} isNight={isNight} hours={hours} />
+
       {/* <AdBanner adGroupId="123" /> */}
 
       <div className={cn("distance-display")}>
-        오늘의 산책 거리 :{" "}
-        <span className={cn("distance")}>
-          {(totalDistance / 1000).toFixed(2)}
-        </span>{" "}
+        오늘의 산책 거리 :
+        <NumberFlow
+          className={cn("distance")}
+          value={totalDistance / 1000}
+          format={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }}
+        />
         km
       </div>
 
