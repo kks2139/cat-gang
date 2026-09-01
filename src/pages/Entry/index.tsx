@@ -65,17 +65,6 @@ export default function Entry() {
         </div>
       ) : (
         <>
-          {Array.from({ length: 2 }).map((_, i) => (
-            <div key={i} className={cn("paw", { [`n${i}`]: true })}>
-              <div
-                className={cn("paw-stamp")}
-                style={{ animationDelay: `${i * 0.2 + 2}s` }}
-              >
-                <div className={cn("pad")}></div>
-              </div>
-            </div>
-          ))}
-
           <div ref={titleRef} className={cn("title")}>
             <h1>냥만시대</h1>
           </div>
@@ -84,6 +73,7 @@ export default function Entry() {
             <div className={cn("menu")}>
               <Button
                 className={cn("start")}
+                size="large"
                 onClick={() => {
                   if (user) {
                     startGame();
@@ -96,6 +86,8 @@ export default function Entry() {
               </Button>
               <Button
                 className={cn("purpose")}
+                size="large"
+                color="glass"
                 onClick={() => {
                   addToastMessage({ message: "개발중" });
                 }}

@@ -1,5 +1,3 @@
-@use "@/styles/mixins" as *;
-
 .Dialog {
   z-index: 99999;
   position: fixed;
@@ -7,53 +5,51 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 30px 10px;
+  padding: 30px 16px;
 
   .content {
     position: relative;
-    background-color: var(--main-map-border);
-    padding: 8px;
+    background: #ffffff;
+    padding: 28px 24px 20px;
     border-radius: 24px;
-    box-shadow: 0 4px 0 var(--main-map-shadow);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.16);
     width: 100%;
-    max-width: 400px;
+    max-width: 360px;
     overflow: hidden;
 
-    // 봉제선 (Stitch line)
-    @include plush-stitch(4px, 20px, 0.4, 10);
-
     .wrapper {
-      padding: 15px 10px;
-      border-radius: 18px;
-      background-color: white;
       display: flex;
       flex-direction: column;
       align-items: center;
-      row-gap: 20px;
-      color: black;
+      row-gap: 12px;
+      color: #0f172a;
       white-space: pre-wrap;
       text-align: center;
       width: 100%;
 
       .title {
-        font-weight: bold;
+        font-weight: 800;
         font-size: 20px;
-        color: var(--main-border);
+        color: #0f172a;
+        letter-spacing: -0.3px;
       }
 
       .sub-title {
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 500;
-        color: #7e7e7e;
+        color: #64748b;
+        line-height: 1.5;
       }
 
       strong {
-        font-weight: 900;
-        color: var(--main-shadow);
+        font-weight: 800;
+        color: #ff5722;
       }
 
       .body {
@@ -65,9 +61,8 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      column-gap: 5px;
-      border-radius: 18px;
-      padding: 8px 0;
+      column-gap: 8px;
+      padding-top: 16px;
     }
   }
 }

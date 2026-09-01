@@ -17,7 +17,7 @@ export const useMyCatsQuery = () => {
         .eq("user_id", userKey || "");
 
       if (error) {
-        alert(error);
+        console.error(error);
       }
 
       return data;

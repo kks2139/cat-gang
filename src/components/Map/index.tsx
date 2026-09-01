@@ -652,13 +652,13 @@ export default function Map({ className, ...rest }: Props) {
       {/* <AdBanner adGroupId="123" /> */}
 
       <div className={cn("distance-display")}>
-        오늘의 산책 거리 :
+        <span className={cn("label")}>오늘 산책</span>
         <NumberFlow
           className={cn("distance")}
           value={totalDistance / 1000}
           format={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }}
         />
-        km
+        <span className={cn("unit")}>km</span>
       </div>
 
       <MapContainer
@@ -677,9 +677,9 @@ export default function Map({ className, ...rest }: Props) {
       >
         <TileLayer
           className={cn("tile-layer", { night: isNight })}
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          maxZoom={20}
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          maxZoom={19}
         />
 
         {/* 맵 내부 마커생성, 이벤트 등록 등 */}
@@ -710,6 +710,7 @@ export default function Map({ className, ...rest }: Props) {
       <button
         data-name="focus-button"
         className={cn("focus-button", { "stop-focus": isStopFocusMe })}
+        aria-label="내 위치로 이동"
         onClick={async () => {
           if (myMarkerRef.current) {
             // panTo 완료 후에 자동 추적 재개 (panTo 도중 panTo/setView와 충돌 방지)
@@ -719,7 +720,24 @@ export default function Map({ className, ...rest }: Props) {
             map?.panTo(myMarkerRef.current.getLatLng());
           }
         }}
-      ></button>
+      >
+        <svg
+          className={cn("gps-icon")}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="12" cy="12" r="7" />
+          <line x1="12" y1="2" x2="12" y2="5" />
+          <line x1="12" y1="19" x2="12" y2="22" />
+          <line x1="2" y1="12" x2="5" y2="12" />
+          <line x1="19" y1="12" x2="22" y2="12" />
+          <circle cx="12" cy="12" r="2.5" fill="currentColor" />
+        </svg>
+      </button>
 
       <ZoomButton />
 
@@ -736,7 +754,6 @@ export default function Map({ className, ...rest }: Props) {
           </motion.div>
         )}
       </AnimatePresence>
-      <Loading />
     </div>
   );
 }

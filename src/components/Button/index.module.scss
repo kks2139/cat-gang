@@ -1,61 +1,70 @@
-@use "@/styles/mixins" as *;
-
 .Button {
   position: relative;
-  padding: 12px 28px;
-  border-radius: 20px; // 더 뭉툭하고 부드러운 느낌
-  font-size: 16px;
-  font-weight: 800;
-  background: linear-gradient(135deg, var(--main-1) 0%, var(--main-2) 100%);
-  color: #fff;
-  border: 3px solid var(--main-border); // 더 진한 외곽선
-  text-shadow: 0px 1px 3px rgba(0, 0, 0, 0.7); // 더 강한 그림자로 텍스트를 확실히 분리
-  box-shadow: 0 4px 0 var(--main-shadow); // 더 어두운 그림자로 대비 강화
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 18px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  background: linear-gradient(135deg, #ff7a18 0%, #ff5232 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 14px rgba(255, 82, 50, 0.28), 0 1px 2px rgba(0, 0, 0, 0.04);
   text-align: center;
+  cursor: pointer;
+  user-select: none;
   transition:
-    transform 0.1s,
-    box-shadow 0.1s,
-    filter 0.2s;
+    transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+    filter 0.15s ease;
   overflow: hidden;
 
-  // 봉제선 (Stitch line)
-  @include plush-stitch(4px, 16px, 0.6, 1);
-
   &.secondary {
-    background: linear-gradient(
-      135deg,
-      var(--secondary-1) 0%,
-      var(--secondary-2) 100%
-    );
-    color: #fff;
-    border: 3px solid var(--secondary-border);
-    box-shadow: 0 4px 0 var(--secondary-shadow);
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  }
+
+  &.glass {
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   }
 
   &.small {
-    padding: 6px 16px;
+    padding: 6px 14px;
     font-size: 13px;
-    border-radius: 14px;
-    border-width: 2px;
-    box-shadow: 0 3px 0 var(--main-shadow);
-
-    @include plush-stitch(3px, 10px, 0.6, 1);
+    border-radius: 12px;
   }
 
   &.large {
     width: 100%;
-    font-size: 18px;
-    padding: 16px 28px;
+    font-size: 17px;
+    padding: 15px 28px;
+    border-radius: 20px;
+  }
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.03);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.96);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   }
 
   &:disabled {
-    filter: brightness(0.8) grayscale(1);
-  }
-
-  // 모바일 터치(Active) 시 꾹 눌리는 인형 느낌
-  &:active:not(:disabled) {
-    transform: translateY(3px); // 그림자 두께만큼 내려감
-    box-shadow: 0 1px 0 var(--main-shadow);
-    filter: brightness(0.95);
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.8);
+    box-shadow: none;
   }
 }
+

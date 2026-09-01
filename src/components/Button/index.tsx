@@ -8,7 +8,7 @@ const cn = classNames.bind(styles);
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;
   size?: "small" | "regular" | "large";
-  color?: "primary" | "secondary";
+  color?: "primary" | "secondary" | "glass";
   radius?: number;
 }
 

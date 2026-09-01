@@ -97,27 +97,33 @@ export default function FindCat() {
         }}
       />
 
-      <div className={cn("menu")}>
-        <div className={cn("buttons")}>
-          <Button
-            onClick={() => {
-              setIsStopFocusMe(true);
-              setIsShowCatchedCatPopup(true);
-            }}
-          >
-            내 부하
-          </Button>
-          <Button
-            onClick={() => {
-              navigate(-1);
-            }}
-          >
-            나가기
-          </Button>
-        </div>
+      {/* 하단 플로팅 액션 독 */}
+      <div className={cn("floating-dock")}>
+        <Button
+          className={cn("dock-btn", "my-cats-btn")}
+          color="primary"
+          onClick={() => {
+            setIsStopFocusMe(true);
+            setIsShowCatchedCatPopup(true);
+          }}
+        >
+          <span className={cn("btn-label")}>내 부하</span>
+          {ownCats && ownCats.length > 0 && (
+            <span className={cn("badge")}>{ownCats.length}</span>
+          )}
+        </Button>
+        <Button
+          className={cn("dock-btn", "exit-btn")}
+          color="glass"
+          onClick={() => {
+            navigate(-1);
+          }}
+        >
+          <span className={cn("btn-label")}>나가기</span>
+        </Button>
       </div>
 
-      {/* 부하 목록 바텀시트 */}
+      {/* 부하 목록 모던 바텀시트 */}
       <AnimatePresence>
         {isShowCatchedCatPopup && (
           <motion.div
@@ -137,30 +143,37 @@ export default function FindCat() {
           >
             <motion.div
               data-bottom-sheet
-              className={cn("wrapper")}
+              className={cn("sheet-container")}
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
-              transition={{ duration: 0.3 }}
+              transition={{ type: "spring", damping: 28, stiffness: 320 }}
             >
-              <div className={cn("content")}>
-                <div className={cn("close-button")}>
-                  <Button
-                    size="small"
-                    onClick={() => {
-                      setIsShowCatchedCatPopup(false);
-                    }}
-                  >
-                    ×
-                  </Button>
+              <div className={cn("sheet-handle")} />
+              <div className={cn("sheet-header")}>
+                <div className={cn("title-row")}>
+                  <h3 className={cn("sheet-title")}>내 부하 고양이</h3>
+                  <span className={cn("sheet-count")}>
+                    {ownCats?.length || 0}마리
+                  </span>
                 </div>
+                <button
+                  type="button"
+                  className={cn("close-btn")}
+                  onClick={() => setIsShowCatchedCatPopup(false)}
+                  aria-label="닫기"
+                >
+                  ✕
+                </button>
+              </div>
 
+              <div className={cn("sheet-body")}>
                 <MyCats
-                  className={cn("cats")}
+                  className={cn("cats-scroll")}
                   onClickCat={(info) => {
                     setClickedOwnCat(info);
-
                     setTimeout(() => setClickedOwnCat(undefined), 2000);
+                    setIsShowCatchedCatPopup(false);
                   }}
                 />
               </div>
