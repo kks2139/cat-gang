@@ -35,4 +35,4 @@ supabase/.branches/
 *.ait
 
 # claude settings
-.claude*
+.claude/settings.json
