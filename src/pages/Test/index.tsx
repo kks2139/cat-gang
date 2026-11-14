@@ -1,7 +1,4 @@
-import {
-  getCurrentLocation,
-  startUpdateLocation,
-} from "@apps-in-toss/web-framework";
+import { Device } from "@apps-in-toss/web-framework";
 
 import Button from "@/components/Button";
 import { useUsersQuery } from "@/queries/useUsersQuery";
@@ -35,26 +32,26 @@ export default function Test() {
 
         <Button
           onClick={async () => {
-            const res = await getCurrentLocation.getPermission();
+            const res = await Device.getLocation.getPermission();
 
             alert(res);
 
-            getCurrentLocation.openPermissionDialog();
+            Device.getLocation.openPermissionDialog();
           }}
         >
-          {"getCurrentLocation permission"}
+          {"Device.getLocation permission"}
         </Button>
 
         <Button
           onClick={async () => {
-            const res = await startUpdateLocation.getPermission();
+            const res = await Device.subscribeLocation.getPermission();
 
             alert(res);
 
-            startUpdateLocation.openPermissionDialog();
+            Device.subscribeLocation.openPermissionDialog();
           }}
         >
-          {"startUpdateLocation permission"}
+          {"Device.subscribeLocation permission"}
         </Button>
 
         <Button

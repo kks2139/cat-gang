@@ -20,20 +20,22 @@ description: cat-gang(냥만시대) 프로젝트 작업 시 참고. 앱인토스
 | 백엔드 | Supabase (`@supabase/supabase-js`, Edge Function `auth` 로 JWT 발급) |
 | 지도 | Leaflet + react-leaflet (Kakao Map 키: `VITE_KKO_MAP_KEY`) |
 | 애니메이션 | framer-motion, @number-flow/react |
-| AIT SDK | `@apps-in-toss/web-framework` **2.x (Granite)** |
+| AIT SDK | `@apps-in-toss/web-framework` **3.x** (v3 네임스페이스 API 사용) |
 
-## 2. 앱인토스 빌드 환경 (SDK 2.x / Granite)
+## 2. 앱인토스 빌드 환경 (SDK 3.x)
 
-- 설정 파일: `granite.config.ts` (SDK 3.x의 `apps-in-toss.config.ts`가 아님)
-  - `brand.displayName: "냥만시대"`, `outdir: "dist"`, 권한: `geolocation`
-  - `web.commands.build: "tsc -b && vite build"` → **`ait build` 가 tsc 타입체크 + vite 빌드를 모두 수행**
+- 설정 파일: `apps-in-toss.config.ts` (2.x의 `granite.config.ts`에서 마이그레이션됨)
+  - `appName: "cat-gang"`, `primaryColor: "#3182F6"`, 권한: `geolocation`, `webBundleDir: "dist"`
+  - `brand.displayName`/`icon`은 마이그레이션에서 제외됨 (3.x에서 brand deprecated)
 - `package.json` 스크립트 (패키지 매니저: **pnpm**):
-  - `pnpm dev` → granite dev (로컬 5173, 토스 샌드박스 연동)
-  - `pnpm build` → `ait build` (배포용 번들)
+  - `pnpm dev` → `vite --host` (로컬 5173, devtools mock SDK; `granite dev` 아님)
+  - `pnpm build` → `tsc -b && vite build && ait build` (타입체크 + 빌드 + .ait 아티팩트)
   - `pnpm lint` → `eslint .`
   - `pnpm deploy` → `ait deploy`
   - `pnpm update-types` → Supabase DB 타입 재생성 → `src/utils/db/types.ts`
-- `.granite/app.json`, `.vercel.json`, `vercel.json` 도 빌드/배포 관련 세팅.
+- `@apps-in-toss/devtools`가 devDependencies에 있고 `vite.config.ts` plugins 맨 앞의 `aitDevtools.vite()`가 mock SDK를 제공.
+- **SDK 3.x 유의사항**: 3.x 번들을 출시하면 2.x로 롤백 불가. CORS Origin 허용 목록에 `https://cat-gang.web.tossmini.com`(실서비스) / `https://cat-gang.private-web.tossmini.com`(QR 테스트) 등록 필요 (Supabase 등 외부 API용).
+- **SDK API는 v3 네임스페이스 사용** (v2 함수형 API는 deprecated): `User.getAnonymousKey()`(에러 시 throw, "ERROR" 반환 없음), `Device.getLocation`/`Device.subscribeLocation`(위치), `Device.triggerHaptic`(햅틱), `Screen.close`(닫기), `Environment.environment`(toss/sandbox). v2 최신 유지 API: `graniteEvent.backEvent`, `Storage.getItem/setItem`, `TossAds`.
 
 ## 3. Supabase DB (무료 티어) 구조 & 세팅
 
@@ -93,7 +95,7 @@ src/
 
 ## 5. 핵심 패턴 & 주의사항
 
-- **환경 분기**: `operEnv`(AIT 운영환경)가 있으면 SDK API(`getAnonymousKey`, `getCurrentLocation`)를, 없으면 브라우저 폴백(`navigator.geolocation`). 새 기능도 이 분기를 따를 것.
+- **환경 분기**: `operEnv`(AIT 운영환경, `Environment.environment`)가 있으면 SDK API(`User.getAnonymousKey`, `Device.getLocation`)를, 없으면 브라우저 폴백(`navigator.geolocation`). 새 기능도 이 분기를 따를 것.
 - **유저 식별**: `UserKey.getInstance().getKey()` 싱글턴 사용. Supabase 인증은 익명키 → Edge Function `auth` → JWT (만료 60초 전 자동 갱신, 중복 호출 dedupe).
 - **DB 키 컨벤션**: 요청은 snake_case로 나가고(`snakecase-keys`) 응답은 camelCase로 변환(`camelcase-keys`). Supabase 타입(`db/types.ts`)은 snake_case 그대로임에 유의.
 - **경로 별칭**: `@/` → `src/` (vite alias).

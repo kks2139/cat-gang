@@ -1,5 +1,9 @@
 import { getHours } from "date-fns";
-import L from "leaflet";
+import {
+  type LngLatLike,
+  type Map as MaplibreMap,
+  Marker,
+} from "maplibre-gl";
 
 import type { ItemType } from "@/components/Stage/Inventory";
 
@@ -15,10 +19,8 @@ export const getPostposition = (
   // 마지막 글자의 유니코드 확인
   const lastChar = word.charCodeAt(word.length - 1);
 
-  // 한글 범위가 아닐 경우 처리
-  if (lastChar < 0xac00 || lastChar > 0xd7a3) return word;
-
   // 받침 유무 확인 (0이면 받침 없음)
+  if (lastChar < 0xac00 || lastChar > 0xd7a3) return word;
   const hasBatchim = (lastChar - 0xac00) % 28 !== 0;
 
   const mapping = {
@@ -31,11 +33,13 @@ export const getPostposition = (
   return `${word}${mapping[type]}`;
 };
 
+export type Coords = Pick<GeolocationCoordinates, "latitude" | "longitude">;
+
 export const getRandomLocationInCircle = (
   lat: number,
   lng: number,
   radiusInMeters: number,
-): L.LatLngExpression => {
+): [number, number] => {
   // 1. 0 ~ radiusInMeters 사이의 랜덤한 거리 생성
   // (중심에 몰리지 않게 하기 위해 Math.sqrt 사용)
   const r = radiusInMeters * Math.sqrt(Math.random());
@@ -48,7 +52,7 @@ export const getRandomLocationInCircle = (
   const lng_diff =
     (r * Math.sin(theta)) / (111000 * Math.cos(lat * (Math.PI / 180)));
 
-  return [lat + lat_diff, lng + lng_diff];
+  return [lng + lng_diff, lat + lat_diff];
 };
 
 export const getRandomNumber = (maxNum: number) =>
@@ -82,8 +86,8 @@ export const getFireworkElement = () => {
 type MarkerType = "me" | "owned" | "enemy" | "item";
 
 interface CreateOverlayOptions {
-  map: L.Map;
-  position: L.LatLngExpression;
+  map: MaplibreMap;
+  position: [number, number]; // [lng, lat]
   imgUrl?: string;
   type?: MarkerType;
   itemType?: ItemType;
@@ -107,6 +111,11 @@ export const createMarker = ({
   container.dataset.status = "none";
   container.dataset.markerContainer = "true";
   container.className = "marker-container";
+  // Leaflet divIcon의 iconSize(100/60) 역할 — 고정 크기 없으면 PNG 원본 크기로 렌더됨
+  container.style.width = type === "item" ? "60px" : "100px";
+  container.style.height = type === "item" ? "60px" : "100px";
+  // 발자국(z-index 0)보다 위에 표시되도록
+  container.style.zIndex = "10";
 
   if (imgUrl) {
     // 고양이 이미지
@@ -202,22 +211,26 @@ export const createMarker = ({
     container.classList.add("item", "no-animation", "no-shadow");
   }
 
-  // 마커 생성
-  const icon = L.divIcon({
-    html: container,
-    className: "",
-    iconSize: type === "item" ? [60, 60] : [100, 100],
-  });
+  // MapLibre는 element에 지도 위치용 transform을 직접 걸므로,
+  // 컨테이너의 CSS 애니메이션(cat-move translate/scale)이 그 transform을 덮어쓰면
+  // 마커가 화면 원점(좌측상단)에 박힌다. Leaflet divIcon처럼 래퍼를 한 겹 더 씌워
+  // 위치 transform(래퍼)과 애니메이션 transform(컨테이너)을 분리한다.
+  const wrapperEl = document.createElement("div");
+  wrapperEl.className = "map-marker-wrapper";
+  wrapperEl.style.width = type === "item" ? "60px" : "100px";
+  wrapperEl.style.height = type === "item" ? "60px" : "100px";
+  wrapperEl.appendChild(container);
 
-  // 맵에 마커 추가
-  const marker = L.marker(position, { icon }).addTo(map);
+  // 마커 생성 (MapLibre: setLngLat([lng, lat]) -> 엘리먼트 지정)
+  // 앵커는 기본값(center) — Leaflet divIcon도 iconSize 중앙이 앵커였으므로 동일 유지
+  const marker = new Marker({ element: wrapperEl })
+    .setLngLat(position as LngLatLike)
+    .addTo(map);
 
   return marker;
 };
 
-export type Coords = Pick<GeolocationCoordinates, "latitude" | "longitude">;
-
-export const removeMarkerWithMotion = (marker: L.Marker, duration = 300) => {
+export const removeMarkerWithMotion = (marker: Marker, duration = 300) => {
   const el = marker.getElement();
 
   if (el) {
@@ -232,17 +245,19 @@ export const removeMarkerWithMotion = (marker: L.Marker, duration = 300) => {
 
 /**
  * 마커를 부드럽게 이동시킨다
- * @param marker Leaflet 마커 객체
- * @param destination 이동할 목적지 좌표
+ * @param marker MapLibre 마커 객체
+ * @param destination 이동할 목적지 좌표 [lng, lat]
  * @param duration 이동 시간 (ms, 기본값 500ms)
  */
 export const animateMarker = (
-  marker: L.Marker,
-  newPosition: L.LatLngExpression,
+  marker: Marker,
+  newPosition: [number, number],
   duration: number = 500,
 ) => {
-  const startLatLng = marker.getLatLng();
-  const endLatLng = L.latLng(newPosition);
+  const startLatLng = marker.getLngLat();
+  const startLat = startLatLng.lat;
+  const startLng = startLatLng.lng;
+  const [endLng, endLat] = newPosition;
   let startTime: number | null = null;
 
   const frame = (currentTime: number) => {
@@ -253,12 +268,10 @@ export const animateMarker = (
     const progress = Math.min(elapsed / duration, 1);
 
     // 선형 보간법(Lerp)으로 중간 좌표 계산
-    const currentLat =
-      startLatLng.lat + (endLatLng.lat - startLatLng.lat) * progress;
-    const currentLng =
-      startLatLng.lng + (endLatLng.lng - startLatLng.lng) * progress;
+    const currentLat = startLat + (endLat - startLat) * progress;
+    const currentLng = startLng + (endLng - startLng) * progress;
 
-    marker.setLatLng([currentLat, currentLng]);
+    marker.setLngLat([currentLng, currentLat]);
 
     if (progress < 1) {
       requestAnimationFrame(frame); // 다음 프레임 요청
@@ -303,4 +316,23 @@ export const getCatchedCatElement = (imgUrl: string, greet: string) => {
   container.appendChild(img);
 
   return container;
+};
+
+// 두 좌표 [lat, lng] 간 거리 (미터) — Leaflet distanceTo 대체 (haversine)
+export const distanceInMeters = (
+  a: { lat: number; lng: number },
+  b: { lat: number; lng: number },
+) => {
+  const R = 6371000;
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+
+  return 2 * R * Math.asin(Math.sqrt(h));
 };

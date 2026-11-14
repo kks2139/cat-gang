@@ -1,4 +1,4 @@
-import { closeView } from "@apps-in-toss/web-framework";
+import { Screen } from "@apps-in-toss/web-framework";
 import classNames from "classnames/bind";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -117,7 +117,7 @@ export default function Entry() {
           refetch();
         }}
         onSubButtonClick={() => {
-          closeView();
+          Screen.close();
         }}
       />
     </main>

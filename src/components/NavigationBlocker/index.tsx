@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-import { operEnv } from "@/utils/constants";
+import { isDev, operEnv } from "@/utils/constants";
 
 /**
  * 브라우저 새로고침 및 탭 닫기 시 확인 얼럿을 띄워주는 컴포넌트입니다.
@@ -9,7 +9,8 @@ import { operEnv } from "@/utils/constants";
 export default function NavigationBlocker() {
   // 1. 브라우저 새로고침 및 탭 닫기 방지 (beforeunload)
   useEffect(() => {
-    if (!operEnv) {
+    // 로컬 개발 환경에서는 얼럿 없이 자유롭게 새로고침한다
+    if (!operEnv || isDev) {
       return;
     }
 

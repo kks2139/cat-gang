@@ -1,4 +1,4 @@
-import { generateHapticFeedback } from "@apps-in-toss/web-framework";
+import { Device } from "@apps-in-toss/web-framework";
 import classNames from "classnames/bind";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
@@ -87,7 +87,7 @@ export default function FindCat() {
           setIsStopFocusMe(true);
           setIsBattleOn(true);
 
-          generateHapticFeedback({ type: "wiggle" });
+          Device.triggerHaptic({ type: "wiggle" });
         }}
         onClickOwnCat={(cat) => {
           setOwnCatInfo(cat);
@@ -205,7 +205,7 @@ export default function FindCat() {
                 setIsShowStage(false);
 
                 const { marker } = cat;
-                const { lat = 0, lng = 0 } = marker?.getLatLng() || {};
+                const { lat = 0, lng = 0 } = marker?.getLngLat() || {};
 
                 postCatMutate({
                   catName: cat.name,

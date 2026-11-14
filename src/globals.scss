@@ -915,31 +915,24 @@ input {
   }
 }
 
-// 지도 축척바
-.leaflet-control-scale-line {
-  $color: rgb(112, 112, 112);
-  border: none !important;
-  padding-bottom: 3px !important;
-  box-shadow: 0 2px 0 -1px $color;
-  background-color: rgba(255, 255, 255, 0.6) !important;
-  background-color: transparent !important;
+// MapLibre 마커 래퍼 — 지도 위치 transform은 이 엘리먼트에 적용됨 (애니메이션과 분리)
+.map-marker-wrapper {
+  pointer-events: none;
 
-  // 위치 조정
-  z-index: 99999;
-  position: absolute;
-  bottom: 12px;
-  left: 15px;
-  font-size: 14px;
-  text-align: center;
-  text-shadow: none !important;
-  color: $color !important;
+  // 컨테이너의 애니메이션 이동(±12px)이 래퍼 밖으로 삐져나갈 수 있게 overflow 허용
+  overflow: visible;
+
+  // 클릭은 내부 컨테이너가 받도록
+  > * {
+    pointer-events: auto;
+  }
 }
 
-// 마커 내 이미지 가운데정렬
-.leaflet-marker-icon {
-  display: flex !important;
+// 마커 컨테이너 가운데정렬 (지도 앵커 보정)
+.marker-container {
+  display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: center; // 중앙 앵커 — Leaflet 때와 동일한 배치
 }
 
 // 부하 목록에서 고양이 클릭 시 효과
@@ -1087,7 +1080,7 @@ input {
 }
 
 .paw-print {
-  // leaflet divIcon 기본 스타일 제거
+  // maplibre 마커 기본 스타일 제거
   background: transparent;
   border: none;
   pointer-events: none;

@@ -1,7 +1,15 @@
 import NumberFlow from "@number-flow/react";
 import classNames from "classnames/bind";
 import { AnimatePresence, motion } from "framer-motion";
-import L from "leaflet";
+import {
+  config,
+  Map as MaplibreMap,
+  type MapMouseEvent,
+  Marker,
+  type SkySpecification,
+  type StyleSpecification,
+  type TerrainSpecification,
+} from "maplibre-gl";
 import {
   useCallback,
   useEffect,
@@ -9,13 +17,6 @@ import {
   useRef,
   useState,
 } from "react";
-// Marker 아이콘 깨짐 방지 (특정 환경에서 아이콘 경로가 인식 안 될 때 필요)
-import {
-  MapContainer,
-  ScaleControl,
-  TileLayer,
-  useMapEvents,
-} from "react-leaflet";
 
 import ImgCatMe from "@/assets/img/character/cat-me.png";
 import ImgCatMeWalk1 from "@/assets/img/character/cat-me-walk-1.png";
@@ -23,6 +24,7 @@ import ImgCatMeWalk2 from "@/assets/img/character/cat-me-walk-2.png";
 import ImgCatnip from "@/assets/img/item/catnip.png";
 import ImgFish from "@/assets/img/item/fish.png";
 import ImgGukbab from "@/assets/img/item/gukbab.png";
+import noLabelsStyle from "@/assets/no-labels-style.json";
 import { useDayAndNight } from "@/hooks/useDayAndNight";
 import { useItemMutation } from "@/queries/useItemMutation";
 import { useItemQuery } from "@/queries/useItemQuery";
@@ -32,7 +34,9 @@ import { catCharacters } from "@/utils/cats";
 import { isDev } from "@/utils/constants";
 import {
   animateMarker,
+  type Coords,
   createMarker,
+  distanceInMeters,
   getCatchedCatElement,
   getRandomLocationInCircle,
   getRandomNumber,
@@ -48,13 +52,14 @@ import { getTodayWalk, storeTodayWalk } from "@/utils/storage";
 
 import Loading from "../Loading";
 import styles from "./index.module.scss";
-import SkyLayer from "./SkyLayer";
 
 const cn = classNames.bind(styles);
 
-export const MAX_ZOOM_LEVEL = 19;
-export const MIN_ZOOM_LEVEL = 19;
-export const INIT_ZOOM_LEVEL = 19;
+// MapLibre는 Leaflet과 같은 줌 레벨에서 축척이 2배(512px 타일 기준)이므로
+// Leaflet 줌 19 축척과 동일하게 맞추려면 -1한 값을 사용한다
+export const MAX_ZOOM_LEVEL = 18;
+export const MIN_ZOOM_LEVEL = 18;
+export const INIT_ZOOM_LEVEL = 18;
 const BOUNDARY_METER_OF_ME = 50;
 const OWN_CAT_KEY_TOKEN = "_";
 const PAW_INTERVAL_METER = 7; // 한 걸음(발자국) 기본 간격 (m)
@@ -67,6 +72,237 @@ const MAX_SAVED_PATH = 600; // 스토리지에 저장할 궤적 좌표 최대 �
 const STORE_DEBOUNCE_MS = 5000; // 궤적 저장 디바운스 (ms)
 const PAW_SVG = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 11.5c-3.2 0-6 2.6-6 5.2 0 1.8 1.4 3 3.2 3 1 0 1.8-.4 2.8-.4s1.8.4 2.8.4c1.8 0 3.2-1.2 3.2-3 0-2.6-2.8-5.2-6-5.2z"/><ellipse cx="6" cy="8.4" rx="1.9" ry="2.4" transform="rotate(-25 6 8.4)"/><ellipse cx="12" cy="6.6" rx="1.9" ry="2.5"/><ellipse cx="18" cy="8.4" rx="1.9" ry="2.4" transform="rotate(25 18 8.4)"/></svg>`;
 
+// 3D 카메라/지형/하늘 설정
+const MAP_PITCH = 30; // 카메라 기울기 (도) — 3D 효과의 핵심
+const TERRAIN_EXAGGERATION = 1.3; // 지형 높이 증폭 배율
+const DEM_SOURCE_ID = "terrain-dem";
+
+// 시간대별 하늘 색 (낮/노을/밤)
+const SKY_DAY: SkySpecification = {
+  "sky-color": "rgb(103, 179, 245)",
+  "horizon-color": "rgb(230, 244, 255)",
+  "fog-color": "rgb(230, 244, 255)",
+  // 지평선 안개/대기 효과 비활성 — 하늘색만 표시
+  "fog-ground-blend": 0,
+  "horizon-fog-blend": 0,
+  "sky-horizon-blend": 0,
+  "atmosphere-blend": 0,
+};
+
+const SKY_EVENING: SkySpecification = {
+  "sky-color": "rgb(255, 145, 84)",
+  "horizon-color": "rgb(255, 214, 165)",
+  "fog-color": "rgb(255, 214, 165)",
+  // 지평선 안개/대기 효과 비활성 — 하늘색만 표시
+  "fog-ground-blend": 0,
+  "horizon-fog-blend": 0,
+  "sky-horizon-blend": 0,
+  "atmosphere-blend": 0,
+};
+
+const SKY_NIGHT: SkySpecification = {
+  "sky-color": "rgb(16, 22, 48)",
+  "horizon-color": "rgb(46, 58, 89)",
+  "fog-color": "rgb(46, 58, 89)",
+  // 지평선 안개/대기 효과 비활성 — 하늘색만 표시
+  "fog-ground-blend": 0,
+  "horizon-fog-blend": 0,
+  "sky-horizon-blend": 0,
+  "atmosphere-blend": 0,
+};
+
+// 시간(0~23) 기준 하늘 상태: 낮 / 노을(6~8, 17~19) / 밤
+const getSkyByHour = (isNight: boolean, hours: number): SkySpecification => {
+  if (isNight) {
+    return SKY_NIGHT;
+  }
+
+  if (hours <= 8 || hours >= 17) {
+    return SKY_EVENING;
+  }
+
+  return SKY_DAY;
+};
+
+// ----- 다크 테마: 밤에는 주요 지물 색을 런타임에서 교체한다 -----
+// (스타일 JSON은 낮 테마가 기본 — 여기 정의된 레이어만 밤에 어둡게 치환)
+type PaintOverrides = Record<string, Record<string, unknown>>;
+
+const DARK_PAINT_OVERRIDES: PaintOverrides = {
+  background: {
+    "background-color": "rgb(28, 32, 44)",
+  },
+  natural_earth: {
+    "raster-opacity": 0.15,
+  },
+  park: {
+    "fill-color": "rgb(38, 52, 42)",
+    "fill-outline-color": "rgba(70, 110, 75, 0.5)",
+  },
+  landcover_wood: {
+    "fill-color": "hsla(122,20%,22%,0.7)",
+  },
+  landcover_grass: {
+    "fill-color": "rgba(62, 84, 60, 1)",
+  },
+  landcover_ice: {
+    "fill-color": "rgba(70, 82, 100, 1)",
+  },
+  landcover_sand: {
+    "fill-color": "rgba(90, 82, 66, 1)",
+  },
+  water: {
+    "fill-color": "rgb(28, 44, 72)",
+  },
+  building: {
+    "fill-color": "hsl(220,10%,26%)",
+  },
+  "building-3d": {
+    "fill-extrusion-color": "hsl(220,10%,30%)",
+  },
+};
+
+// 도로 계열: 채도를 죽이고 어둡게 (라벨 없는 지도 특성상 도로 색만으로 계층 구분)
+const DARK_ROAD_COLOR = "rgb(64, 70, 86)";
+const DARK_ROADS = [
+  "road_minor",
+  "road_secondary_tertiary",
+  "road_trunk_primary",
+  "road_service_track",
+  "road_link",
+  "road_motorway",
+  "road_major_rail",
+  "road_transit_rail",
+  "tunnel_minor",
+  "tunnel_secondary_tertiary",
+  "tunnel_trunk_primary",
+  "tunnel_motorway",
+];
+
+const DARK_CASING_COLOR = "rgb(40, 45, 58)";
+const DARK_CASINGS = [
+  "road_minor_casing",
+  "road_secondary_tertiary_casing",
+  "road_trunk_primary_casing",
+  "road_service_track_casing",
+  "road_link_casing",
+  "road_motorway_casing",
+  "tunnel_minor_casing",
+  "tunnel_secondary_tertiary_casing",
+  "tunnel_trunk_primary_casing",
+  "tunnel_motorway_casing",
+];
+
+// 스타일의 모든 레이어 색을 낮/밤 테마에 맞게 치환
+const applyTheme = (map: MaplibreMap, isNight: boolean, hours: number) => {
+  map.setSky(getSkyByHour(isNight, hours));
+
+  // hillshade(지형 음영)는 낮/밤 톤이 다름 — 밤엔 회색 음영이 어두운 배경 위 뿌옇게 부각되므로
+  // 밤에는 채도를 낮춘 짙은 남색으로 바꾸고 강도를 줄인다
+  if (map.getLayer("terrain-hillshade")) {
+    if (isNight) {
+      map.setPaintProperty(
+        "terrain-hillshade",
+        "hillshade-shadow-color",
+        "#12141a"
+      );
+      map.setPaintProperty(
+        "terrain-hillshade",
+        "hillshade-highlight-color",
+        "#2a3348"
+      );
+      map.setPaintProperty(
+        "terrain-hillshade",
+        "hillshade-accent-color",
+        "#232b3f"
+      );
+      map.setPaintProperty("terrain-hillshade", "hillshade-exaggeration", 0.35);
+    } else {
+      map.setPaintProperty(
+        "terrain-hillshade",
+        "hillshade-shadow-color",
+        "#8a8a8a"
+      );
+      map.setPaintProperty(
+        "terrain-hillshade",
+        "hillshade-highlight-color",
+        "#ffffff"
+      );
+      map.setPaintProperty(
+        "terrain-hillshade",
+        "hillshade-accent-color",
+        "#aaaaaa"
+      );
+      map.setPaintProperty("terrain-hillshade", "hillshade-exaggeration", 0.5);
+    }
+  }
+
+  if (!isNight) {
+    // 낮: 스타일 원본 색으로 복원
+    Object.entries(DARK_PAINT_OVERRIDES).forEach(([layerId, paints]) => {
+      if (!map.getLayer(layerId)) {
+        return;
+      }
+
+      const original = ORIGINAL_PAINTS[layerId];
+
+      if (!original) {
+        return;
+      }
+
+      Object.keys(paints).forEach((key) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        map.setPaintProperty(layerId, key as any, original[key] as any);
+      });
+    });
+
+    [...DARK_ROADS, ...DARK_CASINGS].forEach((layerId) => {
+      if (!map.getLayer(layerId)) {
+        return;
+      }
+
+      const original = ORIGINAL_PAINTS[layerId];
+
+      if (original && "line-color" in original) {
+        map.setPaintProperty(
+          layerId,
+          "line-color",
+          original["line-color"] as never
+        );
+      }
+    });
+
+    return;
+  }
+
+  // 밤: 다크 테마 색으로 치환
+  Object.entries(DARK_PAINT_OVERRIDES).forEach(([layerId, paints]) => {
+    if (!map.getLayer(layerId)) {
+      return;
+    }
+
+    Object.entries(paints).forEach(([key, value]) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      map.setPaintProperty(layerId, key as any, value as any);
+    });
+  });
+
+  [...DARK_ROADS, ...DARK_CASINGS].forEach((layerId) => {
+    if (!map.getLayer(layerId)) {
+      return;
+    }
+
+    map.setPaintProperty(
+      layerId,
+      "line-color",
+      DARK_CASINGS.includes(layerId) ? DARK_CASING_COLOR : DARK_ROAD_COLOR
+    );
+  });
+};
+
+// 낮 테마 원본 색 (applyTheme 복원용 — 로드 시점에 수집)
+const ORIGINAL_PAINTS: Record<string, Record<string, unknown>> = {};
+
 export interface OwnCat {
   name: string;
   position: { lat: number; lng: number };
@@ -78,9 +314,9 @@ interface Props {
   onClickCat?: () => void;
   ownCats?: OwnCat[];
   onClickOwnCat?: (value: OwnCat) => void;
-  onMapReady?: (map: L.Map) => void;
+  onMapReady?: (map: MaplibreMap) => void;
   onCreateCatsComplete?: () => void;
-  ref?: React.Ref<L.Marker | null>;
+  ref?: React.Ref<Marker | null>;
   onClickMe?: () => void;
   onDistanceChange?: (distance: number) => void;
 }
@@ -98,7 +334,7 @@ function MapContent({
 }: Props) {
   const isStopFocusMe = useViewStore((s) => s.isStopFocusMe);
   const isBattleOn = useViewStore((s) => s.isBattleOn);
-  const { setIsStopFocusMe, addToastMessage } = useViewStore((s) => s.actions);
+  const { addToastMessage } = useViewStore((s) => s.actions);
 
   // 최신 isStopFocusMe 값을 ref에 동기화 (클로저 스코프 문제 방지)
   const isStopFocusMeRef = useRef(isStopFocusMe);
@@ -118,12 +354,14 @@ function MapContent({
   const isRendered = useRef(false);
   const isMapReady = useRef(false);
   const isWatchPositionReady = useRef(false);
-  const centerPositionOfCats = useRef<L.LatLng>(undefined);
+  const centerPositionOfCats = useRef<{ lat: number; lng: number } | undefined>(
+    undefined
+  );
 
   // 마커
-  const catMarkersRef = useRef<L.Marker[]>([]);
-  const ownCatMarkersRef = useRef<Record<string, L.Marker>>({});
-  const myCatRef = useRef<L.Marker>(null);
+  const catMarkersRef = useRef<Marker[]>([]);
+  const ownCatMarkersRef = useRef<Record<string, Marker>>({});
+  const myCatRef = useRef<Marker>(null);
 
   // 타이머
   const walkTimerRef = useRef<number>(undefined);
@@ -132,12 +370,12 @@ function MapContent({
   const catSpawnTimerRef = useRef<number>(undefined);
 
   // 이동 궤적 (발자국 트레일)
-  const pathRef = useRef<L.LatLng[]>([]);
+  const pathRef = useRef<{ lat: number; lng: number }[]>([]);
   const totalDistanceRef = useRef<number>(0);
   const sessionDistanceRef = useRef<number>(0); // 이번 세션(캐릭터 첫 위치) 이동 거리 — 발자국 기준
-  const startPointRef = useRef<L.CircleMarker | null>(null);
+  const startPointRef = useRef<Marker | null>(null);
   const nextPawDistanceRef = useRef<number>(PAW_INTERVAL_METER);
-  const pawMarkerRef = useRef<L.Marker[]>([]);
+  const pawMarkerRef = useRef<Marker[]>([]);
   const pawToggleRef = useRef<boolean>(false); // false: 왼쪽 발, true: 오른쪽 발
   const storeWalkTimerRef = useRef<number>(undefined); // 궤적 저장 디바운스 타이머
 
@@ -149,43 +387,65 @@ function MapContent({
   const itemCountRef = useRef(itemCount);
   itemCountRef.current = itemCount;
 
-  // 부모의 myMarkerRef.current에 그 값을 동기화합니다.
-  useImperativeHandle<L.Marker | null, L.Marker | null>(myMarkerRef, () => {
-    return myCatRef.current;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [myCatRef.current]);
+  const map = useViewStore((s) => s.map);
 
-  const map = useMapEvents({
-    dragstart() {
-      setIsStopFocusMe(true);
+  // 부모의 myMarkerRef.current에 그 값을 동기화합니다.
+  useImperativeHandle<Marker | null, Marker | null>(
+    myMarkerRef,
+    () => {
+      return myCatRef.current;
     },
-    click(e) {
-      if (isDev) {
-        setMockLocation(e.latlng.lat, e.latlng.lng);
-        createMeAndCats(true);
-      }
-    },
-  });
+    []
+  );
+
+  // dev 모드: 지도 클릭으로 목 위치(mock) 설정 후 캐릭터/고양이 다시 그리기
+  // (createMeAndCats는 아래에서 정의되므로 항상 최신값을 가리키는 ref로 우회)
+  const createMeAndCatsRef = useRef<
+    ((usePanTo?: boolean) => Promise<void>) | null
+  >(null);
+
+  useEffect(() => {
+    if (!map || !isDev) {
+      return;
+    }
+
+    const onClick = (e: MapMouseEvent) => {
+      setMockLocation(e.lngLat.lat, e.lngLat.lng);
+      createMeAndCatsRef.current?.(true);
+    };
+
+    map.on("click", onClick);
+
+    return () => {
+      map.off("click", onClick);
+    };
+  }, [map]);
 
   // 발자국 마커 1개를 찍는다 (트레일 기록 및 복원 공용)
   const createPawMarker = useCallback(
-    (latLng: L.LatLng, bearingDeg: number, tiltDeg: number) => {
+    (
+      point: { lat: number; lng: number },
+      bearingDeg: number,
+      tiltDeg: number
+    ) => {
       if (!map) {
         return;
       }
 
-      const icon = L.divIcon({
-        className: "paw-print",
-        html: `<div class="paw-print-rotate" style="transform: rotate(${bearingDeg + tiltDeg}deg)"><div class="paw-print-inner">${PAW_SVG}</div></div>`,
-        iconSize: [PAW_ICON_PX, PAW_ICON_PX],
-        iconAnchor: [PAW_ICON_PX / 2, PAW_ICON_PX / 2],
-      });
+      const el = document.createElement("div");
+      el.className = "paw-print";
+      el.innerHTML = `<div class="paw-print-rotate" style="transform: rotate(${
+        bearingDeg + tiltDeg
+      }deg)"><div class="paw-print-inner">${PAW_SVG}</div></div>`;
+      el.style.width = `${PAW_ICON_PX}px`;
+      el.style.height = `${PAW_ICON_PX}px`;
 
-      const pawMarker = L.marker(latLng, {
-        icon,
-        interactive: false,
-        keyboard: false,
-      }).addTo(map);
+      // z-index를 낮게 — 캐릭터/고양이 마커가 발자국 위에 표시되도록
+      el.style.zIndex = "0";
+
+      const pawMarker = new Marker({ element: el })
+        .setLngLat([point.lng, point.lat])
+        .addTo(map);
 
       pawMarkerRef.current.push(pawMarker);
 
@@ -195,26 +455,36 @@ function MapContent({
         oldest?.remove();
       }
     },
-    [map],
+    [map]
   );
 
   // 시작점 마커를 찍는다
   const createStartDot = useCallback(
-    (latLng: L.LatLng) => {
+    (point: { lat: number; lng: number }) => {
       if (!map || startPointRef.current) {
         return;
       }
 
-      startPointRef.current = L.circleMarker(latLng, {
-        radius: 6,
-        color: "white",
-        weight: 2,
-        fillColor: "var(--main-1)",
-        fillOpacity: 1,
-        className: "trajectory-start-dot",
-      }).addTo(map);
+      const el = document.createElement("div");
+      el.appendChild(
+        document.createElementNS("http://www.w3.org/2000/svg", "svg")
+      );
+      const svg = el.firstChild as SVGSVGElement;
+      svg.classList.add("trajectory-start-dot");
+      svg.setAttribute("width", "12");
+      svg.setAttribute("height", "12");
+      svg.setAttribute("viewBox", "0 0 12 12");
+      svg.innerHTML =
+        '<circle cx="6" cy="6" r="5" fill="var(--main-1)" stroke="white" stroke-width="2"/>';
+
+      // 발자국과 마찬가지로 캐릭터보다 아래 레이어
+      el.style.zIndex = "0";
+
+      startPointRef.current = new Marker({ element: el })
+        .setLngLat([point.lng, point.lat])
+        .addTo(map);
     },
-    [map],
+    [map]
   );
 
   // 발자국 간격은 줌이 고정(레벨 19)되어 있으므로 항상 기본 값 사용.
@@ -261,24 +531,24 @@ function MapContent({
 
   const drawMe = useCallback(
     async (usePanTo?: boolean) => {
-      const coords = await getCurrentPosition();
+      const coords: Coords | undefined = await getCurrentPosition();
 
-      if (!coords) {
+      if (!coords || !map) {
         return;
       }
 
-      const newLatLng = new L.LatLng(coords.latitude, coords.longitude);
+      const newPoint = { lat: coords.latitude, lng: coords.longitude };
 
       if (pathRef.current.length > 0) {
-        const lastLatLng = pathRef.current[pathRef.current.length - 1];
-        const dist = lastLatLng.distanceTo(newLatLng);
+        const lastPoint = pathRef.current[pathRef.current.length - 1];
+        const dist = distanceInMeters(lastPoint, newPoint);
 
         // 10미터 이상 이동했을때만 거리 추가
         if (dist > 10) {
           totalDistanceRef.current += dist;
           sessionDistanceRef.current += dist;
           onDistanceChange?.(totalDistanceRef.current);
-          pathRef.current.push(newLatLng);
+          pathRef.current.push(newPoint);
 
           // 줌 레벨에 맞는 발자국 간격(m): 줌 아웃일수록 간격을 넓혀
           // 발자국 아이콘이 겹치지 않도록 한다 (기본 줌에선 7m 그대로)
@@ -286,13 +556,14 @@ function MapContent({
           // 좌우 벌어짐 배율: 간격이 늘어난 비율에 맞춰 offset도 같이 키운다
           const spreadDegFactor = intervalM / PAW_INTERVAL_METER;
           // 한 이동당 발자국 개수 상한: 구간이 너무 길면 간격 자체를 늘려 개수를 제한한다
-          const maxStepForCap = Math.ceil(dist / MAX_PAWS_PER_MOVE / intervalM) * intervalM;
+          const maxStepForCap =
+            Math.ceil(dist / MAX_PAWS_PER_MOVE / intervalM) * intervalM;
           const step = Math.max(intervalM, maxStepForCap);
 
           const bearingDeg =
             (Math.atan2(
-              newLatLng.lng - lastLatLng.lng,
-              newLatLng.lat - lastLatLng.lat,
+              newPoint.lng - lastPoint.lng,
+              newPoint.lat - lastPoint.lat
             ) *
               180) /
             Math.PI;
@@ -303,7 +574,7 @@ function MapContent({
 
           // 이동 구간을 따라 step 간격으로 발자국 위치를 미리 계산
           const pawPositions: {
-            latLng: L.LatLng;
+            latLng: { lat: number; lng: number };
             bearingDeg: number;
             tiltDeg: number;
           }[] = [];
@@ -314,38 +585,34 @@ function MapContent({
             remain += step
           ) {
             const ratio = remain / dist;
-            const centerLatLng = L.latLng(
-              lastLatLng.lat + (newLatLng.lat - lastLatLng.lat) * ratio,
-              lastLatLng.lng + (newLatLng.lng - lastLatLng.lng) * ratio,
-            );
+            const centerPoint = {
+              lat: lastPoint.lat + (newPoint.lat - lastPoint.lat) * ratio,
+              lng: lastPoint.lng + (newPoint.lng - lastPoint.lng) * ratio,
+            };
 
             // 중심축에서 좌우로 벌어진 위치 계산 (위도/경도 거리 비율 보정)
             const isLeftPaw = !pawToggleRef.current;
             const metersPerDegLat = 111_320;
             const metersPerDegLng =
-              111_320 * Math.cos((centerLatLng.lat * Math.PI) / 180);
+              111_320 * Math.cos((centerPoint.lat * Math.PI) / 180);
 
             // 보행 방향(미터 공간) 단위 벡터의 오른쪽 수직 벡터
-            const dirLatM =
-              (newLatLng.lat - lastLatLng.lat) * metersPerDegLat;
-            const dirLngM =
-              (newLatLng.lng - lastLatLng.lng) * metersPerDegLng;
+            const dirLatM = (newPoint.lat - lastPoint.lat) * metersPerDegLat;
+            const dirLngM = (newPoint.lng - lastPoint.lng) * metersPerDegLng;
             const dirNorm = Math.hypot(dirLatM, dirLngM) || 1;
             const perpLatM = dirLngM / dirNorm; // 시계방향 90도 회전: 오른쪽
             const perpLngM = -dirLatM / dirNorm;
 
             const spreadDegLat =
-              (perpLatM * PAW_SPREAD_METER * spreadDegFactor) /
-              metersPerDegLat;
+              (perpLatM * PAW_SPREAD_METER * spreadDegFactor) / metersPerDegLat;
             const spreadDegLng =
-              (perpLngM * PAW_SPREAD_METER * spreadDegFactor) /
-              metersPerDegLng;
+              (perpLngM * PAW_SPREAD_METER * spreadDegFactor) / metersPerDegLng;
 
             pawPositions.push({
-              latLng: L.latLng(
-                centerLatLng.lat + spreadDegLat * (isLeftPaw ? -1 : 1),
-                centerLatLng.lng + spreadDegLng * (isLeftPaw ? -1 : 1),
-              ),
+              latLng: {
+                lat: centerPoint.lat + spreadDegLat * (isLeftPaw ? -1 : 1),
+                lng: centerPoint.lng + spreadDegLng * (isLeftPaw ? -1 : 1),
+              },
               bearingDeg,
               tiltDeg: isLeftPaw ? 22 : -22, // 왼/오 대각선 번갈아 (방향 반대)
             });
@@ -355,8 +622,7 @@ function MapContent({
           if (pawPositions.length > 0) {
             pawPositions.forEach((paw, index) => {
               // 캐릭터 이동보다 약간 늦게 찍히도록 지연 (WALK_DURATION * 1.3에 걸쳐 순차 출력)
-              const delay =
-                (index / pawPositions.length) * WALK_DURATION * 1.3;
+              const delay = (index / pawPositions.length) * WALK_DURATION * 1.3;
 
               window.setTimeout(() => {
                 // 캐릭터가 그 지점을 지나가는 시점에 발자국 생성
@@ -383,28 +649,28 @@ function MapContent({
           }, STORE_DEBOUNCE_MS);
         }
       } else {
-        pathRef.current.push(newLatLng);
-        createStartDot(newLatLng);
+        pathRef.current.push(newPoint);
+        createStartDot(newPoint);
       }
 
       if (myCatRef.current) {
         startWalkAnimation();
         animateMarker(
           myCatRef.current,
-          [coords.latitude, coords.longitude],
-          WALK_DURATION,
+          [coords.longitude, coords.latitude],
+          WALK_DURATION
         );
       } else {
         const marker = createMarker({
           type: "me",
           imgUrl: ImgCatMe,
           map,
-          position: [coords.latitude, coords.longitude],
-        }).on("click", () => {
-          onClickMe?.();
+          position: [coords.longitude, coords.latitude],
         });
 
-        marker.setZIndexOffset(99);
+        marker.on("click", () => {
+          onClickMe?.();
+        });
 
         myCatRef.current = marker;
       }
@@ -415,10 +681,13 @@ function MapContent({
 
         // 현재 위치로 지도 중심 이동
         if (usePanTo) {
-          map.panTo([coords.latitude, coords.longitude], { duration: 1.5 });
+          map.easeTo({
+            center: [coords.longitude, coords.latitude],
+            duration: 1500,
+          });
         } else {
-          map.setView([coords.latitude, coords.longitude], undefined, {
-            duration: 1.5,
+          map.jumpTo({
+            center: [coords.longitude, coords.latitude],
           });
         }
       }
@@ -435,20 +704,20 @@ function MapContent({
       onClickMe,
       onDistanceChange,
       startWalkAnimation,
-    ],
+    ]
   );
 
   const drawCats = useCallback(
     (forceDraw?: boolean) => {
-      if (!myCatRef.current || isShowStage) {
+      if (!myCatRef.current || !map || isShowStage) {
         return;
       }
 
-      const myPosition = myCatRef.current.getLatLng();
+      const myPosition = myCatRef.current.getLngLat();
 
       // 내 고양이 이전좌표랑 일정m 이상 차이날때만 cats 새로 그린다
       const canSkipDraw = centerPositionOfCats.current
-        ? myPosition.distanceTo(centerPositionOfCats.current) <= 40
+        ? distanceInMeters(myPosition, centerPositionOfCats.current) <= 40
         : false;
 
       if (canSkipDraw && !forceDraw) {
@@ -456,7 +725,10 @@ function MapContent({
       }
 
       // 고양이들 그릴 중심점 업데이트
-      centerPositionOfCats.current = myPosition;
+      centerPositionOfCats.current = {
+        lat: myPosition.lat,
+        lng: myPosition.lng,
+      };
 
       // 이전에 생성한 랜덤 마커들 해제
       catMarkersRef.current.forEach((marker) => {
@@ -478,25 +750,30 @@ function MapContent({
       });
 
       filteredCats.forEach((cat) => {
-        const randomLatLng = getRandomLocationInCircle(
+        const [lng, lat] = getRandomLocationInCircle(
           myPosition.lat,
           myPosition.lng,
-          BOUNDARY_METER_OF_ME,
+          BOUNDARY_METER_OF_ME
         );
 
         const marker = createMarker({
           type: "enemy",
           catName: cat.name,
-          position: randomLatLng,
+          position: [lng, lat],
           imgUrl: cat.img,
-          map: map,
-        }).on("click", (e) => {
-          const target = e.target as L.Marker;
-          const el = target.getElement()?.querySelector("[data-status]") as
-            | HTMLElement
-            | undefined;
+          map,
+        });
 
-          if (el?.dataset.status !== "none") {
+        marker.on("click", (e) => {
+          // MapLibre 마커 클릭 이벤트의 originalEvent.target은 실제 클릭된 DOM 노드
+          // — data-status를 가진 컨테이너를 찾아 올라간다
+          const domTarget =
+            e.originalEvent.target instanceof HTMLElement
+              ? e.originalEvent.target
+              : marker.getElement();
+          const container = domTarget?.closest("[data-marker-container]");
+
+          if (container?.getAttribute("data-status") !== "none") {
             return;
           }
 
@@ -508,7 +785,7 @@ function MapContent({
         catMarkersRef.current.push(marker);
       });
     },
-    [isShowStage, map, onClickCat, setSelectedCat],
+    [isShowStage, map, onClickCat, setSelectedCat]
   );
 
   const drawOwnCats = useCallback(() => {
@@ -516,7 +793,7 @@ function MapContent({
 
     // 현재 전달받은 고양이들의 고유 키 셋 생성
     const currentCatKeys = new Set(
-      ownCats?.map((cat) => `${cat.name}_${cat.createdAt}`) || [],
+      ownCats?.map((cat) => `${cat.name}_${cat.createdAt}`) || []
     );
 
     // 1. 제거 대상: 현재 데이터에 없는 마커들을 지도에서 삭제
@@ -535,10 +812,12 @@ function MapContent({
         const { position } = cat;
 
         const marker = createMarker({
-          position: [position.lat, position.lng],
+          position: [position.lng, position.lat],
           type: "owned",
           map,
-        }).on("click", () => {
+        });
+
+        marker.on("click", () => {
           onClickOwnCat?.(cat);
         });
 
@@ -570,22 +849,31 @@ function MapContent({
       drawCats();
       checkSpawnedCats();
     },
-    [checkSpawnedCats, drawCats, drawMe],
+    [checkSpawnedCats, drawCats, drawMe]
   );
+
+  // 항상 최신 createMeAndCats를 ref에 동기화 (dev 클릭 핸들러에서 사용)
+  createMeAndCatsRef.current = createMeAndCats;
+
+  // 잡은 고양이(깃발) 목록이 로드되거나 변경될 때마다 다시 그린다
+  // (마운트 시점엔 쿼리 데이터가 아직 없으므로 데이터 도착 후 재호출 필요)
+  useEffect(() => {
+    drawOwnCats();
+  }, [drawOwnCats]);
 
   useEffect(() => {
     // 잡은 고양이목록 클릭 리액션
     if (clickedOwnCat) {
       const cat = Object.entries(ownCatMarkersRef.current).find(
         ([key, marker]) => {
-          const { lat, lng } = marker.getLatLng();
+          const { lat, lng } = marker.getLngLat();
 
           return (
             key.includes(clickedOwnCat.createdAt) &&
             lat === clickedOwnCat.lat &&
             lng === clickedOwnCat.lng
           );
-        },
+        }
       );
 
       if (cat) {
@@ -603,7 +891,7 @@ function MapContent({
         if (catData) {
           const catElement = getCatchedCatElement(
             catData.img,
-            catData.dialog.greeting[getRandomNumber(3)],
+            catData.dialog.greeting[getRandomNumber(3)]
           );
 
           markerElement?.appendChild(catElement);
@@ -627,31 +915,21 @@ function MapContent({
       return;
     }
 
-    pathRef.current = todayWalk.path.map(
-      ({ lat, lng }) => new L.LatLng(lat, lng),
-    );
+    pathRef.current = todayWalk.path.map(({ lat, lng }) => ({ lat, lng }));
 
     // 저장된 궤적을 따라 발자국 + 시작점을 다시 그린다 (애니메이션 지연 없이 즉시)
-    pathRef.current.forEach((latLng, i) => {
+    pathRef.current.forEach((point, i) => {
       if (i === 0) {
-        createStartDot(latLng);
+        createStartDot(point);
         return;
       }
 
       const prev = pathRef.current[i - 1];
       const bearingDeg =
-        (Math.atan2(
-          latLng.lng - prev.lng,
-          latLng.lat - prev.lat,
-        ) *
-          180) /
+        (Math.atan2(point.lng - prev.lng, point.lat - prev.lat) * 180) /
         Math.PI;
 
-      createPawMarker(
-        latLng,
-        bearingDeg,
-        pawToggleRef.current ? -22 : 22,
-      );
+      createPawMarker(point, bearingDeg, pawToggleRef.current ? -22 : 22);
       pawToggleRef.current = !pawToggleRef.current;
     });
 
@@ -663,7 +941,8 @@ function MapContent({
   }, [createPawMarker, createStartDot, map, onDistanceChange]);
 
   useEffect(() => {
-    if (isRendered.current) {
+    // 지도 인스턴스(store의 map)가 준비된 뒤 1회만 초기화한다
+    if (!map || isRendered.current) {
       return;
     }
 
@@ -679,11 +958,16 @@ function MapContent({
       await createMeAndCats();
 
       setIsInitLoading(false);
-      isRendered.current = true;
 
       onCreateCatsComplete?.();
     })();
-  }, [createMeAndCats, drawOwnCats, map, onCreateCatsComplete, restoreTodayWalk]);
+  }, [
+    createMeAndCats,
+    drawOwnCats,
+    map,
+    onCreateCatsComplete,
+    restoreTodayWalk,
+  ]);
 
   useEffect(() => {
     if (isInitLoading || isWatchPositionReady.current) {
@@ -732,30 +1016,30 @@ function MapContent({
     }
 
     const spwanItem = () => {
-      const myPosition = myCatRef.current?.getLatLng();
+      const myPosition = myCatRef.current?.getLngLat();
 
-      if (!myPosition) return;
+      if (!myPosition || !map) return;
 
-      const randomLatLng = getRandomLocationInCircle(
+      const [lng, lat] = getRandomLocationInCircle(
         myPosition.lat,
         myPosition.lng,
-        70,
+        70
       );
       const randomNum = getRandomNumber(10);
       const itemType =
         randomNum === 0
           ? "catnip"
           : randomNum === 1
-            ? "gukbab"
-            : randomNum === 2
-              ? "fish"
-              : null;
+          ? "gukbab"
+          : randomNum === 2
+          ? "fish"
+          : null;
       const imgUrl =
         itemType === "catnip"
           ? ImgCatnip
           : itemType === "gukbab"
-            ? ImgGukbab
-            : ImgFish;
+          ? ImgGukbab
+          : ImgFish;
 
       if (!itemType) {
         return;
@@ -763,21 +1047,32 @@ function MapContent({
 
       const marker = createMarker({
         type: "item",
-        position: randomLatLng,
+        position: [lng, lat],
         imgUrl,
-        map: map,
-      }).on("click", async (e) => {
-        const target = e.target as L.Marker;
-        const container = target
-          .getElement()
-          ?.querySelector("[data-type='item']");
+        map,
+      });
+
+      marker.on("click", async (e) => {
+        // MapLibre 클릭 이벤트의 originalEvent.target은 실제 클릭된 DOM 노드
+        // — 아이템 컨테이너를 찾아 올라간다
+        const domTarget =
+          e.originalEvent.target instanceof HTMLElement
+            ? e.originalEvent.target
+            : marker.getElement();
+        const container = domTarget?.closest("[data-type='item']");
 
         if (container) {
           container.classList.add("clicked");
 
           addToastMessage({
             duration: 3000,
-            message: `${itemType === "catnip" ? "캣닢" : itemType === "gukbab" ? "국밥" : "생선"} +1`,
+            message: `${
+              itemType === "catnip"
+                ? "캣닢"
+                : itemType === "gukbab"
+                ? "국밥"
+                : "생선"
+            } +1`,
           });
 
           const [updateResult] = await Promise.allSettled([
@@ -833,52 +1128,194 @@ function MapContent({
 }
 
 export default function Map({ className, ...rest }: Props) {
-  const map = useViewStore((s) => s.map);
   const isStopFocusMe = useViewStore((s) => s.isStopFocusMe);
   const { setMap, setIsStopFocusMe } = useViewStore((s) => s.actions);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<MaplibreMap | null>(null);
 
   const [isLoading, setisLoading] = useState(true);
   const [totalDistance, setTotalDistance] = useState(0);
 
-  const myMarkerRef = useRef<L.Marker>(null);
+  const myMarkerRef = useRef<Marker>(null);
 
   const { isNight, hours } = useDayAndNight();
+
+  // 지도 초기화 effect에서 클로저가 최신 하늘 상태를 쓰도록 ref 유지
+  // (렌더 중이 아닌 effect에서만 갱신)
+  const skyStateRef = useRef({ isNight, hours });
+
+  useEffect(() => {
+    skyStateRef.current = { isNight, hours };
+  }, [isNight, hours]);
 
   useEffect(() => {
     return () => setMap(null);
   }, [setMap]);
 
-  // 오늘 산책 거리 초기 표시 (스토리지에서 복원)
   useEffect(() => {
-    let cancelled = false;
+    const container = containerRef.current;
 
-    (async () => {
-      const todayWalk = await getTodayWalk();
+    if (!container || mapRef.current) {
+      return;
+    }
 
-      if (!cancelled) {
-        setTotalDistance(todayWalk.distance);
-      }
-    })();
+    // Vite 번들러 환경에서 maplibre의 import.meta.url 기반 worker URL이
+    // 깨지므로 public/에 복사해둔 worker 파일을 명시적으로 지정한다
+    // (BASE_URL은 앱인토스 배포 경로에서도 올바르게 리졸브됨)
+    config.WORKER_URL = `${import.meta.env.BASE_URL}maplibre-gl-worker.mjs`;
+
+    const map = new MaplibreMap({
+      container,
+      style: noLabelsStyle as unknown as StyleSpecification,
+      center: [126.978, 37.5665], // 센터 기본값 서울시청
+      zoom: INIT_ZOOM_LEVEL,
+      maxZoom: MAX_ZOOM_LEVEL,
+      minZoom: MIN_ZOOM_LEVEL,
+      attributionControl: false, // 하단 저작권 표시줄 전체 삭제
+      interactive: true,
+      dragPan: true,
+      touchZoomRotate: true,
+      // 확대/축소는 비활성 (기존 줌 고정 정책 유지)
+      scrollZoom: false,
+      doubleClickZoom: false,
+      boxZoom: false,
+      keyboard: false,
+      pitchWithRotate: false,
+      dragRotate: false,
+      touchPitch: false,
+      cooperativeGestures: false,
+    });
+
+    // 3D 피치 상태에서는 '지도 중심'이 화면 중앙(지평선 쪽)으로 시각적으로 밀려난다.
+    // 하단 패딩을 주면 center 기준점이 화면 하단으로 내려가 캐릭터가 화면 중앙에 보이고,
+    // 반경 50m 스폰 고양이들이 화면 안에 들어온다.
+    map.setPadding({
+      top: 0,
+      bottom: Math.round(window.innerHeight * 0.25),
+      left: 0,
+      right: 0,
+    });
+
+    mapRef.current = map;
+
+    map.on("dragstart", () => {
+      setIsStopFocusMe(true);
+    });
+
+    map.on("load", () => {
+      // 낮 테마 원본 색 수집 (밤→낮 복원용)
+      // maplibre의 paint 저장 구조(_values)는 비공개 API라 안전하게 any로 접근
+      [
+        ...Object.keys(DARK_PAINT_OVERRIDES),
+        ...DARK_ROADS,
+        ...DARK_CASINGS,
+      ].forEach((layerId) => {
+        const layer = map.getLayer(layerId);
+
+        if (!layer) {
+          return;
+        }
+
+        const paints: Record<string, unknown> = {};
+        const props = (layer.paint as Record<string, unknown>)?._values as
+          | Record<string, { value: unknown }>
+          | undefined;
+
+        if (props) {
+          Object.keys(props).forEach((key) => {
+            paints[key] = props[key]?.value;
+          });
+        }
+
+        ORIGINAL_PAINTS[layerId] = paints;
+      });
+
+      // 3D 지형: AWS Terrain Tiles(terrarium DEM, 무료/키 불필요)
+      map.addSource(DEM_SOURCE_ID, {
+        type: "raster-dem",
+        tiles: [
+          "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
+        ],
+        encoding: "terrarium",
+        tileSize: 256,
+        maxzoom: 15,
+      });
+
+      const terrain: TerrainSpecification = {
+        source: DEM_SOURCE_ID,
+        exaggeration: TERRAIN_EXAGGERATION,
+      };
+      map.setTerrain(terrain);
+
+      // 지형 음영(햇빛 그림자 느낌): 위 DEM 소스를 재사용 — 추가 타일 다운로드 없음.
+      // 레이어는 background 바로 위(스타일 지물 레이어들보다 아래)에 삽입해 지물에 가리지 않게 한다.
+      map.addLayer(
+        {
+          id: "terrain-hillshade",
+          type: "hillshade",
+          source: DEM_SOURCE_ID,
+          paint: {
+            // 은은한 수준으로 조정 — 이전 1.0은 지져분해 보였음
+            "hillshade-exaggeration": 0.5,
+            "hillshade-shadow-color": "#8a8a8a", // 중립 회색 — 갈색 톤이 지저분해 보여 중화
+            "hillshade-highlight-color": "#ffffff",
+            "hillshade-accent-color": "#aaaaaa",
+            "hillshade-illumination-direction": 315,
+            "hillshade-illumination-altitude": 45,
+          },
+        },
+        "natural_earth" // background 다음 = 지물 레이어 전부보다 아래
+      );
+
+      // 3D 건물 조명: 광원 방향을 지정해 면에 명암(그림자 느낌)을 강화한다.
+      // (MapLibre는 건물의 지면 투영 그림자는 미지원 — 조명 음영이 대체 수단)
+      map.setLight({
+        anchor: "viewport",
+        position: [1.5, 315, 40],
+        color: "#ffffff",
+        intensity: 0.35,
+      });
+
+      // 하늘/안개 효과 + 지물 다크 테마 적용
+      applyTheme(map, skyStateRef.current.isNight, skyStateRef.current.hours);
+
+      // 3D 카메라 기울기
+      map.setPitch(MAP_PITCH);
+
+      setMap(map);
+    });
 
     return () => {
-      cancelled = true;
+      map.remove();
+      mapRef.current = null;
     };
-  }, []);
+  }, [setMap, setIsStopFocusMe]);
 
   useEffect(() => {
     if (isLoading) {
-      map?.dragging.disable();
+      mapRef.current?.dragPan.disable();
     } else {
-      map?.dragging.enable();
+      mapRef.current?.dragPan.enable();
     }
-  }, [isLoading, map]);
+  }, [isLoading]);
+
+  // 낮/밤 전환 시 하늘 + 지물 색 갱신
+  // (스타일 로드 완료 전에 setSky를 호출하면 "Style is not done loading" 에러가 나므로
+  //  map 'load' 이벤트 이후에만 호출한다)
+  useEffect(() => {
+    const map = mapRef.current;
+
+    if (!map || !map.isStyleLoaded()) {
+      return;
+    }
+
+    applyTheme(map, isNight, hours);
+  }, [isNight, hours]);
 
   return (
     <div className={cn("map-wrapper")}>
-      <SkyLayer useDayNight={false} isNight={isNight} hours={hours} />
-
-      {/* <AdBanner adGroupId="123" /> */}
-
+      {/* 상단 산책 거리 플로팅 캡슐 */}
       <div className={cn("distance-display")}>
         <span className={cn("label")}>오늘 산책</span>
         <NumberFlow
@@ -889,64 +1326,46 @@ export default function Map({ className, ...rest }: Props) {
         <span className={cn("unit")}>km</span>
       </div>
 
-      <MapContainer
-        className={cn("Map", className)}
-        center={[37.5665, 126.978]} // 센터 기본값 서울시청
-        zoom={INIT_ZOOM_LEVEL}
-        maxZoom={MAX_ZOOM_LEVEL}
-        minZoom={MIN_ZOOM_LEVEL}
-        zoomControl={false}
-        scrollWheelZoom={false}
-        doubleClickZoom={false}
-        touchZoom={false}
-        boxZoom={false}
-        keyboard={false}
-        attributionControl={false} // 하단 저작권 표시줄 전체 삭제
-        bounceAtZoomLimits={false}
-        maxBoundsViscosity={1}
+      <div
+        ref={containerRef}
+        className={cn("Map", className, { night: isNight })}
       >
-        <TileLayer
-          className={cn("tile-layer", { night: isNight })}
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          maxZoom={19}
-        />
-
-        {/* 맵 내부 마커생성, 이벤트 등록 등 */}
-        <MapContent
-          {...rest}
-          onDistanceChange={(distance) => {
-            setTotalDistance(distance);
-          }}
-          ref={myMarkerRef}
-          className={cn("map-content")}
-          onMapReady={(map) => {
-            // 맵 상태에 등록
-            setMap(map);
-          }}
-          onCreateCatsComplete={() => {
-            setisLoading(false);
-          }}
-        />
-
-        <ScaleControl
-          position={"bottomleft"} // 위치 설정 (topleft, topright, bottomleft, bottomright)
-          imperial={false} // 마일(mi) 단위 표시 여부 (false면 미터법만 표시)
-          maxWidth={100} // 축척 바의 최대 길이 (픽셀 단위)
-        />
-      </MapContainer>
+        <div className={cn("map-content")}>
+          <MapContent
+            {...rest}
+            onDistanceChange={(distance) => {
+              setTotalDistance(distance);
+            }}
+            ref={myMarkerRef}
+            onMapReady={(map) => {
+              // 맵 상태에 등록
+              setMap(map);
+            }}
+            onCreateCatsComplete={() => {
+              setisLoading(false);
+            }}
+          />
+        </div>
+      </div>
 
       <button
         data-name="focus-button"
         className={cn("focus-button", { "stop-focus": isStopFocusMe })}
         aria-label="내 위치로 이동"
         onClick={async () => {
-          if (myMarkerRef.current) {
+          const marker = myMarkerRef.current;
+
+          if (marker) {
+            const { lat, lng } = marker.getLngLat();
+
             // panTo 완료 후에 자동 추적 재개 (panTo 도중 panTo/setView와 충돌 방지)
-            map?.once("moveend", () => {
+            mapRef.current?.once("moveend", () => {
               setIsStopFocusMe(false);
             });
-            map?.panTo(myMarkerRef.current.getLatLng());
+            mapRef.current?.easeTo({
+              center: [lng, lat],
+              duration: 1500,
+            });
           }
         }}
       >

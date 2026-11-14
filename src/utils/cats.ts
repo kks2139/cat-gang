@@ -1,5 +1,5 @@
 // import ImgCatTest from "@/assets/svg/cat_test.svg";
-import L from "leaflet";
+import type { Marker } from "maplibre-gl";
 
 import ImgCat1 from "@/assets/img/character/cat-1.png";
 import ImgCat2 from "@/assets/img/character/cat-2.png";
@@ -42,7 +42,7 @@ export interface CatInfo {
   hp: number;
   defense: number;
   punchPower: number;
-  marker?: L.Marker;
+  marker?: Marker;
   // 상황별 대사
   dialog: {
     chat?: string;

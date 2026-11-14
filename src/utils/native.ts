@@ -1,10 +1,10 @@
 import {
   Accuracy,
-  getAnonymousKey,
-  getCurrentLocation,
+  Device,
+  GetCurrentLocationPermissionError,
   type LocationCoords,
-  startUpdateLocation,
   StartUpdateLocationPermissionError,
+  User,
 } from "@apps-in-toss/web-framework";
 
 import { isDev, operEnv } from "./constants";
@@ -36,23 +36,12 @@ export class UserKey {
     }
 
     try {
-      const res = await getAnonymousKey();
+      // v3: 성공 시 { type: 'HASH', hash }, 실패 시 throw (UNSUPPORTED_APP_VERSION / UNKNOWN_ERROR)
+      const res = await User.getAnonymousKey();
 
-      if (!res) {
-        // 지원하지 않는 앱 버전
-        return;
-      }
+      this.key = res.hash;
 
-      if (res === "ERROR") {
-        //사용자 키 조회 중 오류가 발생
-        return;
-      }
-
-      if (res.type === "HASH") {
-        this.key = res.hash;
-
-        return this.key;
-      }
+      return this.key;
     } catch (e) {
       const err = e as Error;
 
@@ -109,16 +98,16 @@ export const getCurrentPosition = async () => {
   }
 
   try {
-    let status = await getCurrentLocation.getPermission();
+    let status = await Device.getLocation.getPermission();
 
     if (status !== "allowed") {
-      const result = await getCurrentLocation.openPermissionDialog();
+      const result = await Device.getLocation.openPermissionDialog();
 
       if (result === "allowed") {
         status = "allowed";
       } else {
         await wait(500);
-        status = await getCurrentLocation.getPermission();
+        status = await Device.getLocation.getPermission();
       }
     }
 
@@ -127,17 +116,17 @@ export const getCurrentPosition = async () => {
       return;
     }
 
-    const response = await getCurrentLocation({
+    const response = await Device.getLocation({
       accuracy: Accuracy.BestForNavigation,
     });
 
     return response.coords;
   } catch (error: unknown) {
-    if (error instanceof StartUpdateLocationPermissionError) {
+    if (error instanceof GetCurrentLocationPermissionError) {
       console.error("위치 권한이 필요합니다. 설정에서 허용해주세요.");
     }
 
-    console.error("getCurrentLocation 에러:", error);
+    console.error("Device.getLocation 에러:", error);
   }
 };
 
@@ -145,16 +134,16 @@ export const watchPosition = async (
   onChanged: (coords: LocationCoords) => void,
 ) => {
   try {
-    let status = await startUpdateLocation.getPermission();
+    let status = await Device.subscribeLocation.getPermission();
 
     if (status !== "allowed") {
-      const result = await startUpdateLocation.openPermissionDialog();
+      const result = await Device.subscribeLocation.openPermissionDialog();
 
       if (result === "allowed") {
         status = "allowed";
       } else {
         await wait(500);
-        status = await startUpdateLocation.getPermission();
+        status = await Device.subscribeLocation.getPermission();
       }
     }
 
@@ -162,7 +151,7 @@ export const watchPosition = async (
       return;
     }
 
-    const unsubscribe = startUpdateLocation({
+    const unsubscribe = Device.subscribeLocation({
       options: {
         accuracy: Accuracy.High,
         timeInterval: 3000,
@@ -173,7 +162,7 @@ export const watchPosition = async (
       },
       onError: (error) => {
         if (error instanceof StartUpdateLocationPermissionError) {
-          console.error("startUpdateLocation onError:", error);
+          console.error("Device.subscribeLocation onError:", error);
         }
       },
     });
@@ -184,6 +173,6 @@ export const watchPosition = async (
       }
     };
   } catch (error) {
-    console.error("startUpdateLocation 에러:", error);
+    console.error("Device.subscribeLocation 에러:", error);
   }
 };

@@ -1,4 +1,4 @@
-import { generateHapticFeedback } from "@apps-in-toss/web-framework";
+import { Device } from "@apps-in-toss/web-framework";
 import classNames from "classnames/bind";
 import { AnimatePresence } from "framer-motion";
 import { produce } from "immer";
@@ -139,7 +139,7 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
 
       setPunchedBy("me");
       setTimeout(() => setPunchedBy(undefined), 1000);
-      generateHapticFeedback({ type: "tickMedium" });
+      Device.triggerHaptic({ type: "tickMedium" });
 
       await wait(actionDelay);
 
@@ -157,7 +157,7 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
 
       setPunchedBy("enemy");
       setTimeout(() => setPunchedBy(undefined), 1000);
-      generateHapticFeedback({ type: "tickMedium" });
+      Device.triggerHaptic({ type: "tickMedium" });
 
       await wait(actionDelay);
 

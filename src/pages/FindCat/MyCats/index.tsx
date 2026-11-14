@@ -73,7 +73,7 @@ export default function MyCats({ className, onClickCat }: Props) {
                       const zoom = MAX_ZOOM_LEVEL - (map.getZoom() || 0);
                       const offsetLat = (30 + zoom * 30) / 111320; // xx m만큼 위로
 
-                      map.setView([lat - offsetLat, lng]);
+                      map.jumpTo({ center: [lng, lat - offsetLat] });
                       onClickCat({ lat, lng, createdAt });
                     }}
                   >

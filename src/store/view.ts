@@ -1,4 +1,4 @@
-import L from "leaflet";
+import type { Map as MaplibreMap } from "maplibre-gl";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
@@ -12,14 +12,14 @@ interface Message {
 
 interface ViewStore {
   toastMessages: Message[];
-  map: L.Map | null;
+  map: MaplibreMap | null;
   // 내 위치 포커스 해제
   isStopFocusMe: boolean;
   isBattleOn: boolean;
   actions: {
     addToastMessage: (message: Omit<Message, "id">) => void;
     removeToastMessage: () => void;
-    setMap: (map: L.Map | null) => void;
+    setMap: (map: MaplibreMap | null) => void;
     setIsStopFocusMe: (value: boolean) => void;
     setIsBattleOn: (value: boolean) => void;
   };
@@ -51,7 +51,8 @@ export const useViewStore = create<ViewStore>()(
       },
       setMap(map) {
         set((state) => {
-          state.map = map;
+          // maplibre 인스턴스는 immer 프록시로 감싸지 않는다 (GL 내부 구조 보호)
+          state.map = map as never;
         });
       },
       setIsStopFocusMe(value) {

@@ -4,15 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "granite dev",
-    "build": "ait build",
+    "dev": "vite --host",
+    "build": "tsc -b && vite build && ait build",
     "lint": "eslint .",
     "preview": "vite preview",
     "update-types": "npx supabase gen types typescript --project-id \"vvdwvymzsuezknmfuoza\" > src/utils/db/types.ts",
     "deploy": "ait deploy"
   },
   "dependencies": {
-    "@apps-in-toss/web-framework": "^2.4.5",
+    "@apps-in-toss/web-framework": "^3.10.0",
     "@number-flow/react": "^0.6.0",
     "@supabase/supabase-js": "^2.97.0",
     "@tanstack/react-query": "^5.96.2",
@@ -22,10 +22,9 @@
     "date-fns": "^4.1.0",
     "framer-motion": "^12.38.0",
     "immer": "^11.1.4",
-    "leaflet": "^1.9.4",
+    "maplibre-gl": "^6.18.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
-    "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.14.0",
     "snakecase-keys": "^9.0.2",
     "zustand": "^5.0.12"
@@ -35,7 +34,6 @@
     "@eslint/js": "^9.39.4",
     "@rolldown/plugin-babel": "^0.2.2",
     "@types/babel__core": "^7.20.5",
-    "@types/leaflet": "^1.9.21",
     "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -50,6 +48,7 @@
     "sass-embedded": "^1.99.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.0",
-    "vite": "^8.0.4"
+    "vite": "^8.0.4",
+    "@apps-in-toss/devtools": "^3.10.0"
   }
 }
