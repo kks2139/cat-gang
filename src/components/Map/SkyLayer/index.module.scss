@@ -57,26 +57,31 @@
   .wrapper {
     position: absolute;
     pointer-events: none;
-    transition: transform 0.2s linear;
+    // transform은 JS(rAF)로 매 프레임 갱신하므로 transition 넣지 않음
+    will-change: transform;
 
     .floating-wrapper {
       position: absolute;
-      animation: floating 8s infinite;
+      animation: floating 12s ease-in-out infinite;
 
+      // 둥실둥실 떠다니는 모션 (box/shadow의 transform은 JS 패럴랙스가 쓰므로 여기만 transform 사용)
       @keyframes floating {
         0% {
           opacity: 0;
-          transform: translateX(-60);
+          transform: translate(-14px, 6px);
         }
-        20% {
+        15% {
           opacity: 1;
         }
-        80% {
+        50% {
+          transform: translate(6px, -5px);
+        }
+        85% {
           opacity: 1;
         }
         100% {
           opacity: 0;
-          transform: translateX(30px);
+          transform: translate(22px, 4px);
         }
       }
     }
@@ -84,31 +89,37 @@
     .box,
     .shadow {
       width: 50px;
-      height: 50px;
-      background-color: rgb(255, 255, 255, 0.8);
-      border-radius: 50px;
+      height: 34px;
+      background: linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.95) 30%,
+        rgba(228, 236, 245, 0.85) 100%
+      );
+      border-radius: 40px 40px 34px 34px;
       transition: 0.1s;
 
       &::before,
       &::after {
         content: "";
         position: absolute;
-        background-color: inherit;
-        border-radius: 50px;
+        background: inherit;
+        border-radius: 50%;
       }
 
+      // 왼쪽 둥근 봉우리
       &::before {
-        width: 50px;
-        height: 30px;
-        bottom: 0;
-        left: -15px;
+        width: 26px;
+        height: 26px;
+        bottom: 12px;
+        left: 2px;
       }
 
+      // 오른쪽 둥근 봉우리
       &::after {
-        width: 50px;
-        height: 35px;
-        bottom: 0;
-        left: 13px;
+        width: 32px;
+        height: 32px;
+        bottom: 10px;
+        right: 1px;
       }
     }
 
@@ -118,7 +129,8 @@
       z-index: 1;
       top: 0;
       left: 0;
-      filter: blur(1.2px);
+      filter: blur(1.5px);
+      box-shadow: inset -4px -3px 6px rgba(180, 200, 220, 0.35);
     }
 
     // 구름 그림자
@@ -126,9 +138,20 @@
       z-index: -1;
       position: absolute;
       top: 150px;
-      background-color: black;
-      opacity: 0.08;
-      filter: blur(4px);
+      background: black; // 공용 그라디언트 덮어쓰기
+      opacity: 0.06;
+      filter: blur(6px);
+      animation: shadow-breathe 12s ease-in-out infinite;
+    }
+
+    @keyframes shadow-breathe {
+      0%,
+      100% {
+        opacity: 0.04;
+      }
+      50% {
+        opacity: 0.09;
+      }
     }
   }
 }

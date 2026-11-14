@@ -44,20 +44,28 @@ import {
   setMockLocation,
   watchPosition,
 } from "@/utils/native";
-import { getTodayDistance, storeTodayDistance } from "@/utils/storage";
+import { getTodayWalk, storeTodayWalk } from "@/utils/storage";
 
 import Loading from "../Loading";
 import styles from "./index.module.scss";
 import SkyLayer from "./SkyLayer";
-import ZoomButton from "./ZoomButton";
 
 const cn = classNames.bind(styles);
 
 export const MAX_ZOOM_LEVEL = 19;
-export const MIN_ZOOM_LEVEL = 17;
+export const MIN_ZOOM_LEVEL = 19;
 export const INIT_ZOOM_LEVEL = 19;
 const BOUNDARY_METER_OF_ME = 50;
 const OWN_CAT_KEY_TOKEN = "_";
+const PAW_INTERVAL_METER = 7; // 한 걸음(발자국) 기본 간격 (m)
+const PAW_SPREAD_METER = 1.2; // 중심축에서 좌우로 벌어지는 오프셋 (m)
+const PAW_ICON_PX = 18; // 발자국 아이콘 픽셀 크기
+const PAW_MAX_COUNT = 200; // 발자국 최대 개수 (DOM 성능 보호)
+const WALK_DURATION = 1500; // 캐릭터 이동 애니메이션 시간 (ms)
+const MAX_PAWS_PER_MOVE = 50; // 한 번의 위치 업데이트당 찍히는 최대 발자국 수
+const MAX_SAVED_PATH = 600; // 스토리지에 저장할 궤적 좌표 최대 개수
+const STORE_DEBOUNCE_MS = 5000; // 궤적 저장 디바운스 (ms)
+const PAW_SVG = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 11.5c-3.2 0-6 2.6-6 5.2 0 1.8 1.4 3 3.2 3 1 0 1.8-.4 2.8-.4s1.8.4 2.8.4c1.8 0 3.2-1.2 3.2-3 0-2.6-2.8-5.2-6-5.2z"/><ellipse cx="6" cy="8.4" rx="1.9" ry="2.4" transform="rotate(-25 6 8.4)"/><ellipse cx="12" cy="6.6" rx="1.9" ry="2.5"/><ellipse cx="18" cy="8.4" rx="1.9" ry="2.4" transform="rotate(25 18 8.4)"/></svg>`;
 
 export interface OwnCat {
   name: string;
@@ -123,11 +131,15 @@ function MapContent({
   const itemSpawnTimerRef = useRef<number>(undefined);
   const catSpawnTimerRef = useRef<number>(undefined);
 
-  // 이동 궤적
-  const trajectoryRef = useRef<L.Polyline | null>(null);
+  // 이동 궤적 (발자국 트레일)
   const pathRef = useRef<L.LatLng[]>([]);
-  const totalDistanceRef = useRef<number>(getTodayDistance());
+  const totalDistanceRef = useRef<number>(0);
+  const sessionDistanceRef = useRef<number>(0); // 이번 세션(캐릭터 첫 위치) 이동 거리 — 발자국 기준
   const startPointRef = useRef<L.CircleMarker | null>(null);
+  const nextPawDistanceRef = useRef<number>(PAW_INTERVAL_METER);
+  const pawMarkerRef = useRef<L.Marker[]>([]);
+  const pawToggleRef = useRef<boolean>(false); // false: 왼쪽 발, true: 오른쪽 발
+  const storeWalkTimerRef = useRef<number>(undefined); // 궤적 저장 디바운스 타이머
 
   // 아이템
   const { data: itemCount } = useItemQuery();
@@ -154,6 +166,62 @@ function MapContent({
       }
     },
   });
+
+  // 발자국 마커 1개를 찍는다 (트레일 기록 및 복원 공용)
+  const createPawMarker = useCallback(
+    (latLng: L.LatLng, bearingDeg: number, tiltDeg: number) => {
+      if (!map) {
+        return;
+      }
+
+      const icon = L.divIcon({
+        className: "paw-print",
+        html: `<div class="paw-print-rotate" style="transform: rotate(${bearingDeg + tiltDeg}deg)"><div class="paw-print-inner">${PAW_SVG}</div></div>`,
+        iconSize: [PAW_ICON_PX, PAW_ICON_PX],
+        iconAnchor: [PAW_ICON_PX / 2, PAW_ICON_PX / 2],
+      });
+
+      const pawMarker = L.marker(latLng, {
+        icon,
+        interactive: false,
+        keyboard: false,
+      }).addTo(map);
+
+      pawMarkerRef.current.push(pawMarker);
+
+      // 발자국이 너무 많이 쌓이면 오래된 것부터 제거
+      if (pawMarkerRef.current.length > PAW_MAX_COUNT) {
+        const oldest = pawMarkerRef.current.shift();
+        oldest?.remove();
+      }
+    },
+    [map],
+  );
+
+  // 시작점 마커를 찍는다
+  const createStartDot = useCallback(
+    (latLng: L.LatLng) => {
+      if (!map || startPointRef.current) {
+        return;
+      }
+
+      startPointRef.current = L.circleMarker(latLng, {
+        radius: 6,
+        color: "white",
+        weight: 2,
+        fillColor: "var(--main-1)",
+        fillOpacity: 1,
+        className: "trajectory-start-dot",
+      }).addTo(map);
+    },
+    [map],
+  );
+
+  // 발자국 간격은 줌이 고정(레벨 19)되어 있으므로 항상 기본 값 사용.
+  // 이전에는 줌 레벨별 간격 보정이 있었으나 줌 기능 제거로 단순화함
+  const getZoomAwareInterval = useCallback(() => {
+    return PAW_INTERVAL_METER;
+  }, []);
 
   const startWalkAnimation = useCallback(() => {
     const catImg = myCatRef.current
@@ -208,35 +276,115 @@ function MapContent({
         // 10미터 이상 이동했을때만 거리 추가
         if (dist > 10) {
           totalDistanceRef.current += dist;
+          sessionDistanceRef.current += dist;
           onDistanceChange?.(totalDistanceRef.current);
           pathRef.current.push(newLatLng);
 
-          if (trajectoryRef.current) {
-            trajectoryRef.current.setLatLngs(pathRef.current);
-          } else if (map) {
-            trajectoryRef.current = L.polyline(pathRef.current, {
-              color: "var(--main-1)",
-              weight: 1,
-              opacity: 0.7,
-              dashArray: "15",
-              lineJoin: "round",
-              className: "trajectory-line",
-            }).addTo(map);
+          // 줌 레벨에 맞는 발자국 간격(m): 줌 아웃일수록 간격을 넓혀
+          // 발자국 아이콘이 겹치지 않도록 한다 (기본 줌에선 7m 그대로)
+          const intervalM = getZoomAwareInterval();
+          // 좌우 벌어짐 배율: 간격이 늘어난 비율에 맞춰 offset도 같이 키운다
+          const spreadDegFactor = intervalM / PAW_INTERVAL_METER;
+          // 한 이동당 발자국 개수 상한: 구간이 너무 길면 간격 자체를 늘려 개수를 제한한다
+          const maxStepForCap = Math.ceil(dist / MAX_PAWS_PER_MOVE / intervalM) * intervalM;
+          const step = Math.max(intervalM, maxStepForCap);
+
+          const bearingDeg =
+            (Math.atan2(
+              newLatLng.lng - lastLatLng.lng,
+              newLatLng.lat - lastLatLng.lat,
+            ) *
+              180) /
+            Math.PI;
+          // 이번 구간 이동 전까지의 세션 누적 거리 (캐릭터 첫 위치 기준)
+          const sessionDistanceBefore = sessionDistanceRef.current - dist;
+          const traveledSinceLastPaw =
+            nextPawDistanceRef.current - sessionDistanceBefore;
+
+          // 이동 구간을 따라 step 간격으로 발자국 위치를 미리 계산
+          const pawPositions: {
+            latLng: L.LatLng;
+            bearingDeg: number;
+            tiltDeg: number;
+          }[] = [];
+
+          for (
+            let remain = traveledSinceLastPaw;
+            remain <= dist;
+            remain += step
+          ) {
+            const ratio = remain / dist;
+            const centerLatLng = L.latLng(
+              lastLatLng.lat + (newLatLng.lat - lastLatLng.lat) * ratio,
+              lastLatLng.lng + (newLatLng.lng - lastLatLng.lng) * ratio,
+            );
+
+            // 중심축에서 좌우로 벌어진 위치 계산 (위도/경도 거리 비율 보정)
+            const isLeftPaw = !pawToggleRef.current;
+            const metersPerDegLat = 111_320;
+            const metersPerDegLng =
+              111_320 * Math.cos((centerLatLng.lat * Math.PI) / 180);
+
+            // 보행 방향(미터 공간) 단위 벡터의 오른쪽 수직 벡터
+            const dirLatM =
+              (newLatLng.lat - lastLatLng.lat) * metersPerDegLat;
+            const dirLngM =
+              (newLatLng.lng - lastLatLng.lng) * metersPerDegLng;
+            const dirNorm = Math.hypot(dirLatM, dirLngM) || 1;
+            const perpLatM = dirLngM / dirNorm; // 시계방향 90도 회전: 오른쪽
+            const perpLngM = -dirLatM / dirNorm;
+
+            const spreadDegLat =
+              (perpLatM * PAW_SPREAD_METER * spreadDegFactor) /
+              metersPerDegLat;
+            const spreadDegLng =
+              (perpLngM * PAW_SPREAD_METER * spreadDegFactor) /
+              metersPerDegLng;
+
+            pawPositions.push({
+              latLng: L.latLng(
+                centerLatLng.lat + spreadDegLat * (isLeftPaw ? -1 : 1),
+                centerLatLng.lng + spreadDegLng * (isLeftPaw ? -1 : 1),
+              ),
+              bearingDeg,
+              tiltDeg: isLeftPaw ? 22 : -22, // 왼/오 대각선 번갈아 (방향 반대)
+            });
+            pawToggleRef.current = !pawToggleRef.current;
           }
+
+          if (pawPositions.length > 0) {
+            pawPositions.forEach((paw, index) => {
+              // 캐릭터 이동보다 약간 늦게 찍히도록 지연 (WALK_DURATION * 1.3에 걸쳐 순차 출력)
+              const delay =
+                (index / pawPositions.length) * WALK_DURATION * 1.3;
+
+              window.setTimeout(() => {
+                // 캐릭터가 그 지점을 지나가는 시점에 발자국 생성
+                createPawMarker(paw.latLng, paw.bearingDeg, paw.tiltDeg);
+              }, delay);
+            });
+          }
+
+          // 다음 발자국 거리 기준 갱신 (간격 배수로 올림)
+          nextPawDistanceRef.current =
+            Math.floor(sessionDistanceRef.current / step) * step + step;
+
+          // 궤적 저장 (디바운스)
+          if (storeWalkTimerRef.current) {
+            clearTimeout(storeWalkTimerRef.current);
+          }
+          storeWalkTimerRef.current = window.setTimeout(() => {
+            storeTodayWalk({
+              distance: totalDistanceRef.current,
+              path: pathRef.current
+                .slice(-MAX_SAVED_PATH)
+                .map(({ lat, lng }) => ({ lat, lng })),
+            });
+          }, STORE_DEBOUNCE_MS);
         }
       } else {
         pathRef.current.push(newLatLng);
-
-        if (map && !startPointRef.current) {
-          startPointRef.current = L.circleMarker(newLatLng, {
-            radius: 6,
-            color: "white",
-            weight: 2,
-            fillColor: "var(--main-1)",
-            fillOpacity: 1,
-            className: "trajectory-start-dot",
-          }).addTo(map);
-        }
+        createStartDot(newLatLng);
       }
 
       if (myCatRef.current) {
@@ -244,7 +392,7 @@ function MapContent({
         animateMarker(
           myCatRef.current,
           [coords.latitude, coords.longitude],
-          1500,
+          WALK_DURATION,
         );
       } else {
         const marker = createMarker({
@@ -279,7 +427,15 @@ function MapContent({
         coords,
       };
     },
-    [map, onClickMe, onDistanceChange, startWalkAnimation],
+    [
+      createPawMarker,
+      createStartDot,
+      getZoomAwareInterval,
+      map,
+      onClickMe,
+      onDistanceChange,
+      startWalkAnimation,
+    ],
   );
 
   const drawCats = useCallback(
@@ -460,14 +616,51 @@ function MapContent({
     }
   }, [clickedOwnCat]);
 
-  useEffect(() => {
-    if (!isRendered.current) {
+  // 스토리지에 저장된 오늘 산책 데이터(거리 + 궤적)를 읽어 발자국 트레일을 복원한다
+  const restoreTodayWalk = useCallback(async () => {
+    const todayWalk = await getTodayWalk();
+
+    totalDistanceRef.current = todayWalk.distance;
+    onDistanceChange?.(todayWalk.distance);
+
+    if (!map || todayWalk.path.length === 0) {
       return;
     }
 
-    // 잡은 고양이들 변경 시, 다시 그리기
-    drawOwnCats();
-  }, [drawOwnCats, ownCats]);
+    pathRef.current = todayWalk.path.map(
+      ({ lat, lng }) => new L.LatLng(lat, lng),
+    );
+
+    // 저장된 궤적을 따라 발자국 + 시작점을 다시 그린다 (애니메이션 지연 없이 즉시)
+    pathRef.current.forEach((latLng, i) => {
+      if (i === 0) {
+        createStartDot(latLng);
+        return;
+      }
+
+      const prev = pathRef.current[i - 1];
+      const bearingDeg =
+        (Math.atan2(
+          latLng.lng - prev.lng,
+          latLng.lat - prev.lat,
+        ) *
+          180) /
+        Math.PI;
+
+      createPawMarker(
+        latLng,
+        bearingDeg,
+        pawToggleRef.current ? -22 : 22,
+      );
+      pawToggleRef.current = !pawToggleRef.current;
+    });
+
+    // 다음 발자국 기준을 저장된 궤적 길이 기준으로 맞춘다
+    nextPawDistanceRef.current =
+      Math.floor(sessionDistanceRef.current / PAW_INTERVAL_METER) *
+        PAW_INTERVAL_METER +
+      PAW_INTERVAL_METER;
+  }, [createPawMarker, createStartDot, map, onDistanceChange]);
 
   useEffect(() => {
     if (isRendered.current) {
@@ -480,6 +673,9 @@ function MapContent({
       setIsInitLoading(true);
 
       drawOwnCats();
+
+      // 오늘 저장된 궤적 복원 후 캐릭터/고양이 그리기
+      await restoreTodayWalk();
       await createMeAndCats();
 
       setIsInitLoading(false);
@@ -487,7 +683,7 @@ function MapContent({
 
       onCreateCatsComplete?.();
     })();
-  }, [createMeAndCats, drawOwnCats, map, onCreateCatsComplete]);
+  }, [createMeAndCats, drawOwnCats, map, onCreateCatsComplete, restoreTodayWalk]);
 
   useEffect(() => {
     if (isInitLoading || isWatchPositionReady.current) {
@@ -615,6 +811,21 @@ function MapContent({
   useEffect(() => {
     return () => {
       clearInterval(catSpawnTimerRef.current);
+
+      // 대기 중인 궤적 저장 타이머 정리 및 마지막 상태 즉시 저장
+      if (storeWalkTimerRef.current) {
+        clearTimeout(storeWalkTimerRef.current);
+        storeWalkTimerRef.current = undefined;
+
+        if (pathRef.current.length > 0) {
+          storeTodayWalk({
+            distance: totalDistanceRef.current,
+            path: pathRef.current
+              .slice(-MAX_SAVED_PATH)
+              .map(({ lat, lng }) => ({ lat, lng })),
+          });
+        }
+      }
     };
   }, []);
 
@@ -627,7 +838,7 @@ export default function Map({ className, ...rest }: Props) {
   const { setMap, setIsStopFocusMe } = useViewStore((s) => s.actions);
 
   const [isLoading, setisLoading] = useState(true);
-  const [totalDistance, setTotalDistance] = useState(getTodayDistance());
+  const [totalDistance, setTotalDistance] = useState(0);
 
   const myMarkerRef = useRef<L.Marker>(null);
 
@@ -636,6 +847,23 @@ export default function Map({ className, ...rest }: Props) {
   useEffect(() => {
     return () => setMap(null);
   }, [setMap]);
+
+  // 오늘 산책 거리 초기 표시 (스토리지에서 복원)
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      const todayWalk = await getTodayWalk();
+
+      if (!cancelled) {
+        setTotalDistance(todayWalk.distance);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (isLoading) {
@@ -668,9 +896,11 @@ export default function Map({ className, ...rest }: Props) {
         maxZoom={MAX_ZOOM_LEVEL}
         minZoom={MIN_ZOOM_LEVEL}
         zoomControl={false}
-        scrollWheelZoom={"center"}
-        doubleClickZoom={"center"}
-        touchZoom={"center"}
+        scrollWheelZoom={false}
+        doubleClickZoom={false}
+        touchZoom={false}
+        boxZoom={false}
+        keyboard={false}
         attributionControl={false} // 하단 저작권 표시줄 전체 삭제
         bounceAtZoomLimits={false}
         maxBoundsViscosity={1}
@@ -686,7 +916,6 @@ export default function Map({ className, ...rest }: Props) {
         <MapContent
           {...rest}
           onDistanceChange={(distance) => {
-            storeTodayDistance(distance);
             setTotalDistance(distance);
           }}
           ref={myMarkerRef}
@@ -738,8 +967,6 @@ export default function Map({ className, ...rest }: Props) {
           <circle cx="12" cy="12" r="2.5" fill="currentColor" />
         </svg>
       </button>
-
-      <ZoomButton />
 
       <AnimatePresence>
         {isLoading && (

@@ -35,7 +35,25 @@ description: cat-gang(냥만시대) 프로젝트 작업 시 참고. 앱인토스
   - `pnpm update-types` → Supabase DB 타입 재생성 → `src/utils/db/types.ts`
 - `.granite/app.json`, `.vercel.json`, `vercel.json` 도 빌드/배포 관련 세팅.
 
-## 3. 디렉터리 구조
+## 3. Supabase DB (무료 티어) 구조 & 세팅
+
+- **요금제**: 무료 티어. 프로젝트가 일시정지(paused)되면 대시보드에서 리슴(Resume) 필요 — **리슴 중에는 REST API 호출이 5xx(512 등)로 실패**하니 에러 원인으로 의심할 것. 리슴은 즉시 반영되지 않고 시간이 걸린다.
+- **테이블** (3개, 전부 `public` 스키마. 구조의 원본은 `src/utils/db/types.ts` — 수동 수정 금지, `pnpm update-types`로 재생성):
+
+  | 테이블 | 컬럼 | 용도 / 접근 패턴 |
+  | :--- | :--- | :--- |
+  | `users` | `user_id`(text), `name`, `crying`, `created_at` | 유저 프로필(고양이 이름/울음소리). `user_id`로 필터 + `maybeSingle()` |
+  | `own_cats` | `user_id`(text), `cat_name`, `position`(json: `{lat, lng}`), `created_at` | 잡은 고양이 목록. 유저당 여러 행. `user_id`로 필터 (select는 `cat_name, position, created_at`) |
+  | `items` | `user_id`(text), `gukbab`, `fish`, `catnip`, `created_at` | 유저 보유 아이템 수. `user_id`로 필터 + `maybeSingle()` |
+
+  - `user_id`는 uuid가 아니라 **AIT 익명 키(`getAnonymousKey`) 텍스트 값**이다.
+  - PK/외래키 제약은 REST(types.ts)에 노출되지 않음 — 제약·RLS 정책 확인은 Supabase 대시보드에서.
+  - 레포의 `supabase/` 디렉터리에는 로컬 함수 소스가 없음(연결된 프로젝트 메타만 있음). **Edge Function `auth`는 대시보드에서 관리** 중이므로 수정 시 주의.
+
+- **인증 흐름**: publishable 키(`sb_publishable_...`)로 클라이언트 생성 → Edge Function `auth`에 `{ userKey }` 전송 → JWT 수신 → `accessToken` 옵션으로 만료 60초 전 자동 갱신. `initAuth()`를 앱 시작 시 1회 호출.
+- **컬럼 추가/변경 시**: 대시보드에서 테이블 수정 → `pnpm update-types` 실행 → 관련 쿼리 훅(`src/queries/`)과 타입 인터페이스 업데이트.
+
+## 4. 디렉터리 구조
 
 ```
 src/
@@ -73,7 +91,7 @@ src/
 └─ vite-env.d.ts, global.d.ts
 ```
 
-## 4. 핵심 패턴 & 주의사항
+## 5. 핵심 패턴 & 주의사항
 
 - **환경 분기**: `operEnv`(AIT 운영환경)가 있으면 SDK API(`getAnonymousKey`, `getCurrentLocation`)를, 없으면 브라우저 폴백(`navigator.geolocation`). 새 기능도 이 분기를 따를 것.
 - **유저 식별**: `UserKey.getInstance().getKey()` 싱글턴 사용. Supabase 인증은 익명키 → Edge Function `auth` → JWT (만료 60초 전 자동 갱신, 중복 호출 dedupe).
@@ -84,7 +102,7 @@ src/
 - **AIT SDK 필수 규칙**: 사용자 대면 텍스트는 해요체, 다크패턴 금지, 결제는 IAP/TossPay, 광고는 TossAds, 스토리지는 SDK `Storage` 우선. 상세는 `.agents/skills/apps-in-toss/SKILL.md` 및 `.agents/rules/apps-in-toss.md` 참고 (폴더명이 `.agents`임에 유의).
 - **환경변수** (`.env.local`, 커밋되지 않음): `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_KKO_MAP_KEY`.
 
-## 5. 작업 마무리 체크리스트 (필수)
+## 6. 작업 마무리 체크리스트 (필수)
 
 코드 작업/수정 후에는 반드시 아래를 순서대로 실행해 문제가 없는지 확인:
 
