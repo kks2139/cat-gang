@@ -135,26 +135,22 @@ export const createMarker = ({
     }
   }
 
-  // 내 고양이일때
+  // 내 고양이일때 — 발바닥이 새겨진 그린 위치 핀으로 표시
   if (type === "me") {
     container.classList.add("no-animation");
 
     const wrapper = document.createElement("div");
     wrapper.className = "arrow-3d-wrapper";
 
-    const arrow = document.createElement("div");
-    arrow.className = "arrow-3d";
+    const pin = document.createElement("div");
+    pin.className = "arrow-3d";
+    pin.innerHTML = `<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="me-pin-gradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4ade80"/><stop offset="1" stop-color="#16a34a"/></linearGradient></defs><path d="M18 33C18 33 7.5 21.4 7.5 13.5 7.5 7.7 12.2 3 18 3s10.5 4.7 10.5 10.5C28.5 21.4 18 33 18 33Z" fill="url(#me-pin-gradient)" stroke="#ffffff" stroke-width="2.4" stroke-linejoin="round"/><ellipse cx="18" cy="14.5" rx="3.6" ry="2.9" fill="#fff"/><ellipse cx="13.4" cy="10.6" rx="1.7" ry="2.1" fill="#fff" transform="rotate(-22 13.4 10.6)"/><ellipse cx="18" cy="9.4" rx="1.7" ry="2.2" fill="#fff"/><ellipse cx="22.6" cy="10.6" rx="1.7" ry="2.1" fill="#fff" transform="rotate(22 22.6 10.6)"/></svg>`;
 
-    const speak = document.createElement("div");
-    speak.dataset.speak = "true";
-    speak.className = "speak";
-
-    wrapper.appendChild(arrow);
+    wrapper.appendChild(pin);
     container.appendChild(wrapper);
-    container.appendChild(speak);
   }
 
-  // 잡은 고양이일때(깃발)
+  // 잡은 고양이일때(깃발) — 광원 + 떠오르는 반짝임 이펙트
   if (type === "owned") {
     container.classList.add("no-animation", "small-shadow");
 
@@ -167,8 +163,22 @@ export const createMarker = ({
     const flag = document.createElement("div");
     flag.className = "flag";
 
+    // 깃대 발밑 은은한 황금빛 광원
+    const glowFloor = document.createElement("div");
+    glowFloor.className = "flag-glow-floor";
+
+    // 깃발 주변을 떠오르는 반짝임 별 4개
+    const sparkles = document.createElement("div");
+    sparkles.className = "flag-sparkles";
+
+    for (let i = 0; i < 4; i++) {
+      sparkles.appendChild(document.createElement("span"));
+    }
+
     wrapper.appendChild(pole);
     wrapper.appendChild(flag);
+    wrapper.appendChild(glowFloor);
+    wrapper.appendChild(sparkles);
     container.appendChild(wrapper);
   }
 
@@ -216,6 +226,8 @@ export const createMarker = ({
     const randomDuration = 15 + getRandomNumber(10); // 15~25초 사이의 다양한 속도
     const randomScale = 0.8 + Math.random() * 0.4; // 0.8~1.2 사이의 크기 다양함
 
+    // 등장 연출: 순차 등장하는 느낌을 위해 스태거 딜레이 부여
+    container.style.setProperty("--spawn-delay", `${getRandomNumber(600)}ms`);
     wrapper.style.animationDelay = `${getRandomNumber(10)}s`;
     container.style.animationDuration = `${randomDuration}s`;
     container.style.animationDelay = `${randomDelay}s`;

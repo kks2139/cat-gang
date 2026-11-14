@@ -97,11 +97,11 @@ input {
     z-index: 1;
     position: relative;
     width: 100% !important;
-    animation:
-      marker-appear 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+    animation: marker-appear 0.9s cubic-bezier(0.34, 1.56, 0.64, 1)
+        var(--spawn-delay, 0s) backwards,
       walk-bounce $walk-duration ease-in-out infinite alternate,
       cat-jump $swim-duration linear infinite;
-    animation-delay: 0s, 0s, var(--jump-delay, 0s); // 각 애니메이션별 딜레이
+    animation-delay: var(--spawn-delay, 0s), 0s, var(--jump-delay, 0s); // 각 애니메이션별 딜레이
   }
 
   &[data-type="item"] {
@@ -146,68 +146,64 @@ input {
     }
   }
 
-  // 지도 위 고양이 말풍선 (만화 스타일 + 효과 추가)
+  // 지도 위 고양이 말풍선 (글래스 팝 스타일 + 둥둥 떠있는 효과)
   .chat {
     position: absolute;
-    top: -26px;
+    top: -32px;
     left: 50%;
     transform: translateX(-50%);
-    padding: 3px 9px;
-    background: radial-gradient(circle at 30% 30%, #fff 0%, #f0f0f0 100%);
-    border: 1.8px solid #000;
-    border-radius: 12px;
-    font-size: 9px; // 폰트 약간 키움
+    padding: 6px 12px;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 1) 0%,
+      rgba(241, 247, 253, 0.97) 100%
+    );
+    border: 1.5px solid #ffffff;
+    border-radius: 13px;
+    font-size: 10px; // 폰트 약간 키움
     font-weight: 800;
-    color: #000;
+    color: #1e293b;
     white-space: nowrap;
     opacity: 0;
-    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
-    animation:
-      show-up 15s infinite,
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.28),
+      0 1px 3px rgba(15, 23, 42, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+    animation: show-up 15s infinite,
       chat-float 2s ease-in-out infinite alternate; // 둥둥 떠있는 효과 추가
 
     &::after {
       content: "";
       position: absolute;
-      bottom: -7px;
+      bottom: -6.5px;
       left: 50%;
       transform: translateX(-50%);
       width: 0;
       height: 0;
-      border-left: 5px solid transparent;
-      border-right: 5px solid transparent;
-      border-top: 7px solid #000;
-    }
-
-    &::before {
-      content: "";
-      position: absolute;
-      bottom: -4.5px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0;
-      height: 0;
-      border-left: 4.5px solid transparent;
-      border-right: 4.5px solid transparent;
-      border-top: 5.5px solid white;
-      z-index: 1;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 7px solid #ffffff;
+      filter: drop-shadow(0 2px 2px rgba(15, 23, 42, 0.18));
     }
 
     @keyframes show-up {
       0% {
         opacity: 0;
-        transform: translateX(-50%) translateY(5px) scale(0.5);
+        transform: translateX(-50%) translateY(6px) scale(0.4);
       }
       3% {
         opacity: 1;
-        transform: translateX(-50%) translateY(-5px) scale(1.1); // 팝업 시 살짝 더 크게
+        transform: translateX(-50%) translateY(-5px) scale(1.18); // 팝업 시 크게 튀어오름
       }
       6%,
       30% {
         opacity: 1;
         transform: translateX(-50%) translateY(-5px) scale(1);
       }
-      35%,
+      33% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(-4px) scale(1.04); // 사라지기 전 살짝 신호
+      }
+      37%,
       100% {
         opacity: 0;
         transform: translateX(-50%) translateY(0) scale(0.5);
@@ -225,29 +221,35 @@ input {
   }
 
   .flag-wrapper {
-    $flag-color: #ffde37;
-    $pole-color: #8b572a;
-    $waving-speed: 1.8s;
+    $flag-color: #ffd54a;
+    $waving-speed: 2.2s;
 
     position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
     width: 45px;
-    height: 50px;
+    height: 52px;
     margin-bottom: 5px;
 
-    // 생성될때 모션
-    animation: appear 2s cubic-bezier(0.175, 0.885, 0.32, 1) forwards;
+    // 생성될때 모션 — 폴대비 스프링으로 튀어나옴
+    animation: appear 0.7s cubic-bezier(0.34, 1.4, 0.5, 1) backwards;
 
     @keyframes appear {
-      from {
+      0% {
         opacity: 0;
-        transform: translateY(-160px);
+        transform: translateY(-90px) scale(0.4);
       }
-      to {
+      60% {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(4px) scale(1.08);
+      }
+      80% {
+        transform: translateY(-2px) scale(0.97);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
       }
     }
 
@@ -255,25 +257,49 @@ input {
     .pole {
       position: absolute;
       bottom: 0;
-      left: 8px;
+      left: 10px;
       width: 3px;
       height: 100%;
-      background: linear-gradient(to right, #8b572a, #a26b3e);
+      background: linear-gradient(
+        to right,
+        #9a6a35 0%,
+        #c68b4e 45%,
+        #8b572a 100%
+      );
       border-radius: 4px;
       z-index: 2;
+      box-shadow: 1px 0 2px rgba(0, 0, 0, 0.18);
 
-      // 깃대 꼭대기 장식 (귀여운 방울)
+      // 깃대 꼭대기 장식 (반짝이는 방울)
       &::after {
         content: "";
         position: absolute;
-        top: -4px;
-        left: -2px;
-        width: 7px;
-        height: 7px;
-        background-color: #ffce00;
-        border: 1px solid #d4a017;
+        top: -5px;
+        left: -2.5px;
+        width: 8px;
+        height: 8px;
+        background: radial-gradient(
+          circle at 30% 30%,
+          #fff3b0 0%,
+          #ffce00 55%,
+          #d4a017 100%
+        );
         border-radius: 50%;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25),
+          0 0 6px rgba(255, 206, 0, 0.55);
+        animation: knob-shine 2.2s ease-in-out infinite;
+      }
+
+      // 깃대 광택 하이라이트 (빛 반사줄)
+      &::before {
+        content: "";
+        position: absolute;
+        top: 6px;
+        left: 0.5px;
+        width: 1px;
+        height: calc(100% - 14px);
+        border-radius: 2px;
+        background: rgba(255, 240, 200, 0.55);
       }
     }
 
@@ -281,44 +307,133 @@ input {
     .flag {
       position: absolute;
       top: 4px;
-      left: 11px;
+      left: 13px;
       width: 40px;
       height: 30px;
-      background-color: $flag-color;
-      border-radius: 0 8px 8px 0;
-      border: 1.5px solid #d4a017;
+      background: linear-gradient(
+          160deg,
+          rgba(255, 255, 255, 0.38) 0%,
+          transparent 42%,
+          rgba(0, 0, 0, 0.06) 100%
+        ),
+        linear-gradient(180deg, #ffe082 0%, $flag-color 55%, #ffc933 100%);
+      border-radius: 0 10px 10px 0;
+      border: 1.5px solid rgba(212, 160, 23, 0.9);
       border-left: none;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.45);
+      // 광택 스윕(::before)이 깃발 밖으로 삐져나가지 않게 클리핑
+      overflow: hidden;
 
       transform-origin: left center;
       animation: flag-wave $waving-speed ease-in-out infinite;
 
-      // 깃발 안의 단일 발바닥 무늬 (Cuter Single Cat Paw)
+      // 깃발 안의 단일 발바닥 무늬
       &::after {
         content: "";
         position: absolute;
         top: 55%;
         left: 50%;
         transform: translate(-50%, -50%);
-        width: 7px;
-        height: 7px;
+        width: 8px;
+        height: 8px;
         background-color: #8b572a;
         border-radius: 50% 50% 45% 45%;
-        opacity: 0.7;
+        opacity: 0.75;
 
-        // 발가락 3개 구현 (사이즈 업)
-        box-shadow:
-          -5px -6px 0 -1px #8b572a,
-          0.5px -8px 0 -1px #8b572a,
-          6px -6px 0 -1px #8b572a;
+        // 발가락 3개 구현
+        box-shadow: -5.5px -6px 0 -1px #8b572a, 0.5px -8.5px 0 -1px #8b572a,
+          6.5px -6px 0 -1px #8b572a;
       }
 
-      // 주름 효과
-      background-image: linear-gradient(
-        -45deg,
-        rgba(255, 255, 255, 0.4) 0%,
-        transparent 50%,
-        rgba(0, 0, 0, 0.05) 100%
+      // 깃발 표면을 스치는 광택 (한 번 흐르고 반복)
+      &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -70%;
+        width: 45%;
+        height: 100%;
+        background: linear-gradient(
+          105deg,
+          transparent 0%,
+          rgba(255, 255, 255, 0.55) 50%,
+          transparent 100%
+        );
+        transform: skewX(-18deg);
+        animation: flag-shine 3.4s ease-in-out infinite;
+      }
+    }
+
+    // ─── 발밑 황금빛 광원 ─────────────────────────
+    .flag-glow-floor {
+      z-index: 0;
+      position: absolute;
+      bottom: -3px;
+      left: 50%;
+      width: 46px;
+      height: 14px;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: radial-gradient(
+        ellipse at center,
+        rgba(255, 206, 0, 0.5) 0%,
+        rgba(255, 193, 7, 0.22) 50%,
+        transparent 75%
       );
+      filter: blur(2.5px);
+      animation: flag-glow-breathe 2.8s ease-in-out infinite;
+    }
+
+    // ─── 떠오르는 반짝임 별 4개 ─────────────────────
+    .flag-sparkles span {
+      z-index: 3;
+      position: absolute;
+      width: 9px;
+      height: 9px;
+      clip-path: polygon(
+        50% 0%,
+        62% 38%,
+        100% 50%,
+        62% 62%,
+        50% 100%,
+        38% 62%,
+        0% 50%,
+        38% 38%
+      );
+      background: #fff7cc;
+      filter: drop-shadow(0 0 3px rgba(255, 220, 100, 0.95))
+        drop-shadow(0 0 7px rgba(255, 193, 7, 0.7));
+      animation: flag-sparkle-rise 3.2s ease-in infinite;
+      opacity: 0;
+    }
+
+    .flag-sparkles span:nth-child(1) {
+      left: 4px;
+      bottom: 8px;
+      animation-delay: 0s;
+      scale: 0.8;
+    }
+
+    .flag-sparkles span:nth-child(2) {
+      left: 16px;
+      bottom: 2px;
+      animation-delay: 0.9s;
+      scale: 1;
+    }
+
+    .flag-sparkles span:nth-child(3) {
+      left: 28px;
+      bottom: 10px;
+      animation-delay: 1.7s;
+      scale: 0.7;
+    }
+
+    .flag-sparkles span:nth-child(4) {
+      left: 38px;
+      bottom: 4px;
+      animation-delay: 2.4s;
+      scale: 0.9;
     }
 
     // 깃대 축을 기준으로 물결치는 애니메이션
@@ -337,39 +452,85 @@ input {
         transform: rotateY(-15deg) skewY(3deg) scaleX(1.05);
       }
     }
+
+    // 꼭대기 방울 반짝임
+    @keyframes knob-shine {
+      0%,
+      100% {
+        filter: brightness(1);
+      }
+      50% {
+        filter: brightness(1.35);
+      }
+    }
+
+    // 광택이 깃발 표면을 한 번 스치고 잠깐 쉼
+    @keyframes flag-shine {
+      0%,
+      55% {
+        left: -70%;
+      }
+      85%,
+      100% {
+        left: 130%;
+      }
+    }
+
+    // 발밑 광원: 숨쉬듯 확장/수축
+    @keyframes flag-glow-breathe {
+      0%,
+      100% {
+        opacity: 0.65;
+        transform: translateX(-50%) scale(1);
+      }
+      50% {
+        opacity: 1;
+        transform: translateX(-50%) scale(1.2);
+      }
+    }
+
+    // 별: 아래에서 위로 떠오르며 반짝임
+    @keyframes flag-sparkle-rise {
+      0% {
+        transform: translateY(0) scale(0.4) rotate(0deg);
+        opacity: 0;
+      }
+      12% {
+        opacity: 1;
+      }
+      70% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(-46px) scale(1.05) rotate(70deg);
+        opacity: 0;
+      }
+    }
   }
 
-  // 내 고양이 위치 화살표 (2D Cat Paw Arrow)
+  // 내 고양이 위치 핀 (발바닥이 새겨진 그린 드롭핀) — 펄스 링으로 시선 유도
   .arrow-3d-wrapper {
     z-index: 999;
     position: absolute;
-    top: -25px;
+    top: -38px;
     left: 50%;
     transform: translateX(-50%);
-    width: 35px;
-    height: 35px;
-    animation: floating-arrow 1.5s ease-in-out infinite;
+    width: 42px;
+    height: 42px;
+    animation: floating-arrow 1.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    filter: drop-shadow(0 3px 6px rgba(20, 83, 45, 0.45));
 
     .arrow-3d {
       position: relative;
       width: 100%;
       height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      transform-origin: bottom center;
+      animation: pin-swing 3s ease-in-out infinite;
 
-      // 심플한 삼각형 화살표 (이전 버전 복구)
-      &::before {
-        content: "";
-        position: absolute;
-        bottom: 5px;
-        width: 0;
-        height: 0;
-        border-left: 12px solid transparent;
-        border-right: 12px solid transparent;
-        border-top: 25px solid var(--main-1);
-        filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.2));
-        animation: arrow-blink 2s ease-in-out infinite;
+      svg {
+        display: block;
+        width: 100%;
+        height: 100%;
       }
 
       &::after {
@@ -384,17 +545,18 @@ input {
       transform: translateX(-50%) translateY(0);
     }
     50% {
-      transform: translateX(-50%) translateY(-8px);
+      transform: translateX(-50%) translateY(-7px);
     }
   }
 
-  @keyframes arrow-blink {
+  // 핀을 좌우로 살짝 기울이며 관성을 주는 스윙
+  @keyframes pin-swing {
     0%,
     100% {
-      border-top-color: var(--main-map-border);
+      transform: rotate(-7deg);
     }
     50% {
-      border-top-color: var(--main-border);
+      transform: rotate(7deg);
     }
   }
 
@@ -409,8 +571,7 @@ input {
     filter: blur(2px) !important;
     background-color: rgba(0, 0, 0, 0.4);
     border-radius: 50%;
-    animation:
-      shadow-pulse $walk-duration ease-in-out infinite alternate,
+    animation: shadow-pulse $walk-duration ease-in-out infinite alternate,
       shadow-jump $swim-duration linear infinite;
     animation-delay: 0s, var(--jump-delay, 0s); // 점프 시 작아지고 흐려짐
   }
@@ -531,13 +692,22 @@ input {
   }
 
   @keyframes marker-appear {
-    from {
+    0% {
       opacity: 0;
-      scale: 0.3;
+      scale: 0.2;
+      translate: 0 14px; // 땅속에서 튀어나오는 느낌
     }
-    to {
+    60% {
+      opacity: 1;
+      scale: 1.15;
+    }
+    80% {
+      scale: 0.95;
+    }
+    100% {
       opacity: 1;
       scale: 1;
+      translate: 0 0;
     }
   }
 }
@@ -729,8 +899,7 @@ input {
 
     .orbit {
       border: 1.5px solid rgba(200, 140, 255, 0.55);
-      box-shadow:
-        0 0 8px rgba(190, 120, 255, 0.35),
+      box-shadow: 0 0 8px rgba(190, 120, 255, 0.35),
         inset 0 0 8px rgba(190, 120, 255, 0.25);
 
       // 궤도를 따라 도는 빛점
@@ -814,30 +983,73 @@ input {
   align-items: center; // 중앙 앵커 — Leaflet 때와 동일한 배치
 }
 
-// 부하 목록에서 고양이 클릭 시 효과
+// 부하 목록에서 고양이 클릭 시 효과 — 스프링 팝 등장 + 글래스 인사 말풍선
 .click-catched-cat {
   z-index: 9999;
   position: absolute;
   top: 0;
   left: 0;
   width: 120px;
-  animation: fade-in-out 2s forwards;
+  animation: reaction-fade 2.2s forwards;
+  pointer-events: none;
+
+  // 부드러운 바닥 광원 — 등장을 강조
+  &::before {
+    content: "";
+    z-index: 0;
+    position: absolute;
+    top: 55px;
+    left: -5px;
+    width: 80px;
+    height: 26px;
+    border-radius: 50%;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(74, 222, 128, 0.4) 0%,
+      rgba(74, 222, 128, 0.12) 55%,
+      transparent 75%
+    );
+    filter: blur(3px);
+    animation: reaction-glow 2.2s ease-out forwards;
+  }
 
   .comment {
     z-index: 9;
     position: absolute;
-    top: -40px;
-    left: -55px;
-    font-weight: bold;
-    font-size: 15px;
-    color: var(--main-border);
+    top: -46px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px 12px;
+    font-weight: 800;
+    font-size: 13px;
+    color: #166534;
     white-space: nowrap;
-    border-radius: 50px;
-    background-color: white;
-    box-shadow: 0 0 10px 10px white;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.98) 0%,
+      rgba(240, 253, 244, 0.94) 100%
+    );
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.22),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+
+    // 말풍선 꼬리
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 6px solid rgba(240, 253, 244, 0.96);
+    }
 
     // 외치는 효과 애니메이션 적용
-    animation: shout-spread 2s ease-out forwards;
+    animation: shout-spread 2.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   }
 
   img {
@@ -846,7 +1058,10 @@ input {
     left: -30px;
     width: 100% !important;
     transform-origin: bottom center;
-    animation: hello-swing 2s ease-in-out infinite;
+    z-index: 2;
+    filter: drop-shadow(0 6px 8px rgba(15, 23, 42, 0.25));
+    animation: reaction-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards,
+      hello-swing 2.2s ease-in-out 0.6s;
   }
 
   // 그림자
@@ -861,6 +1076,56 @@ input {
     border-radius: 50%;
     background-color: hsla(0, 0%, 0%, 0.4);
     filter: blur(2px);
+    animation: reaction-shadow 2.2s ease-out forwards;
+  }
+
+  @keyframes reaction-pop {
+    0% {
+      opacity: 0;
+      transform: scale(0.2) translateY(20px);
+    }
+    55% {
+      opacity: 1;
+      transform: scale(1.18) translateY(-10px);
+    }
+    75% {
+      transform: scale(0.94) translateY(2px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  @keyframes reaction-glow {
+    0% {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+    25% {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+    70% {
+      opacity: 0.8;
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.3);
+    }
+  }
+
+  @keyframes reaction-shadow {
+    0% {
+      opacity: 0;
+      transform: scale(0.4);
+    }
+    30% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 1;
+    }
   }
 
   @keyframes hello-swing {
@@ -887,24 +1152,28 @@ input {
   @keyframes shout-spread {
     0% {
       opacity: 0;
-      transform: scale(0.5) translateY(10px);
+      transform: translateX(-50%) scale(0.5) translateY(10px);
     }
-    20%,
+    15% {
+      opacity: 1;
+      transform: translateX(-50%) scale(1.05) translateY(0);
+    }
     80% {
       opacity: 1;
+      transform: translateX(-50%) scale(1) translateY(0);
     }
     100% {
       opacity: 0;
-      transform: scale(1.6) translateY(-20px);
+      transform: translateX(-50%) scale(1.15) translateY(-14px);
     }
   }
 
-  @keyframes fade-in-out {
+  @keyframes reaction-fade {
     0% {
       opacity: 0;
     }
-    20%,
-    80% {
+    10%,
+    85% {
       opacity: 1;
     }
     100% {
