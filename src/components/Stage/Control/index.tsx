@@ -101,7 +101,9 @@ export default function Control({
               key="dialog"
               {...MOTION_DATA}
               whileTap={{ scale: 0.98, filter: "brightness(0.95)" }}
-              className={cn("dialog")}
+              className={cn("dialog", {
+                enemy: dialogInfo.side === "enemy" || dialogInfo.type === "system",
+              })}
               onClick={() => {
                 onDialogConfirmClick({
                   type: dialogInfo.type,
@@ -112,7 +114,13 @@ export default function Control({
             >
               <div className={cn("wrapper")}>
                 <div className={cn("guide-text")}>click {"→"} 넘기기</div>
-                <div className={cn("speaker")}>{`${dialogInfo.speaker}`}</div>
+                <div className={cn("speaker")}>
+                  {dialogInfo.type === "system"
+                    ? "시스템"
+                    : dialogInfo.side === "enemy"
+                      ? `${dialogInfo.speaker}`
+                      : `${dialogInfo.speaker || "나"}`}
+                </div>
                 <Typing text={content} />
               </div>
             </motion.div>
@@ -127,7 +135,7 @@ export default function Control({
                         onPunch();
                       }}
                     >
-                      냥냥펀치
+                      🐾 냥냥펀치
                     </Button>
                   </li>
                   <li>
@@ -137,7 +145,7 @@ export default function Control({
                         onSeduce();
                       }}
                     >
-                      유혹
+                      😽 유혹
                     </Button>
                   </li>
                   <li>
@@ -147,7 +155,7 @@ export default function Control({
                         onShowItems();
                       }}
                     >
-                      인벤토리
+                      🎒 인벤토리
                     </Button>
                   </li>
                   <li>
@@ -157,7 +165,7 @@ export default function Control({
                         setMenuType("default");
                       }}
                     >
-                      뒤로
+                      ⬅️ 뒤로
                     </Button>
                   </li>
                 </motion.ul>
@@ -170,7 +178,7 @@ export default function Control({
                         setMenuType("battle");
                       }}
                     >
-                      싸운다
+                      ⚔️ 싸운다
                     </Button>
                   </li>
                   <li>
@@ -180,7 +188,7 @@ export default function Control({
                         onRun();
                       }}
                     >
-                      튄다
+                      🏃 튄다
                     </Button>
                   </li>
                 </motion.ul>

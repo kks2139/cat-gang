@@ -658,10 +658,11 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
       />
 
       <Dialog
+        className={cn("finish-dialog")}
         isShow={isShowFinishPopup}
         title={isVictory ? "승리" : "패배"}
         subTitle={isVictory ? "적을 쓰러뜨렸습니다." : "패배하였습니다."}
-        buttonLable={isVictory ? "좋은 싸움이었다" : "도망가자"}
+        buttonLable={isVictory ? "🏆 좋은 싸움이었다" : "🏃 도망가자"}
         onButtonClick={() => {
           if (isVictory && selectedCat) {
             onWin(selectedCat);

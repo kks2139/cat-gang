@@ -18,7 +18,7 @@ import styles from "./index.module.scss";
 const cn = classNames.bind(styles);
 
 export default function Entry() {
-  const { addToastMessage, setIsStopFocusMe } = useViewStore((s) => s.actions);
+  const { setIsStopFocusMe } = useViewStore((s) => s.actions);
   const navigate = useNavigate();
 
   const [isShowNewCatDialog, setIsShowNewCatDialog] = useState(false);
@@ -53,7 +53,28 @@ export default function Entry() {
   return (
     <main className={cn("Entry")}>
       <div className={cn("background")}>
+        {/* 캐릭터 뒤에서 회전하는 광선 */}
+        <div className={cn("rays")} aria-hidden />
+        {/* 캐릭터를 감싸는 오라 */}
+        <div className={cn("aura")} aria-hidden />
         <img src={TitleCatImg} width={100} height={100} alt="title-cat" />
+      </div>
+
+      {/* 반짝이는 별 */}
+      <div className={cn("stars")} aria-hidden>
+        {Array.from({ length: 12 }, (_, i) => (
+          <span key={i} />
+        ))}
+      </div>
+
+      {/* 시선을 중앙으로 모으는 비네트 */}
+      <div className={cn("vignette")} aria-hidden />
+
+      {/* 은은하게 떠오르는 빛 입자 */}
+      <div className={cn("particles")} aria-hidden>
+        {Array.from({ length: 7 }, (_, i) => (
+          <span key={i} />
+        ))}
       </div>
 
       {/* TODO: id발급 */}
@@ -67,6 +88,7 @@ export default function Entry() {
         <>
           <div ref={titleRef} className={cn("title")}>
             <h1>냥만시대</h1>
+            <p className={cn("tagline")}>냥도시를 평정하라옹</p>
           </div>
 
           <div className={cn("content")}>
@@ -82,17 +104,21 @@ export default function Entry() {
                   }
                 }}
               >
-                시작하기
-              </Button>
-              <Button
-                className={cn("purpose")}
-                size="large"
-                color="glass"
-                onClick={() => {
-                  addToastMessage({ message: "개발중" });
-                }}
-              >
-                랭킹
+                <span className={cn("btn-inner")}>
+                  <svg
+                    className={cn("paw")}
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    aria-hidden
+                  >
+                    <ellipse cx="12" cy="16" rx="5.2" ry="4.4" />
+                    <circle cx="5" cy="10.5" r="2.3" />
+                    <circle cx="9.4" cy="6.8" r="2.5" />
+                    <circle cx="14.6" cy="6.8" r="2.5" />
+                    <circle cx="19" cy="10.5" r="2.3" />
+                  </svg>
+                  시작하기
+                </span>
               </Button>
             </div>
           </div>

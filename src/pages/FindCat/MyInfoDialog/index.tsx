@@ -6,7 +6,8 @@ import ImgFish from "@/assets/img/item/fish.png";
 import ImgGukbab from "@/assets/img/item/gukbab.png";
 import Dialog from "@/components/Dialog";
 import { useItemQuery } from "@/queries/useItemQuery";
-import { MyCat } from "@/utils/cats";
+import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
+import { catCharacters, getGangInfo, MyCat } from "@/utils/cats";
 
 import styles from "./index.module.scss";
 
@@ -21,7 +22,21 @@ export default function MyInfoDialog({ onClose, isShow }: Props) {
   const { data: itemCount } = useItemQuery();
   const { gukbab = 0, catnip = 0, fish = 0 } = itemCount || {};
 
+  const { data: catList } = useMyCatsQuery();
+
   const myCat = MyCat.getInstance().getMyCat();
+
+  // 세력 정보: 부하 수 기반 칭호 + 보너스 표시용
+  const minions = catList || [];
+  const uniqueMinionCount = new Set(
+    minions
+      .filter(
+        ({ cat_name }) =>
+          catCharacters.find((c) => c.name === cat_name)?.rarity === "unique",
+      )
+      .map(({ cat_name }) => cat_name),
+  ).size;
+  const gangInfo = getGangInfo(minions.length, uniqueMinionCount);
 
   return (
     <Dialog
@@ -42,6 +57,7 @@ export default function MyInfoDialog({ onClose, isShow }: Props) {
         </div>
 
         <div className={cn("cat-details")}>
+          <div className={cn("gang-title")}>{gangInfo.title}</div>
           <div className={cn("name")}>{myCat.name}</div>
           <div className={cn("crying")}>"{myCat.crying}"</div>
 
@@ -76,6 +92,13 @@ export default function MyInfoDialog({ onClose, isShow }: Props) {
               </div>
               <span className={cn("value")}>{myCat.defense}</span>
             </div>
+          </div>
+
+          <div className={cn("gang-summary")}>
+            부하 {gangInfo.minionCount}마리
+            {gangInfo.hpBonus > 0 && ` · HP+${gangInfo.hpBonus}`}
+            {gangInfo.punchBonus > 0 && ` · PWR+${gangInfo.punchBonus}`}
+            {gangInfo.defBonus > 0 && ` · DEF+${gangInfo.defBonus}`}
           </div>
         </div>
       </div>

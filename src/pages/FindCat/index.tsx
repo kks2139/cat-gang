@@ -1,7 +1,7 @@
 import { Device } from "@apps-in-toss/web-framework";
 import classNames from "classnames/bind";
 import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Button from "@/components/Button";
@@ -14,7 +14,7 @@ import { useItemQuery } from "@/queries/useItemQuery";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
 import { useCatStore } from "@/store/cat";
 import { useViewStore } from "@/store/view";
-import { type CatInfo } from "@/utils/cats";
+import { catCharacters, type CatInfo, getGangInfo, MyCat } from "@/utils/cats";
 import {
   getFireworkElement,
   getPostposition,
@@ -22,6 +22,7 @@ import {
   wait,
 } from "@/utils/helper";
 
+import CatBook from "./CatBook";
 import styles from "./index.module.scss";
 import MyCats from "./MyCats";
 import MyInfoDialog from "./MyInfoDialog";
@@ -41,6 +42,7 @@ export default function FindCat() {
   const [isShowVictoryDialog, setIsShowVictoryDialog] = useState(false);
   const [isShowCatchedCatPopup, setIsShowCatchedCatPopup] = useState(false);
   const [isShowMyInfoPopup, setIsShowMyInfoPopup] = useState(false);
+  const [isShowCatBook, setIsShowCatBook] = useState(false);
   const [catchedCat, setCatchedCat] = useState<CatInfo>();
   const [ownCatInfo, setOwnCatInfo] = useState<OwnCat>();
 
@@ -49,11 +51,29 @@ export default function FindCat() {
   // 아이템 조회
   useItemQuery();
 
-  const ownCats = catList?.map((c) => ({
-    name: c.cat_name,
-    position: c.position,
-    createdAt: c.created_at,
-  })) as OwnCat[];
+  const ownCats = (
+    catList?.map((c) => ({
+      name: c.cat_name,
+      position: c.position,
+      createdAt: c.created_at,
+    })) || []
+  ) as OwnCat[];
+
+  // 도감: 잡은 고양이 이름 집합
+  const catchedNames = new Set(ownCats.map(({ name }) => name));
+
+  // 세력 성장: 부하 수에 따라 내 고양이 스탯 보너스 적용
+  // (Stage가 싱글턴 스탯을 읽으므로 부하 목록이 바뀔 때마다 갱신)
+  const uniqueMinionCount = new Set(
+    ownCats
+      .filter(({ name }) => catCharacters.find((c) => c.name === name)?.rarity === "unique")
+      .map(({ name }) => name),
+  ).size;
+  const gangInfo = getGangInfo(ownCats.length, uniqueMinionCount);
+
+  useEffect(() => {
+    MyCat.getInstance().applyGangBonus(gangInfo);
+  }, [gangInfo]);
 
   useCustomBack(true, () => {
     if (isShowStage) {
@@ -62,6 +82,11 @@ export default function FindCat() {
 
     if (isShowCatchedCatPopup) {
       setIsShowCatchedCatPopup(false);
+      return;
+    }
+
+    if (isShowCatBook) {
+      setIsShowCatBook(false);
       return;
     }
 
@@ -113,6 +138,16 @@ export default function FindCat() {
           )}
         </Button>
         <Button
+          className={cn("dock-btn", "book-btn")}
+          color="primary"
+          onClick={() => {
+            setIsStopFocusMe(true);
+            setIsShowCatBook(true);
+          }}
+        >
+          <span className={cn("btn-label")}>도감</span>
+        </Button>
+        <Button
           className={cn("dock-btn", "exit-btn")}
           color="glass"
           onClick={() => {
@@ -149,7 +184,6 @@ export default function FindCat() {
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 320 }}
             >
-              <div className={cn("sheet-handle")} />
               <div className={cn("sheet-header")}>
                 <div className={cn("title-row")}>
                   <h3 className={cn("sheet-title")}>내 부하 고양이</h3>
@@ -176,6 +210,57 @@ export default function FindCat() {
                     setIsShowCatchedCatPopup(false);
                   }}
                 />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 도감 바텀시트 */}
+      <AnimatePresence>
+        {isShowCatBook && (
+          <motion.div
+            className={cn("my-cats-modal")}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={(e) => {
+              const target = e.target as HTMLElement;
+              const el = target.closest("[data-bottom-sheet]");
+
+              if (!el) {
+                setIsShowCatBook(false);
+              }
+            }}
+          >
+            <motion.div
+              data-bottom-sheet
+              className={cn("sheet-container")}
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 320 }}
+            >
+              <div className={cn("sheet-header")}>
+                <div className={cn("title-row")}>
+                  <h3 className={cn("sheet-title")}>고양이 도감</h3>
+                  <span className={cn("sheet-count")}>
+                    {catCharacters.length}종 중 {catchedNames.size}종
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className={cn("close-btn")}
+                  onClick={() => setIsShowCatBook(false)}
+                  aria-label="닫기"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className={cn("sheet-body")}>
+                <CatBook catchedNames={catchedNames} />
               </div>
             </motion.div>
           </motion.div>

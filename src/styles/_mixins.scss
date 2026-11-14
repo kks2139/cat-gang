@@ -12,3 +12,41 @@
     z-index: $z-index;
   }
 }
+
+// ─── 공통 글래스 카드 질감 ──────────────────────────────
+// 이 프로젝트의 표준 카드/패널/버튼 질감. 색상톤을 그대로 복사하는 게 아니라
+// 각 UI의 원래 색 정체성을 글래스에 맞게 재해석해 틴트로 넣는다.
+// (ex. 흰 톤 → 밝은 유리, 그린 톤 → 그린빛 스며든 유리, 다크 톤 → 짙은 유리)
+// 런타임에 톤을 바꿔야 하면 CSS 변수(--glass-*)를 재정의한다.
+@mixin glass-card(
+  $tint: rgba(15, 23, 42, 0.55),
+  $border: rgba(255, 255, 255, 0.25),
+  $radius: 20px,
+  $shadow: 0 8px 24px rgba(0, 0, 0, 0.35),
+  $blur: 12px,
+  $highlight: rgba(255, 255, 255, 0.25),
+  $grad-top: rgba(255, 255, 255, 0.18),
+  $grad-bottom: rgba(0, 0, 0, 0.1)
+) {
+  position: relative;
+  border-radius: $radius;
+  --glass-tint: #{$tint};
+  --glass-border: #{$border};
+  --glass-shadow: #{$shadow};
+  --glass-highlight: #{$highlight};
+  --glass-grad-top: #{$grad-top};
+  --glass-grad-bottom: #{$grad-bottom};
+  background:
+    linear-gradient(
+      180deg,
+      var(--glass-grad-top) 0%,
+      var(--glass-grad-bottom) 100%
+    ),
+    var(--glass-tint);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur($blur);
+  -webkit-backdrop-filter: blur($blur);
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    var(--glass-shadow);
+}

@@ -10,13 +10,7 @@ import {
   type StyleSpecification,
   type TerrainSpecification,
 } from "maplibre-gl";
-import {
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import ImgCatMe from "@/assets/img/character/cat-me.png";
 import ImgCatMeWalk1 from "@/assets/img/character/cat-me-walk-1.png";
@@ -38,6 +32,7 @@ import {
   createMarker,
   distanceInMeters,
   getCatchedCatElement,
+  getNightTime,
   getRandomLocationInCircle,
   getRandomNumber,
   removeMarkerWithMotion,
@@ -390,12 +385,18 @@ function MapContent({
   const map = useViewStore((s) => s.map);
 
   // 부모의 myMarkerRef.current에 그 값을 동기화합니다.
-  useImperativeHandle<Marker | null, Marker | null>(
-    myMarkerRef,
-    () => {
-      return myCatRef.current;
+  // myCatRef.current는 state가 아니라 ref라 값이 변해도 재렌더가 없어
+  // useImperativeHandle(getter, [])로는 마커 생성 이후 값이 반영되지 않는다.
+  // → 마커 생성/제거 시점에 직접 대입해 동기화한다 (assignMyMarker)
+  const assignMyMarker = useCallback(
+    (marker: Marker | null) => {
+      myCatRef.current = marker;
+
+      if (typeof myMarkerRef === "object" && myMarkerRef !== null) {
+        (myMarkerRef as React.RefObject<Marker | null>).current = marker;
+      }
     },
-    []
+    [myMarkerRef]
   );
 
   // dev 모드: 지도 클릭으로 목 위치(mock) 설정 후 캐릭터/고양이 다시 그리기
@@ -672,7 +673,7 @@ function MapContent({
           onClickMe?.();
         });
 
-        myCatRef.current = marker;
+        assignMyMarker(marker);
       }
 
       // 드래그된 상태 아닐때 (ref로 항상 최신값 참조)
@@ -697,6 +698,7 @@ function MapContent({
       };
     },
     [
+      assignMyMarker,
       createPawMarker,
       createStartDot,
       getZoomAwareInterval,
@@ -736,7 +738,19 @@ function MapContent({
       });
       catMarkersRef.current = [];
 
-      const filteredCats = catCharacters.filter(({ rarity }) => {
+      const filteredCats = catCharacters.filter(({ rarity, activeTime }) => {
+        // 시간대 필터: 밤(18시~05시)에만 등장 / 낮(06시~17시)에만 등장
+        if (activeTime === "night" && !getNightTime(new Date()).isNightTime) {
+          return false;
+        }
+
+        if (
+          activeTime === "day" &&
+          getNightTime(new Date()).isNightTime
+        ) {
+          return false;
+        }
+
         const num = getRandomNumber(1000);
 
         switch (rarity) {

@@ -18,8 +18,9 @@ description: cat-gang(냥만시대) 프로젝트 작업 시 참고. 앱인토스
 | 상태 | Zustand + immer (`src/store/`) |
 | 서버 상태 | TanStack React Query (`src/queries/`) |
 | 백엔드 | Supabase (`@supabase/supabase-js`, Edge Function `auth` 로 JWT 발급) |
-| 지도 | Leaflet + react-leaflet (Kakao Map 키: `VITE_KKO_MAP_KEY`) |
+| 지도 | MapLibre GL JS (`maplibre-gl` v6, react-leaflet 없이 직접 사용). 지도 스타일은 자체 제작 `src/assets/no-labels-style.json` (라벨 없음) — 지도 API 키 불필요 |
 | 애니메이션 | framer-motion, @number-flow/react |
+| 유틸 | classnames, date-fns, camelcase-keys/snakecase-keys |
 | AIT SDK | `@apps-in-toss/web-framework` **3.x** (v3 네임스페이스 API 사용) |
 
 ## 2. 앱인토스 빌드 환경 (SDK 3.x)
@@ -33,7 +34,7 @@ description: cat-gang(냥만시대) 프로젝트 작업 시 참고. 앱인토스
   - `pnpm lint` → `eslint .`
   - `pnpm deploy` → `ait deploy`
   - `pnpm update-types` → Supabase DB 타입 재생성 → `src/utils/db/types.ts`
-- `@apps-in-toss/devtools`가 devDependencies에 있고 `vite.config.ts` plugins 맨 앞의 `aitDevtools.vite()`가 mock SDK를 제공.
+- `@apps-in-toss/devtools`가 devDependencies에 있고 `vite.config.ts` plugins 맨 앞의 `aitDevtools.vite()`가 mock SDK를 제공. `initialState: { deviceModes: { location: "web" } }`로 로컬에서 실제 브라우저 위치(navigator.geolocation) 사용.
 - **SDK 3.x 유의사항**: 3.x 번들을 출시하면 2.x로 롤백 불가. CORS Origin 허용 목록에 `https://cat-gang.web.tossmini.com`(실서비스) / `https://cat-gang.private-web.tossmini.com`(QR 테스트) 등록 필요 (Supabase 등 외부 API용).
 - **SDK API는 v3 네임스페이스 사용** (v2 함수형 API는 deprecated): `User.getAnonymousKey()`(에러 시 throw, "ERROR" 반환 없음), `Device.getLocation`/`Device.subscribeLocation`(위치), `Device.triggerHaptic`(햅틱), `Screen.close`(닫기), `Environment.environment`(toss/sandbox). v2 최신 유지 API: `graniteEvent.backEvent`, `Storage.getItem/setItem`, `TossAds`.
 
@@ -61,14 +62,16 @@ description: cat-gang(냥만시대) 프로젝트 작업 시 참고. 앱인토스
 src/
 ├─ main.tsx                 # 진입점 (globals.scss 임포트)
 ├─ App.tsx                  # react-router-dom v7 createBrowserRouter
-│                           #   / → Entry(Auth 감싸줌), /find-cat → FindCat, /test → Test
+│                           #   / → Entry(Auth 감싸줌), /find-cat → FindCat, /test → Test, * → /
+│                           #   최상단에 "maplibre-gl/dist/maplibre-gl.css" 임포트
 ├─ pages/                   # 라우트 페이지
 │   ├─ Entry/               # 홈 (유저 등록 AddUserDialog)
-│   └─ FindCat/             # 메인 게임 (지도, MyCats, MyInfoDialog, OwnCatInfoDialog)
-├─ components/              # 재사용 컴포넌트
+│   ├─ FindCat/             # 메인 게임 (지도, MyCats, MyInfoDialog, OwnCatInfoDialog)
+│   └─ Test/                # 테스트 페이지
+├─ components/              # 재사용 컴포넌트 (각 폴더 index.tsx + index.module.scss)
 │   ├─ Auth/                # 로그인/인증 게이트 (initAuth 호출)
-│   ├─ Map/                 # Leaflet 지도 래퍼 (SkyLayer, ZoomButton)
-│   ├─ Stage/               # 게임 스테이지 (Player, Control, Inventory, Effects)
+│   ├─ Map/                 # MapLibre 지도 + 게임 로직 전부 포함한 단일 컴포넌트 (하단 §4.5)
+│   ├─ Stage/               # 전투 스테이지 (Player — 하위 Status/StatusEffect, Control, Inventory, Effects)
 │   ├─ ReactQueryProvider/  # QueryClientProvider
 │   ├─ ToastMessage/, Dialog/, Button/, Input/, Loading/, Skeleton/, AdBanner/
 │   └─ NavigationBlocker/   # 라우트 이동 차단 (AIT 환경 대응)
@@ -76,33 +79,55 @@ src/
 ├─ queries/                 # React Query 훅 (config.ts에 QUERY_KEY, queryClient)
 │   # useAuthMutation, useAddUserMutation, useCatchCatMutation,
 │   # useItemQuery/useItemMutation, useMyCatsQuery, useUsersQuery
-├─ store/                   # Zustand 스토어
-│   ├─ cat.ts               # useCatStore (스테이지/선택된 고양이)
-│   └─ view.ts              # useViewStore (토스트, Leaflet map 인스턴스, 전투 상태)
-├─ styles/_mixins.scss      # Sass 믹스인
+├─ store/                   # Zustand 스토어 (immer 미들웨어)
+│   ├─ cat.ts               # useCatStore (isShowStage, selectedCat, clickedOwnCat)
+│   └─ view.ts              # useViewStore (toastMessages, map: MaplibreMap|null,
+│                           #   isStopFocusMe, isBattleOn)
+├─ styles/_mixins.scss      # Sass 믹스인 (plush-stitch, glass-card — 공통 카드 질감 §5 참고)
+├─ assets/
+│   ├─ no-labels-style.json # MapLibre 지도 스타일 (자체 제작, 라벨 없음, 낮 테마 기본)
+│   ├─ img/character/       # 고양이 캐릭터 cat-1..31.png, cat-me(+walk) 플레이어 이미지
+│   └─ img/item/, img/title/, svg/
 ├─ utils/
 │   ├─ native.ts            # AIT SDK 연동 핵심: UserKey 싱글턴(getAnonymousKey),
 │   │                       #   getCurrentPosition/watchPosition (권한 흐름 + 개발용 mock 위치)
-│   ├─ constants.ts         # isDev, operEnv (AIT 운영 환경 여부 판단)
+│   ├─ constants.ts         # isDev, operEnv (AIT 운영 환경 여부 판단; isDev면 null → 브라우저 폴백)
 │   ├─ db/supabase.ts       # Supabase 클라이언트 (accessToken 자동 갱신 + Edge Function `auth`)
 │   ├─ db/types.ts          # supabase gen types 생성물 (수동 수정 금지)
 │   ├─ fetch.ts             # fetchData (snakecase → camelcase 자동 변환)
-│   ├─ storage.ts           # localStorage 래퍼 (당일 걸음거리)
-│   ├─ cats.ts, helper.ts, constants.ts
-│   └─ ...
+│   ├─ storage.ts           # localStorage 래퍼 (당일 산책 거리 + 궤적 TodayWalkData)
+│   ├─ cats.ts              # catCharacters (31종 고양이: 이름/희귀도/이미지/대사)
+│   ├─ helper.ts            # animateMarker, createMarker, distanceInMeters, getPostposition 등
+│   └─ constants.ts
 └─ vite-env.d.ts, global.d.ts
 ```
+
+`public/`에는 `maplibre-gl-worker.mjs`(+dev)가 있어야 한다 — Vite 번들 환경에서 maplibre의 `import.meta.url` 기반 worker URL이 깨지므로 `config.WORKER_URL = ${BASE_URL}maplibre-gl-worker.mjs`로 명시 지정한다 (maplibre-gl 버전 업그레이드 시 worker 파일도 갱신 필요).
+
+## 4.5. Map 컴포넌트 (MapLibre) 핵심 구조
+
+`src/components/Map/index.tsx`는 지도 렌더링과 게임 로직(마커, 발자국, 스폰)을 함께 담당한다.
+
+- **구성**: 바깥 `Map`(지도 인스턴스 생성/테마) + 내부 `MapContent`(마커/게임 로직). 지도 인스턴스는 `useViewStore`의 `map`에 등록해 공유.
+- **지도 설정**: 줌 고정 18(Leaflet 줌 19 축척과 동일 — MapLibre는 512px 타일이라 같은 줌에서 축척 2배), pitch 30 3D 카메라, 스크롤/더블클릭 줌·회전 전부 비활성. `map.setPadding(bottom 25%)`로 3D 피치에서 캐릭터를 화면 중앙에 유지.
+- **3D 지형/하늘**: AWS Terrain Tiles(terrarium DEM, 무료·키 불필요) 소스로 terrain + hillshade, `setSky`로 낮/노을/밤 하늘색. 건물 3D 조명은 `setLight`.
+- **낮/밤 다크 테마**: `applyTheme()`이 `useDayAndNight` 기준으로 스타일 레이어 색을 런타임에 치환/복원. 원본 색은 로드 시점에 수집(`ORIGINAL_PAINTS`). `setSky`/`setPaintProperty`는 스타일 로드 완료(`load` 이벤트) 전에 호출하면 에러남.
+- **마커**: 전부 DOM element 기반 `Marker` (me/enemy/owned/item 타입 — `createMarker`는 `utils/helper.ts`). 마커 클릭은 `e.originalEvent.target`에서 `[data-marker-container]` 등을 `closest()`로 찾는 MapLibre 방식.
+- **발자국 트레일**: 이동 시 7m 간격으로 좌우 번갈아 발자국 마커 생성, 최대 200개(성능 보호), 궤적+거리는 `storage.ts`에 디바운스 저장 후 재접속 시 복원.
+- **immer 주의**: `useViewStore`의 `map`에 MapLibre 인스턴스 저장 시 `as never` 캐스팅으로 immer 프록시를 우회 (GL 내부 구조 보호). MapLibre 인스턴스/마커를 상태에 넣을 땐 항상 이 패턴.
 
 ## 5. 핵심 패턴 & 주의사항
 
 - **환경 분기**: `operEnv`(AIT 운영환경, `Environment.environment`)가 있으면 SDK API(`User.getAnonymousKey`, `Device.getLocation`)를, 없으면 브라우저 폴백(`navigator.geolocation`). 새 기능도 이 분기를 따를 것.
+- **공통 글래스 카드 스타일 (2026-11-15 확정)**: 전 앱의 카드/패널/버튼/캡슐은 `src/styles/_mixins.scss`의 `@mixin glass-card` 로 질감을 통일한다 (반투명 배경 + blur + 흰 하이라이트 1px + 외곽 그림자). **���상톤은 각 UI의 원래 색을 유지**하며 질감만 공유 �� `glass-card($tint, $border, $radius, $shadow, $blur, $grad-top, $grad-bottom)` 파라미터로 톤을 넣는다 (ex. primary 버튼은 그린 톤, 대화창 내 대사는 주황, 적/시스템은 흰+회색). 런타임에 톤을 바꿔야 하면 믹스인이 노출하는 CSS 변수(`--glass-tint`, `--glass-border`, `--glass-grad-top/bottom` 등)를 재정의한다 (예: Control의 `.enemy`). 사용처: Stage Status/대화창/인벤토리, Dialog.content, Button, ToastMessage, 산책 거리 캡슐, FindCat 플로팅 독/바텀시트, MyCats 리스트 카드, CatBook 슬롯, MyInfoDialog/OwnCatInfoDialog 카드. 새 UI 추가 시에도 이 믹스인을 쓸 것.
+- **스킬 문서 갱신**: 이처럼 확정된 디자인 시스템/공통 규칙이 생기면 이 SKILL.md에도 반영한다.
 - **유저 식별**: `UserKey.getInstance().getKey()` 싱글턴 사용. Supabase 인증은 익명키 → Edge Function `auth` → JWT (만료 60초 전 자동 갱신, 중복 호출 dedupe).
 - **DB 키 컨벤션**: 요청은 snake_case로 나가고(`snakecase-keys`) 응답은 camelCase로 변환(`camelcase-keys`). Supabase 타입(`db/types.ts`)은 snake_case 그대로임에 유의.
 - **경로 별칭**: `@/` → `src/` (vite alias).
 - **import 정렬**: `simple-import-sort`가 error 레벨. react-hooks exhaustive-deps도 error + autofix.
 - **React Compiler 활성화**: useMemo/useCallback 남발 불필요. 컴포넌트는 순수하게 유지(렌더 중 변이 금지).
 - **AIT SDK 필수 규칙**: 사용자 대면 텍스트는 해요체, 다크패턴 금지, 결제는 IAP/TossPay, 광고는 TossAds, 스토리지는 SDK `Storage` 우선. 상세는 `.agents/skills/apps-in-toss/SKILL.md` 및 `.agents/rules/apps-in-toss.md` 참고 (폴더명이 `.agents`임에 유의).
-- **환경변수** (`.env.local`, 커밋되지 않음): `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_KKO_MAP_KEY`.
+- **환경변수** (`.env.local`, 커밋되지 않음): `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`. 지도는 키 불필요(자체 스타일 + 무료 DEM 타일). `VITE_KKO_MAP_KEY`는 타입 선언에만 남아있고 사용처 없음(Leaflet/Kakao 잔재 — 제거 후보).
 
 ## 6. 작업 마무리 체크리스트 (필수)
 

@@ -17,24 +17,25 @@ export default function ToastMessage() {
             key={id}
             className={cn("messages")}
             layout
-            initial={{ opacity: 0, y: 20, scale: 0.7 }}
+            initial={{ opacity: 0, y: 24, scale: 0.92, rotateX: -12 }}
             animate={{
-              opacity: 0.9,
+              opacity: 1,
               y: 0,
-              scale: 1 - index * 0.05,
+              scale: 1 - index * 0.04,
+              rotateX: 0,
               zIndex: 100 - index,
             }}
             exit={{
               opacity: 0,
-              scale: 0.8,
-              y: 20,
-              transition: { duration: 0.2 },
+              scale: 0.9,
+              y: 16,
+              transition: { duration: 0.18, ease: "easeOut" },
             }}
             transition={{
               type: "spring",
-              stiffness: 400,
-              damping: 30,
-              mass: 0.8,
+              stiffness: 380,
+              damping: 26,
+              mass: 0.9,
             }}
           >
             {message}

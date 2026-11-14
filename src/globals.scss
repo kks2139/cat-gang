@@ -69,13 +69,13 @@ input {
   --blue-1: rgb(0, 110, 255);
   --green-1: rgb(73, 255, 112);
 
-  // Vibrant Orange Theme
-  --main-1: #ff8c00; // 다크 오렌지 (Vibrant Orange)
-  --main-2: #ffaa33; // 라이트 오렌지
-  --main-border: #e65100; // 진한 오렌지 (테두리)
-  --main-shadow: #bf360c; // 깊은 오렌지 그림자
-  --main-map-border: #ffcc80; // 지도용 연한 오렌지
-  --main-map-shadow: #ffb74d; // 지도용 오렌지 그림자
+  // Fresh Green Theme
+  --main-1: #16a34a; // 메인 그린 (버튼/강조 — 굵은 흰 글자 대비 3:1 이상)
+  --main-2: #4ade80; // 라이트 그린
+  --main-border: #166534; // 진한 그린 (테두리)
+  --main-shadow: #14532d; // 깊은 포레스트 (그림자/강조 텍스트)
+  --main-map-border: #bbf7d0; // 지도용 연한 민트
+  --main-map-shadow: #4ade80; // 지도용 그린 그림자
 
   // Secondary Color (Stylish Red/Rose)
   --secondary-1: #ff6b6b;
@@ -616,51 +616,97 @@ input {
 }
 
 // 희귀함 정도에 따른 부수 효과
+// — 은은한 바닥 광원 + 떠오르는 별, unique엔 궤도 링
+// 주의: 루트에 transform을 쓰면 스태킹 컨텍스트가 생겨 통째로 캐릭터 뒤에 가려지므로
+// margin으로 중앙정렬한다 (자식들이 캐릭터 이미지와 직접 z-index 비교가 가능해짐)
 .rarity-effect {
-  z-index: -1;
   position: absolute;
   bottom: 0;
   left: 50%;
-  transform: translateX(-50%);
   width: 60px;
   height: 60px;
+  margin-left: -30px;
   pointer-events: none;
-  z-index: 0;
 
+  // ─── 바닥 광원: 은은하게 퍼지는 타원 ─────────────
+  .glow-floor {
+    z-index: 0; // 캐릭터 이미지(z-index 1)보다 뒤 — 발밑 광원 역할
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    width: 52px;
+    height: 14px;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    animation: glow-breathe 3s ease-in-out infinite;
+  }
+
+  // ─── 떠오르는 별 ──────────────────────────────
+  // 캐릭터 이미지(z-index 1)보다 앞 — 등급 효과가 가려지지 않도록
+  .sparkles span {
+    z-index: 2;
+    position: absolute;
+    bottom: 6px;
+    width: 10px;
+    height: 10px;
+    clip-path: polygon(
+      50% 0%,
+      62% 38%,
+      100% 50%,
+      62% 62%,
+      50% 100%,
+      38% 62%,
+      0% 50%,
+      38% 38%
+    );
+    animation: sparkle-rise 3s ease-in infinite;
+    opacity: 0;
+  }
+
+  .sparkles span:nth-child(1) {
+    left: 4px;
+    animation-delay: 0s;
+  }
+
+  .sparkles span:nth-child(2) {
+    left: 24px;
+    animation-delay: 1s;
+  }
+
+  .sparkles span:nth-child(3) {
+    left: 44px;
+    animation-delay: 2s;
+  }
+
+  // ─── unique: 고양이 주변을 도는 궤도 링 ─────────
+  .orbit {
+    z-index: 2; // 캐릭터 이미지(z-index 1)보다 앞
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    width: 54px;
+    height: 18px;
+    margin-left: -27px;
+    border-radius: 50%;
+    animation: orbit-spin 4s linear infinite;
+  }
+
+  // ─── 등급별 색상 ──────────────────────────────
   &.rare {
     .glow-floor {
-      &::before {
-        // 작은 황금 불꽃
-        height: 40px;
-        width: 40px;
-        bottom: 85%;
-        background: radial-gradient(
-          ellipse at 50% 85%,
-          rgba(255, 255, 255, 1) 0%,
-          rgba(255, 255, 100, 0.95) 18%,
-          rgba(255, 220, 0, 0.85) 40%,
-          rgba(255, 140, 0, 0.5) 70%,
-          transparent 100%
-        );
-      }
+      background: radial-gradient(
+        ellipse at center,
+        rgba(120, 190, 255, 0.55) 0%,
+        rgba(90, 160, 240, 0.3) 45%,
+        transparent 75%
+      );
+      filter: blur(2px);
     }
 
-    // 은은한 후광
-    &::before {
-      content: "";
-      position: absolute;
-      top: -10px;
-      left: -10px;
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: radial-gradient(
-        circle,
-        rgba(255, 200, 0, 0.2) 0%,
-        transparent 70%
-      );
-      animation: pulse-aura 2s ease-in-out infinite alternate;
-      pointer-events: none;
+    .sparkles span {
+      background: #a8d4ff;
+      filter: drop-shadow(0 0 4px rgba(160, 210, 255, 1))
+        drop-shadow(0 0 8px rgba(120, 180, 255, 0.8));
     }
   }
 
@@ -668,249 +714,82 @@ input {
     .glow-floor {
       background: radial-gradient(
         ellipse at center,
-        rgba(240, 220, 255, 1) 0%,
-        rgba(200, 100, 255, 1) 20%,
-        rgba(160, 40, 255, 0.9) 50%,
-        rgba(100, 0, 200, 0.6) 75%,
-        rgba(60, 0, 120, 0) 100%
+        rgba(210, 160, 255, 0.6) 0%,
+        rgba(170, 110, 245, 0.32) 45%,
+        transparent 75%
       );
+      filter: blur(2px);
+    }
+
+    .sparkles span {
+      background: #e3c8ff;
+      filter: drop-shadow(0 0 4px rgba(220, 170, 255, 1))
+        drop-shadow(0 0 8px rgba(180, 120, 255, 0.8));
+    }
+
+    .orbit {
+      border: 1.5px solid rgba(200, 140, 255, 0.55);
       box-shadow:
-        0 0 6px 3px rgba(220, 180, 255, 1),
-        0 0 16px 8px rgba(180, 80, 255, 0.95),
-        0 0 32px 16px rgba(130, 0, 255, 0.8),
-        0 0 56px 25px rgba(80, 0, 180, 0.6);
+        0 0 8px rgba(190, 120, 255, 0.35),
+        inset 0 0 8px rgba(190, 120, 255, 0.25);
 
+      // 궤도를 따라 도는 빛점
       &::before {
-        // 크고 화려한 보라 불꽃
-        height: 65px;
-        width: 55px;
-        bottom: 85%;
-        background: radial-gradient(
-          ellipse at 50% 85%,
-          rgba(255, 255, 255, 1) 0%,
-          rgba(220, 150, 255, 0.95) 18%,
-          rgba(170, 50, 255, 0.85) 40%,
-          rgba(100, 0, 200, 0.5) 70%,
-          transparent 100%
-        );
-        filter: blur(1px);
-        animation: flame-center 0.22s ease-in-out infinite alternate;
-      }
-
-      &::after {
-        // 좌우를 감싸는 보조 불꽃
         content: "";
         position: absolute;
-        bottom: 75%;
+        top: -3px;
         left: 50%;
-        width: 45px;
-        height: 45px;
-        border-radius: 50% 50% 25% 25% / 85% 85% 15% 15%;
-        transform-origin: center bottom;
-        background: radial-gradient(
-          ellipse at 50% 85%,
-          rgba(255, 255, 255, 0.9) 0%,
-          rgba(220, 150, 255, 0.85) 18%,
-          rgba(170, 50, 255, 0.75) 40%,
-          rgba(100, 0, 200, 0.4) 70%,
-          transparent 100%
-        );
-        filter: blur(1.5px);
-        animation: flame-sway-l 0.26s ease-in-out infinite alternate;
-        margin-left: -22px;
+        width: 7px;
+        height: 7px;
+        margin-left: -3.5px;
+        border-radius: 50%;
+        background: #e9d5ff;
+        box-shadow: 0 0 6px 2px rgba(216, 180, 254, 0.9);
       }
     }
-
-    // 폭발적인 펄스 링 효과
-    &::before {
-      content: "";
-      position: absolute;
-      top: -15px;
-      left: -15px;
-      width: 90px;
-      height: 90px;
-      border-radius: 50%;
-      border: 2px solid rgba(180, 80, 255, 0.8);
-      box-shadow:
-        0 0 15px rgba(180, 80, 255, 0.6),
-        inset 0 0 15px rgba(180, 80, 255, 0.6);
-      animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
-      pointer-events: none;
-    }
-
-    // 솟아오르는 빛기둥 효과
-    &::after {
-      content: "";
-      position: absolute;
-      bottom: -5px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 25px;
-      height: 120px;
-      background: linear-gradient(
-        to top,
-        rgba(220, 150, 255, 0.8) 0%,
-        rgba(170, 50, 255, 0.3) 40%,
-        transparent 100%
-      );
-      filter: blur(4px);
-      animation: light-pillar 2s ease-in-out infinite alternate;
-      pointer-events: none;
-    }
   }
 
-  // ─── 바닥 황금빛 풀 ──────────────────────────────
-  .glow-floor {
-    z-index: -1;
-    position: absolute;
-    bottom: -2px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 40px;
-    height: 10px;
-    border-radius: 50%;
-    background: radial-gradient(
-      ellipse at center,
-      rgba(255, 255, 220, 1) 0%,
-      rgba(255, 240, 30, 1) 20%,
-      rgba(255, 200, 0, 0.9) 50%,
-      rgba(255, 120, 0, 0.4) 75%,
-      rgba(255, 60, 0, 0) 100%
-    );
-    box-shadow:
-      0 0 4px 2px rgba(255, 255, 150, 1),
-      0 0 12px 6px rgba(255, 230, 0, 0.95),
-      0 0 26px 12px rgba(255, 170, 0, 0.65),
-      0 0 46px 20px rgba(255, 100, 0, 0.3);
-    animation: saiyan-ki 0.12s steps(1, end) infinite;
+  // ─── 애니메이션 ──────────────────────────────
 
-    // ─── 중앙 메인 불꽃 혀 (가장 크고 높음) ──────────
-    &::before {
-      content: "";
-      position: absolute;
-      bottom: 90%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 50px;
-      height: 50px;
-      border-radius: 50% 50% 25% 25% / 85% 85% 15% 15%;
-      transform-origin: center bottom;
-      filter: blur(0.8px);
-      animation: flame-center 0.26s ease-in-out infinite alternate;
-    }
-  }
-
-  // ─── 애니메이션 ──────────────────────────────────
-
-  @keyframes pulse-aura {
-    0% {
-      transform: scale(0.9);
-      opacity: 0.5;
-    }
+  // 바닥 광원: 숨쉬듯 확장/수축
+  @keyframes glow-breathe {
+    0%,
     100% {
-      transform: scale(1.2);
-      opacity: 1;
-    }
-  }
-
-  @keyframes pulse-ring {
-    0% {
-      transform: scale(0.6);
-      opacity: 0;
-    }
-    30% {
-      opacity: 1;
-    }
-    100% {
-      transform: scale(1.6);
-      opacity: 0;
-    }
-  }
-
-  @keyframes light-pillar {
-    0% {
-      transform: translateX(-50%) scaleY(0.8);
-      opacity: 0.5;
-    }
-    100% {
-      transform: translateX(-50%) scaleY(1.2);
-      opacity: 0.9;
-    }
-  }
-
-  // 바닥 에너지 고동 (불규칙 진동)
-  @keyframes saiyan-ki {
-    0% {
-      opacity: 1;
-      transform: translateX(-50%) scaleX(1) scaleY(1);
-    }
-    12% {
-      opacity: 0.85;
-      transform: translateX(-50%) scaleX(1.1) scaleY(0.88);
-    }
-    25% {
-      opacity: 1;
-      transform: translateX(-50%) scaleX(0.95) scaleY(1.1);
-    }
-    37% {
-      opacity: 0.9;
-      transform: translateX(-50%) scaleX(1.12) scaleY(0.9);
+      opacity: 0.7;
+      transform: translateX(-50%) scale(1);
     }
     50% {
-      opacity: 0.82;
-      transform: translateX(-50%) scaleX(1.06) scaleY(0.85);
-    }
-    62% {
       opacity: 1;
-      transform: translateX(-50%) scaleX(0.93) scaleY(1.1);
+      transform: translateX(-50%) scale(1.15);
+    }
+  }
+
+  // 별: 아래에서 위로 떠오르며 반짝임
+  @keyframes sparkle-rise {
+    0% {
+      transform: translateY(0) scale(0.5) rotate(0deg);
+      opacity: 0;
+    }
+    12% {
+      opacity: 1;
     }
     75% {
-      opacity: 0.88;
-      transform: translateX(-50%) scaleX(1.08) scaleY(0.94);
-    }
-    87% {
       opacity: 1;
-      transform: translateX(-50%) scaleX(0.97) scaleY(1.06);
     }
     100% {
-      opacity: 1;
-      transform: translateX(-50%) scaleX(1) scaleY(1);
+      transform: translateY(-52px) scale(1.1) rotate(90deg);
+      opacity: 0;
     }
   }
 
-  // 중앙 불꽃 — 비틀리며 위로 솟구침
-  @keyframes flame-center {
-    from {
-      transform: translateX(-50%) scaleX(1) scaleY(1) rotate(-4deg);
-      opacity: 0.85;
+  // 궤도: 3D 기울어진 타원을 따라 회전 (요소 자체는 정적, 빛점만 보이게 하려면
+  // rotate로 감점 — 여기선 타원 자체에 회전 애니메이션을 걸지 않고 빛점을 orbit 시킴)
+  @keyframes orbit-spin {
+    0% {
+      transform: rotate(0deg);
     }
-    to {
-      transform: translateX(-50%) scaleX(0.75) scaleY(1.22) rotate(4deg);
-      opacity: 1;
-    }
-  }
-
-  // 좌측 불꽃 — 바깥쪽으로 기울며 흔들림
-  @keyframes flame-sway-l {
-    from {
-      transform: scaleX(1) scaleY(1) rotate(-10deg);
-      opacity: 0.7;
-    }
-    to {
-      transform: scaleX(0.82) scaleY(1.28) rotate(5deg);
-      opacity: 0.95;
-    }
-  }
-
-  // 우측 불꽃 — 반대 방향으로 흔들림
-  @keyframes flame-sway-r {
-    from {
-      transform: scaleX(1) scaleY(1) rotate(10deg);
-      opacity: 0.65;
-    }
-    to {
-      transform: scaleX(0.8) scaleY(1.24) rotate(-6deg);
-      opacity: 0.92;
+    100% {
+      transform: rotate(360deg);
     }
   }
 }

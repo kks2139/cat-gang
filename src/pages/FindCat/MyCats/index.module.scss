@@ -1,3 +1,5 @@
+@use "@/styles/mixins" as *;
+
 .MyCats {
   position: relative;
   width: 100%;
@@ -23,35 +25,42 @@
     row-gap: 10px;
 
     li > button {
-      position: relative;
+      @include glass-card(
+        $tint: rgba(255, 255, 255, 0.08),
+        $border: rgba(255, 255, 255, 0.2),
+        $radius: 18px,
+        $blur: 12px,
+        $shadow: 0 2px 12px rgba(0, 0, 0, 0.25),
+        $grad-top: rgba(255, 255, 255, 0.12),
+        $grad-bottom: rgba(0, 0, 0, 0.1)
+      );
+
       width: 100%;
       display: flex;
       column-gap: 12px;
       align-items: center;
       padding: 10px 14px;
-      background-color: #f8fafc;
-      border-radius: 18px;
-      border: 1px solid #f1f5f9;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
       cursor: pointer;
       user-select: none;
       transition:
         transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
         background-color 0.15s ease,
-        border-color 0.15s ease;
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
 
       &:active {
         transform: scale(0.98);
-        background-color: #f1f5f9;
+        background: rgba(255, 255, 255, 0.16);
+        border-color: rgba(74, 222, 128, 0.5);
       }
 
       img {
         border-radius: 14px;
-        background-color: #ffffff;
+        background: linear-gradient(135deg, #f7fdf9 0%, #ecfdf3 100%);
         width: 64px;
         height: 64px;
         object-fit: cover;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         flex-shrink: 0;
       }
 
@@ -68,14 +77,14 @@
 
           span {
             &:first-of-type {
-              color: #0f172a;
+              color: rgba(255, 255, 255, 0.92);
               font-weight: 800;
               font-size: 15px;
               letter-spacing: -0.2px;
             }
 
             &:last-of-type {
-              color: #64748b;
+              color: rgba(255, 255, 255, 0.5);
               font-size: 12px;
               font-weight: 500;
             }
@@ -92,7 +101,7 @@
     justify-content: center;
     padding: 40px 20px;
     font-size: 15px;
-    color: #94a3b8;
+    color: rgba(255, 255, 255, 0.45);
     text-align: center;
     gap: 8px;
   }
@@ -109,7 +118,7 @@
     align-items: center;
     column-gap: 12px;
     padding: 10px 14px;
-    background-color: #f8fafc;
+    background: rgba(255, 255, 255, 0.06);
     border-radius: 18px;
   }
 }

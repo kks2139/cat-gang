@@ -1,8 +1,6 @@
 .Skeleton {
-  $back: #e0e0e0;
-  $center: #bebebee3;
-  $dark-back: #707070;
-  $dark-center: #4b4b4be3;
+  $back: rgba(255, 255, 255, 0.1);
+  $center: rgba(255, 255, 255, 0.22);
 
   background-size: 400% 400% !important;
   background: linear-gradient(

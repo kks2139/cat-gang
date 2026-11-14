@@ -36,6 +36,8 @@ import ImgCatMe from "@/assets/img/character/cat-me.png";
 
 export interface CatInfo {
   rarity: "common" | "rare" | "unique"; // 희귀함 정도
+  // 출몰 시간대 — 미지정이면 하루 종일 등장
+  activeTime?: "night" | "day";
   name: string;
   crying: string;
   img: string;
@@ -57,14 +59,20 @@ export interface CatInfo {
   };
 }
 
+const MY_CAT_BASE = {
+  hp: 10,
+  punchPower: 6,
+  defense: 2,
+};
+
 const myCat: CatInfo = {
   rarity: "common",
   name: "",
   crying: "",
   img: ImgCatMe,
-  hp: 10,
-  punchPower: 6,
-  defense: 2,
+  hp: MY_CAT_BASE.hp,
+  punchPower: MY_CAT_BASE.punchPower,
+  defense: MY_CAT_BASE.defense,
   dialog: {
     meet: [
       "난 최고의 주먹왕이 될 고양이야! 길을 비켜라!",
@@ -128,7 +136,56 @@ export class MyCat {
     this.cat.name = name;
     this.cat.crying = crying;
   }
+
+  // 세력(부하) 규모에 따른 스탯 보너스 적용
+  // (기본 스탯에서 파생되므로 호출 횟수와 무관하게 항상 같은 결과)
+  applyGangBonus(gang: GangInfo) {
+    this.cat.hp = MY_CAT_BASE.hp + gang.hpBonus;
+    this.cat.punchPower = MY_CAT_BASE.punchPower + gang.punchBonus;
+    this.cat.defense = MY_CAT_BASE.defense + gang.defBonus;
+  }
 }
+
+export interface GangInfo {
+  title: string;
+  minionCount: number;
+  hpBonus: number;
+  punchBonus: number;
+  defBonus: number;
+}
+
+// 부하 수에 따른 칭호 + 스탯 보너스
+// - HP: 부하 5마리당 +1 (최대 +5)
+// - PWR: 부하 10마리당 +1 (최대 +3)
+// - DEF: unique 부하 2마리당 +1 (최대 +2)
+export const getGangInfo = (
+  minionCount: number,
+  uniqueMinionCount: number,
+): GangInfo => {
+  const hpBonus = Math.min(Math.floor(minionCount / 5), 5);
+  const punchBonus = Math.min(Math.floor(minionCount / 10), 3);
+  const defBonus = Math.min(Math.floor(uniqueMinionCount / 2), 2);
+
+  let title = "길고양이";
+
+  if (minionCount >= 50) {
+    title = "종로의 왕";
+  } else if (minionCount >= 30) {
+    title = "종로의 실력자";
+  } else if (minionCount >= 15) {
+    title = "동네 양반";
+  } else if (minionCount >= 5) {
+    title = "두목 후보";
+  }
+
+  return {
+    title,
+    minionCount,
+    hpBonus,
+    punchBonus,
+    defBonus,
+  };
+};
 
 export const catCharacters: CatInfo[] = [
   {
@@ -173,6 +230,7 @@ export const catCharacters: CatInfo[] = [
   },
   {
     rarity: "unique",
+    activeTime: "night",
     name: "시라소니",
     crying: "애오오오옹~ (이 간나새끼야!)",
     img: ImgCat2,
@@ -334,6 +392,7 @@ export const catCharacters: CatInfo[] = [
   {
     rarity: "common",
     name: "비너스",
+    activeTime: "day",
     crying: "크어어어- 냥!",
     img: ImgCat6,
     hp: 10,
@@ -494,6 +553,7 @@ export const catCharacters: CatInfo[] = [
   {
     rarity: "unique",
     name: "뭉치",
+    activeTime: "day",
     crying: "불-쉿! 냥!",
     img: ImgCat10,
     hp: 10,
@@ -614,6 +674,7 @@ export const catCharacters: CatInfo[] = [
   {
     rarity: "common",
     name: "소금빵",
+    activeTime: "day",
     crying: "바삭- 냥!",
     img: ImgCat13,
     hp: 10,
@@ -694,6 +755,7 @@ export const catCharacters: CatInfo[] = [
   {
     rarity: "unique",
     name: "하야시",
+    activeTime: "night",
     crying: "냐아앙-! (혼또니..!)",
     img: ImgCat15,
     hp: 12,
@@ -894,6 +956,7 @@ export const catCharacters: CatInfo[] = [
   {
     rarity: "common",
     name: "독사",
+    activeTime: "night",
     crying: "쉿- 냐앙!",
     img: ImgCat20,
     hp: 7,
@@ -1042,6 +1105,7 @@ export const catCharacters: CatInfo[] = [
   {
     rarity: "unique",
     name: "염동력냥",
+    activeTime: "night",
     crying: "삐비빅- (우주가 돕는다..)",
     img: ImgCat24,
     hp: 8,
@@ -1114,6 +1178,7 @@ export const catCharacters: CatInfo[] = [
   {
     rarity: "common",
     name: "알바묘",
+    activeTime: "day",
     crying: "어서오세냥-! (시급 만원!)",
     img: ImgCat26,
     hp: 9,

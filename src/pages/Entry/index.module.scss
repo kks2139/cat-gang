@@ -6,15 +6,148 @@
   align-items: center;
   height: 100vh;
   overflow: hidden;
+  background: radial-gradient(
+    ellipse at 50% 35%,
+    #2c3a5e 0%,
+    #1b2440 55%,
+    #131b31 100%
+  );
 
   .background {
     position: absolute;
     animation: bg-enter 1.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 
+    // 캐릭터 뒤에서 회전하는 광선
+    .rays {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 1400px;
+      height: 1400px;
+      transform: translate(-50%, -50%);
+      background: repeating-conic-gradient(
+        from 0deg,
+        rgba(255, 226, 120, 0.16) 0deg 9deg,
+        transparent 9deg 24deg
+      );
+      border-radius: 50%;
+      mask-image: radial-gradient(
+        circle,
+        rgba(0, 0, 0, 1) 0%,
+        rgba(0, 0, 0, 0.55) 32%,
+        transparent 62%
+      );
+      -webkit-mask-image: radial-gradient(
+        circle,
+        rgba(0, 0, 0, 1) 0%,
+        rgba(0, 0, 0, 0.55) 32%,
+        transparent 62%
+      );
+      animation: rays-spin 26s linear infinite;
+      pointer-events: none;
+    }
+
+    // 캐릭터를 감싸는 오라
+    .aura {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 620px;
+      height: 620px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        rgba(255, 224, 130, 0.55) 0%,
+        rgba(255, 190, 90, 0.28) 32%,
+        rgba(255, 160, 60, 0.12) 52%,
+        transparent 70%
+      );
+      filter: blur(6px);
+      animation: aura-breathe 3.4s ease-in-out infinite;
+      pointer-events: none;
+    }
+
     img {
+      position: relative;
       width: 600px;
       height: auto;
       transform: translateY(-20px);
+      filter: drop-shadow(0 18px 40px rgba(0, 0, 0, 0.55));
+      animation: char-pulse 3.4s ease-in-out infinite;
+    }
+  }
+
+  // 반짝이는 별
+  .stars {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+
+    span {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.75);
+      opacity: 0;
+      animation: star-twinkle 3s ease-in-out infinite;
+      animation-delay: calc(var(--i, 0) * 0.25s);
+    }
+
+    @for $i from 1 through 12 {
+      span:nth-child(#{$i}) {
+        --i: #{$i};
+        top: #{(($i * 37) % 80) + 4%};
+        left: #{(($i * 53) % 92) + 3%};
+      }
+    }
+  }
+
+  // 시선을 중앙으로 모으는 비네트
+  .vignette {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      ellipse at center,
+      transparent 45%,
+      rgba(0, 0, 0, 0.35) 100%
+    );
+  }
+
+  // 은은하게 떠오르는 빛 입자
+  .particles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+
+    span {
+      position: absolute;
+      bottom: -12px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        rgba(255, 245, 200, 0.95) 0%,
+        rgba(255, 213, 0, 0.4) 60%,
+        transparent 100%
+      );
+      filter: blur(0.5px);
+      opacity: 0;
+      animation: particle-rise 9s ease-in infinite;
+      animation-delay: calc(var(--i, 0) * 1.3s);
+    }
+
+    @for $i from 1 through 7 {
+      span:nth-child(#{$i}) {
+        --i: #{$i};
+        left: #{$i * 13%};
+        animation-duration: #{7 + ($i * 0.9)}s;
+      }
     }
   }
 
@@ -30,20 +163,42 @@
     z-index: 20;
     position: absolute;
     top: 12%;
+    text-align: center;
     animation: title-float 4s ease-in-out infinite;
 
     h1 {
       font-family: "Fredoka", sans-serif;
       font-size: 70px;
       font-weight: 700;
-      color: #fff;
-      text-align: center;
       letter-spacing: 2px;
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+      text-align: center;
+      color: transparent;
+      background: linear-gradient(180deg, #fff 0%, #ffe9a3 55%, #f5c542 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.55))
+        drop-shadow(0 8px 18px rgba(0, 0, 0, 0.35));
       animation: content-enter 1s ease-out 0.8s both;
 
       @media (max-width: 362px) {
         font-size: 58px;
+      }
+    }
+
+    .tagline {
+      margin-top: 10px;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 5px;
+      color: #fff;
+      text-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.65),
+        0 0 16px rgba(255, 224, 130, 0.55);
+      animation: content-enter 1s ease-out 1.1s both;
+
+      @media (max-width: 362px) {
+        font-size: 18px;
+        letter-spacing: 3px;
       }
     }
   }
@@ -61,7 +216,55 @@
       display: flex;
       flex-direction: column;
       row-gap: 12px;
-      width: 260px;
+      width: 280px;
+
+      .start {
+        --glass-tint: linear-gradient(
+          180deg,
+          #22c55e 0%,
+          #16a34a 55%,
+          #15803d 100%
+        );
+        --glass-border: rgba(190, 242, 100, 0.45);
+        --glass-grad-top: rgba(255, 255, 255, 0.25);
+        --glass-grad-bottom: rgba(0, 0, 0, 0.12);
+        --glass-highlight: rgba(255, 255, 255, 0.4);
+        --glass-shadow: 0 10px 28px rgba(0, 0, 0, 0.45),
+          0 0 24px rgba(34, 197, 94, 0.35);
+
+        // 버튼 위를 지나가는 광택
+        &::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: -80%;
+          width: 50%;
+          height: 100%;
+          background: linear-gradient(
+            100deg,
+            transparent 20%,
+            rgba(255, 255, 255, 0.35) 50%,
+            transparent 80%
+          );
+          transform: skewX(-20deg);
+          animation: btn-shine 3.2s ease-in-out infinite;
+          pointer-events: none;
+        }
+
+        .btn-inner {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+        }
+
+        .paw {
+          width: 22px;
+          height: 22px;
+          filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.6));
+          animation: paw-tap 1.6s ease-in-out infinite;
+        }
+      }
     }
   }
 
@@ -96,6 +299,84 @@
     }
     50% {
       transform: translateY(-10px) rotate(0.5deg);
+    }
+  }
+
+  @keyframes rays-spin {
+    to {
+      transform: translate(-50%, -50%) rotate(360deg);
+    }
+  }
+
+  @keyframes aura-breathe {
+    0%,
+    100% {
+      opacity: 0.75;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.12);
+    }
+  }
+
+  @keyframes char-pulse {
+    0%,
+    100% {
+      transform: translateY(-20px) scale(1);
+    }
+    50% {
+      transform: translateY(-20px) scale(1.02);
+    }
+  }
+
+  @keyframes star-twinkle {
+    0%,
+    100% {
+      opacity: 0;
+      transform: scale(0.5);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes particle-rise {
+    0% {
+      opacity: 0;
+      transform: translateY(0) scale(0.6);
+    }
+    12% {
+      opacity: 0.9;
+    }
+    85% {
+      opacity: 0.5;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-88vh) scale(1.1);
+    }
+  }
+
+  @keyframes btn-shine {
+    0%,
+    55% {
+      left: -80%;
+    }
+    85%,
+    100% {
+      left: 130%;
+    }
+  }
+
+  @keyframes paw-tap {
+    0%,
+    100% {
+      transform: translateY(0) scale(1);
+    }
+    50% {
+      transform: translateY(-2px) scale(1.12);
     }
   }
 }

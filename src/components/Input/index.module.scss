@@ -1,3 +1,5 @@
+@use "@/styles/mixins" as *;
+
 .Input-wrapper {
   display: flex;
   flex-direction: column;
@@ -6,38 +8,54 @@
 }
 
 .Input {
-  position: relative;
+  @include glass-card(
+    $tint: rgba(255, 255, 255, 0.08),
+    $border: rgba(255, 255, 255, 0.2),
+    $radius: 14px,
+    $blur: 10px,
+    $shadow: none,
+    $grad-top: rgba(255, 255, 255, 0.1),
+    $grad-bottom: rgba(0, 0, 0, 0.08)
+  );
+
   width: 100%;
-  background-color: #f8fafc;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 14px;
+  overflow: hidden;
   transition:
     border-color 0.15s ease,
     background-color 0.15s ease,
     box-shadow 0.15s ease;
-  overflow: hidden;
 
   &:focus-within {
-    border-color: #ff7a18;
-    background-color: #fff;
-    box-shadow: 0 0 0 3px rgba(255, 122, 24, 0.1);
+    border-color: #4ade80;
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      0 0 0 3px rgba(74, 222, 128, 0.15);
   }
 
   &.error {
     border-color: #ef4444;
-    background-color: #fef2f2;
+    --glass-tint: rgba(239, 68, 68, 0.1);
+    background:
+      linear-gradient(
+        180deg,
+        var(--glass-grad-top) 0%,
+        var(--glass-grad-bottom) 100%
+      ),
+      var(--glass-tint);
 
     &:focus-within {
       border-color: #ef4444;
-      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+      box-shadow:
+        inset 0 1px 0 var(--glass-highlight),
+        0 0 0 3px rgba(239, 68, 68, 0.15);
     }
 
     .field {
-      color: #dc2626;
+      color: #fca5a5;
       caret-color: #ef4444;
 
       &::placeholder {
-        color: #fca5a5;
+        color: rgba(252, 165, 165, 0.5);
       }
     }
   }
@@ -48,8 +66,8 @@
     padding: 10px 14px;
     font-size: 16px;
     font-weight: 600;
-    color: #0f172a;
-    caret-color: #ff7a18;
+    color: rgba(255, 255, 255, 0.92);
+    caret-color: #4ade80;
     background: transparent;
     border: none;
     outline: none;
@@ -57,7 +75,7 @@
     letter-spacing: -0.3px;
 
     &::placeholder {
-      color: #94a3b8;
+      color: rgba(255, 255, 255, 0.35);
       font-weight: 400;
       font-size: 14px;
     }
