@@ -5,10 +5,12 @@ import styles from "./index.module.scss";
 
 const cn = classNames.bind(styles);
 
+export type Color = "primary" | "secondary" | "glass" | "danger";
+
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;
   size?: "small" | "regular" | "large";
-  color?: "primary" | "secondary" | "glass";
+  color?: Color;
   radius?: number;
 }
 

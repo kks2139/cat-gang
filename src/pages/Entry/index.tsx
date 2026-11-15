@@ -185,6 +185,7 @@ export default function Entry() {
         title="종료"
         subTitle="냥만시대를 종료할까요?"
         buttonLable="네"
+        buttonColor="danger"
         subButtonLable="닫기"
         onButtonClick={closeApp}
         onSubButtonClick={() => {

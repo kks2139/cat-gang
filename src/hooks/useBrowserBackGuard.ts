@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 
+import { getTopDialogDismiss } from "@/components/Dialog/backStack";
 import { operEnv } from "@/utils/constants";
 
 // 히스토리 가드 엔트리 표식 — 시스템 뒤로가기를 가로채기 위한 센티널 식별자
@@ -54,6 +55,16 @@ export const useBrowserBackGuard = ({ message, onConfirm }: Options) => {
     }
 
     const handlePopState = () => {
+      // 다이얼로그가 열려있으면 컨펌 대신 최상단 다이얼로그를 닫는다
+      // (Dialog의 공통 뒤로가기 로직 — AIT backEvent와 동일한 동작)
+      const topDismiss = getTopDialogDismiss();
+
+      if (topDismiss) {
+        topDismiss();
+        pushGuardEntry();
+        return;
+      }
+
       // 브라우저 기본 컨펌 (로컬 전용)
       const exit = window.confirm(message);
 

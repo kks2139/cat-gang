@@ -399,6 +399,7 @@ export default function FindCat() {
         title="나가기"
         subTitle="지도 화면을 나가서 처음 화면으로 돌아갈까요?"
         buttonLable="나가기"
+        buttonColor="danger"
         subButtonLable="닫기"
         onButtonClick={() => {
           setIsShowExitConfirm(false);

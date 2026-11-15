@@ -41,6 +41,21 @@
     color: #ffffff;
   }
 
+  // danger: 붉은 유리 — 나가기/종료 등 되돌리기 어려운 액션
+  &.danger {
+    --glass-tint: linear-gradient(
+      180deg,
+      rgba(220, 60, 60, 0.6) 0%,
+      rgba(170, 25, 40, 0.85) 100%
+    );
+    --glass-border: rgba(255, 170, 170, 0.4);
+    --glass-grad-top: rgba(255, 255, 255, 0.2);
+    --glass-grad-bottom: rgba(0, 0, 0, 0.15);
+    --glass-shadow: 0 6px 18px rgba(0, 0, 0, 0.35),
+      0 0 14px rgba(220, 40, 60, 0.25);
+    color: #ffffff;
+  }
+
   // glass: 유리 질감은 같고 더 투명하게 (보조 액션)
   &.glass {
     --glass-tint: rgba(255, 255, 255, 0.06);
