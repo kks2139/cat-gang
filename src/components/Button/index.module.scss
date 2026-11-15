@@ -41,6 +41,21 @@
     color: #ffffff;
   }
 
+  // green: 초록 유리 — 만들기/등록 등 긍정 액션
+  &.green {
+    --glass-tint: linear-gradient(
+      180deg,
+      rgba(74, 222, 128, 0.55) 0%,
+      rgba(22, 163, 74, 0.85) 100%
+    );
+    --glass-border: rgba(187, 247, 208, 0.5);
+    --glass-grad-top: rgba(255, 255, 255, 0.22);
+    --glass-grad-bottom: rgba(0, 0, 0, 0.12);
+    --glass-shadow: 0 6px 18px rgba(0, 0, 0, 0.3),
+      0 0 14px rgba(74, 222, 128, 0.25);
+    color: #ffffff;
+  }
+
   // danger: 붉은 유리 — 나가기/종료 등 되돌리기 어려운 액션
   &.danger {
     --glass-tint: linear-gradient(

@@ -38,6 +38,7 @@ export default function AddUserDialog({ isShow, onSuccess, onCancel }: Props) {
         isShow={isShow}
         title="이름을 알려달라옹"
         buttonLable="만들기"
+        buttonColor="green"
         buttonDisabled={!inputName || !inputCrying}
         subButtonLable="취소"
         onButtonClick={async () => {
