@@ -60,6 +60,11 @@ export default function FindCat() {
     createdAt: c.created_at,
   })) || []) as OwnCat[];
 
+  // 바텀시트(내 부하/도감)가 열려있으면 지도 배경에 블러를 건다.
+  // 웹뷰(AIT)에서는 WebGL 캔버스 위의 backdrop-filter가 무시되므로
+  // 지도 컨테이너 자체에 filter: blur를 적용한다
+  const isAnySheetOpen = isShowCatchedCatPopup || isShowCatBook;
+
   // 도감: 잡은 고양이 이름 집합
   const catchedNames = new Set(ownCats.map(({ name }) => name));
 
@@ -139,7 +144,7 @@ export default function FindCat() {
   return (
     <main className={cn("FindCat")}>
       <Map
-        className={cn("map")}
+        className={cn("map", { "is-blurred": isAnySheetOpen })}
         ownCats={ownCats}
         onClickCat={() => {
           setIsShowStage(true);

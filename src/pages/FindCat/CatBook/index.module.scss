@@ -42,13 +42,19 @@
     gap: 10px;
 
     .slot {
+      // 등급별 톤 (common은 기본 유리 톤 유지)
+      --rarity-border: rgba(255, 255, 255, 0.2);
+      --rarity-glow: transparent;
+      --rarity-strong: rgba(255, 255, 255, 0.85);
+      --rarity-grad-top: rgba(255, 255, 255, 0.12);
+
       @include glass-card(
         $tint: rgba(255, 255, 255, 0.08),
-        $border: rgba(255, 255, 255, 0.2),
+        $border: var(--rarity-border),
         $radius: 16px,
         $blur: 12px,
         $shadow: 0 2px 10px rgba(0, 0, 0, 0.25),
-        $grad-top: rgba(255, 255, 255, 0.12),
+        $grad-top: var(--rarity-grad-top),
         $grad-bottom: rgba(0, 0, 0, 0.1)
       );
 
@@ -58,14 +64,27 @@
       padding: 10px 6px 8px;
       transition: border-color 0.2s ease;
 
+      // 등급 외곽 글로우 — 테두리만으로는 부족해 슬롯 밖으로 발광
+      box-shadow:
+        inset 0 1px 0 var(--glass-highlight),
+        0 0 12px var(--rarity-glow),
+        0 2px 10px rgba(0, 0, 0, 0.25);
+
       &[data-rarity="rare"] {
-        --glass-border: rgba(147, 197, 253, 0.5);
-        border-color: rgba(147, 197, 253, 0.5);
+        --rarity-border: rgba(125, 175, 255, 0.9);
+        --rarity-glow: rgba(125, 175, 255, 0.35);
+        --rarity-strong: #8cbcff;
+        --rarity-grad-top: rgba(125, 175, 255, 0.18);
       }
 
       &[data-rarity="unique"] {
-        --glass-border: rgba(216, 180, 254, 0.5);
-        border-color: rgba(216, 180, 254, 0.5);
+        --rarity-border: rgba(195, 130, 255, 0.95);
+        --rarity-glow: rgba(195, 130, 255, 0.45);
+        --rarity-strong: #c382ff;
+        --rarity-grad-top: rgba(195, 130, 255, 0.2);
+
+        // unique만 은은하게 숨쉬는 글로우
+        animation: unique-glow 2.6s ease-in-out infinite;
       }
 
       &.locked {
@@ -77,6 +96,20 @@
             var(--glass-grad-bottom) 100%
           ),
           var(--glass-tint);
+      }
+
+      .badge {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        padding: 2px 7px;
+        border-radius: 99px;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: -0.2px;
+        color: #0f172a;
+        background: var(--rarity-strong);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
       }
 
       .cat-img {
@@ -93,7 +126,7 @@
         margin-top: 4px;
         font-size: 12px;
         font-weight: 800;
-        color: rgba(255, 255, 255, 0.92);
+        color: var(--rarity-strong);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -106,5 +139,21 @@
         color: rgba(255, 255, 255, 0.45);
       }
     }
+  }
+}
+
+@keyframes unique-glow {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      0 0 10px var(--rarity-glow),
+      0 2px 10px rgba(0, 0, 0, 0.25);
+  }
+  50% {
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      0 0 20px var(--rarity-glow),
+      0 2px 10px rgba(0, 0, 0, 0.25);
   }
 }

@@ -12,6 +12,13 @@ import StatusEffect, { type StatusEffectInfo } from "./StatusEffect";
 
 const cn = classNames.bind(styles);
 
+// 아이템 도착 시 대상 주위에 뜨는 이펙트 글리프
+const ITEM_FX_GLYPHS: Record<ItemType, string[]> = {
+  gukbab: ["✚", "+", "✚", "+"],
+  fish: ["❗", "🐟", "❕", "🐟"],
+  catnip: ["💢", "🔥", "💢", "🔥"],
+};
+
 interface CatVisualProps {
   cat?: CatInfo;
   effectType?: EffectType;
@@ -44,6 +51,31 @@ function CatVisual({
             alt={cat.name || ""}
           />
           <div className={cn("cat-shadow")} />
+          {/* 패배: 머리 위를 빙글 도는 어지러운 별 */}
+          {effectType === "lose" && (
+            <div className={cn("dizzy")}>
+              <span />
+              <span />
+              <span />
+            </div>
+          )}
+          {/* 도망: 출발 지점에 일어나는 먼지 */}
+          {effectType === "run" && (
+            <div className={cn("dust")}>
+              <span />
+              <span />
+              <span />
+            </div>
+          )}
+          {usedItem && (
+            <div className={cn("item-fx", usedItem)}>
+              {ITEM_FX_GLYPHS[usedItem].map((glyph, i) => (
+                <span key={i} style={{ "--i": i } as React.CSSProperties}>
+                  {glyph}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       )}
       {children}

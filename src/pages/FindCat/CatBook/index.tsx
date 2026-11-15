@@ -6,6 +6,14 @@ import styles from "./index.module.scss";
 
 const cn = classNames.bind(styles);
 
+type Rarity = (typeof catCharacters)[number]["rarity"];
+
+const RARITY_LABEL: Record<Rarity, string> = {
+  common: "일반",
+  rare: "레어",
+  unique: "유니크",
+};
+
 interface Props {
   className?: string;
   catchedNames: Set<string>;
@@ -41,6 +49,9 @@ export default function CatBook({ className, catchedNames }: Props) {
               className={cn("slot", { locked: !isCatched })}
               data-rarity={cat.rarity}
             >
+              {cat.rarity !== "common" && (
+                <span className={cn("badge")}>{RARITY_LABEL[cat.rarity]}</span>
+              )}
               <img
                 src={cat.img}
                 alt={isCatched ? cat.name : "미수집"}

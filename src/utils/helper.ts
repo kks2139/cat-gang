@@ -69,17 +69,43 @@ export const getFireworkElement = () => {
   flash.className = "central-flash";
   explosion.appendChild(flash);
 
-  // 2. 50개의 조각 생성 및 조립 (화려하게 증량)
-  for (let i = 0; i < 40; i++) {
-    const piece = document.createElement("div");
-    piece.className = "piece";
-    explosion.appendChild(piece);
+  // 1-2. 팽창하는 충격파 링 3겹 (시간차 따라잡기)
+  ["", "second", "third"].forEach((modifier) => {
+    const wave = document.createElement("div");
+    wave.className = modifier ? `shockwave ${modifier}` : "shockwave";
+    explosion.appendChild(wave);
+  });
+
+  // 1-3. 중심에서 사방으로 뻗는 황금 스파크 광선
+  const rays = document.createElement("div");
+  rays.className = "rays";
+
+  for (let i = 0; i < 10; i++) {
+    const ray = document.createElement("div");
+    ray.className = "ray";
+    ray.style.setProperty("--angle", `${i * 36 + getRandomNumber(14)}deg`);
+    rays.appendChild(ray);
   }
 
-  // 4. 애니메이션 종료 후 DOM에서 제거 (메모리 관리: 3초 애니메이션 기준)
+  explosion.appendChild(rays);
+
+  // 2. 조각 컨테이너 생성 및 조립
+  // 1차 폭발 60개 + 약간 시간을 두고 터지는 2차 폭발 웨이브 20개
+  const pieces = document.createElement("div");
+  pieces.className = "pieces";
+
+  for (let i = 0; i < 80; i++) {
+    const piece = document.createElement("div");
+    piece.className = i < 60 ? "piece" : "piece late";
+    pieces.appendChild(piece);
+  }
+
+  explosion.appendChild(pieces);
+
+  // 3. 애니메이션 종료 후 DOM에서 제거 (메모리 관리)
   setTimeout(() => {
     explosion.remove();
-  }, 3500); // 애니메이션 시간($duration)보다 살짝 길게
+  }, 2200);
 
   return explosion;
 };
@@ -233,8 +259,10 @@ export const createMarker = ({
     // 등장 연출: 순차 등장하는 느낌을 위해 스태거 딜레이 부여
     container.style.setProperty("--spawn-delay", `${getRandomNumber(600)}ms`);
     wrapper.style.animationDelay = `${getRandomNumber(10)}s`;
-    container.style.animationDuration = `${randomDuration}s`;
-    container.style.animationDelay = `${randomDelay}s`;
+    // 이동(cat-move)과 방향 lean(cat-face)이 같은 주기/페이즈를 공유해야 동기화되므로
+    // 랜덤 값을 CSS 변수로 노출한다 (인라인 animation-* 는 img 쪽 애니메이션과 공유 불가)
+    container.style.setProperty("--swim-duration", `${randomDuration}s`);
+    container.style.setProperty("--swim-delay", `${randomDelay}s`);
     container.style.transform = `scale(${randomScale})`;
     container.style.setProperty("--jump-delay", `-${getRandomNumber(20)}s`);
 
@@ -253,6 +281,9 @@ export const createMarker = ({
   wrapperEl.className = "map-marker-wrapper";
   wrapperEl.style.width = type === "item" ? "60px" : "100px";
   wrapperEl.style.height = type === "item" ? "60px" : "100px";
+  // 발자국(z-index 0)보다 위에 표시되도록 — 발자국은 이후에 DOM에 추가되므로
+  // z-index가 없으면(DOM 순서) 발자국이 캐릭터를 덮어버린다
+  wrapperEl.style.zIndex = "10";
   wrapperEl.appendChild(container);
 
   // 마커 생성 (MapLibre: setLngLat([lng, lat]) -> 엘리먼트 지정)

@@ -398,6 +398,7 @@ function MapContent({
 
   // 타이머
   const walkTimerRef = useRef<number>(undefined);
+  const lastWalkStartFrameRef = useRef<number>(0); // 지난 보행의 시작 프레임 (좌우 발 교대용)
   const meClickedTimerRef = useRef<number>(undefined);
   const itemSpawnTimerRef = useRef<number>(undefined);
   const catSpawnTimerRef = useRef<number>(undefined);
@@ -546,11 +547,15 @@ function MapContent({
   }, [map]);
 
   const startWalkAnimation = useCallback(() => {
-    const catImg = myCatRef.current
+    const myMarker = myCatRef.current;
+    const catImg = myMarker
       ?.getElement()
       ?.querySelector("[data-cat-img]") as HTMLImageElement | null;
+    const containerEl = myMarker
+      ?.getElement()
+      ?.querySelector("[data-marker-container]");
 
-    if (!catImg || meClickedTimerRef.current) {
+    if (!catImg || !containerEl || meClickedTimerRef.current) {
       return;
     }
 
@@ -558,13 +563,18 @@ function MapContent({
       clearInterval(walkTimerRef.current);
     }
 
+    // 걷는 동안 bob/스쿼시/그림자 pulse를 켜고, 끝나면 원복
+    containerEl.classList.add("is-walking");
+
     const walkFrames = [
       ImgCatMeWalk1,
       ImgCatMeWalk2,
       ImgCatMeWalk1,
       ImgCatMeWalk2,
     ];
-    let frameIndex = 0;
+    // 연속 이동 시 지난번에 안 쓴 발부터 시작해 좌우 걸음이 이어지게 함
+    let frameIndex = lastWalkStartFrameRef.current;
+    lastWalkStartFrameRef.current = 1 - lastWalkStartFrameRef.current;
     catImg.src = walkFrames[frameIndex];
 
     walkTimerRef.current = window.setInterval(() => {
@@ -574,6 +584,7 @@ function MapContent({
         clearInterval(walkTimerRef.current);
         walkTimerRef.current = undefined;
         catImg.src = ImgCatMe;
+        containerEl.classList.remove("is-walking");
         return;
       }
 
@@ -951,20 +962,29 @@ function MapContent({
         const catData = catCharacters.find(({ name }) => name === catName);
 
         if (catData) {
+          // 부하 깃발을 화면 중앙으로 옮긴 뒤 고양이를 등장시킨다
+          // (지도 하단 패딩으로 '나'가 유지되는 지점이 화면 중앙 기준점)
+          const FOCUS_DURATION = 600;
+          const { lat, lng } = marker.getLngLat();
+
+          map?.flyTo({ center: [lng, lat], duration: FOCUS_DURATION });
+
           const catElement = getCatchedCatElement(
             catData.img,
             catData.dialog.greeting[getRandomNumber(3)]
           );
 
-          markerElement?.appendChild(catElement);
+          wait(FOCUS_DURATION).then(() => {
+            markerElement?.appendChild(catElement);
 
-          setTimeout(() => {
-            markerElement?.removeChild(catElement);
-          }, 2000);
+            setTimeout(() => {
+              markerElement?.removeChild(catElement);
+            }, 2000);
+          });
         }
       }
     }
-  }, [clickedOwnCat]);
+  }, [clickedOwnCat, map]);
 
   // 스토리지에 저장된 오늘 산책 데이터(거리 + 궤적)를 읽어 발자국 트레일을 복원한다
   const restoreTodayWalk = useCallback(async () => {

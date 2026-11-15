@@ -90,7 +90,10 @@ input {
   $move-range: 12px;
 
   position: relative;
-  animation: cat-move $swim-duration linear infinite;
+  // 실제 주기/페이즈는 helper.ts에서 마커별 랜덤 값(--swim-duration/--swim-delay)으로 주입.
+  // img의 cat-face(방향 lean)도 같은 변수를 써야 이동 경로와 동기화된다.
+  animation: cat-move var(--swim-duration, #{$swim-duration}) linear infinite;
+  animation-delay: var(--swim-delay, 0s);
 
   // 고양이 이미지
   img {
@@ -100,8 +103,10 @@ input {
     animation: marker-appear 0.9s cubic-bezier(0.34, 1.56, 0.64, 1)
         var(--spawn-delay, 0s) backwards,
       walk-bounce $walk-duration ease-in-out infinite alternate,
-      cat-jump $swim-duration linear infinite;
-    animation-delay: var(--spawn-delay, 0s), 0s, var(--jump-delay, 0s); // 각 애니메이션별 딜레이
+      cat-jump $swim-duration linear infinite,
+      cat-face var(--swim-duration, #{$swim-duration}) linear infinite;
+    animation-delay: var(--spawn-delay, 0s), 0s, var(--jump-delay, 0s),
+      var(--swim-delay, 0s); // 각 애니메이션별 딜레이
   }
 
   &[data-type="item"] {
@@ -135,6 +140,21 @@ input {
   &.no-shadow {
     &::after {
       display: none;
+    }
+  }
+
+  // 내 고양이(type: me)는 평소 no-animation이지만, 걷는 동안(is-walking)엔
+  // JS 프레임 교체(walk-1/walk-2, 375ms 간격)와 동기화된 bob + 스쿼시로 보행감을 더한다.
+  // .no-animation img(animation: none)보다 뒤에 선언해 같은 specificity로 이긴다.
+  &.is-walking {
+    img {
+      // 750ms 주기에 bounce 2번 = 프레임 교체 1회당 step bounce 1회
+      animation: me-step-bob 0.75s ease-in-out infinite;
+    }
+
+    &::after {
+      // 정적 그림자 대신 걸음 리듬에 맞춰 숨쉬는 그림자
+      animation: shadow-pulse 0.75s ease-in-out infinite alternate;
     }
   }
 
@@ -522,7 +542,7 @@ input {
   .arrow-3d-wrapper {
     z-index: 999;
     position: absolute;
-    top: -38px;
+    top: -20px;
     left: 50%;
     transform: translateX(-50%);
     width: 42px;
@@ -623,7 +643,44 @@ input {
     }
   }
 
+  // 이동 방향으로 몸을 기울이는 lean (cat-move와 같은 주기/딜레이로 동기화)
+  // transform 대신 rotate 개별 속성을 써서 cat-jump/walk-bounce의 transform과 충돌 없이 병렬 재생
+  @keyframes cat-face {
+    0%,
+    12% {
+      rotate: 0deg;
+    }
+    16% {
+      rotate: 4deg;
+    }
+    20%,
+    30% {
+      rotate: 6deg;
+    } // 우측 이동 구간
+    38% {
+      rotate: -2deg;
+    }
+    45%,
+    62% {
+      rotate: -6deg;
+    } // 좌측 이동 구간
+    68% {
+      rotate: 2deg;
+    }
+    74%,
+    82% {
+      rotate: 6deg;
+    } // 우측 복귀 구간
+    88% {
+      rotate: -5deg;
+    } // 좌측 순환 복귀
+    100% {
+      rotate: 0deg;
+    }
+  }
+
   // 고양이 개별 점프 애니메이션 (1초 동안 신속하게, 일그러짐 축소)
+  // squash & stretch: scaleY가 늘어나면 scaleX는 반대로 줄어 부피를 보존 — 탄력 있는 점프
   @keyframes cat-jump {
     0%,
     29%,
@@ -631,23 +688,23 @@ input {
     64%,
     71%,
     100% {
-      transform: translateY(0) scaleY(1);
+      transform: translateY(0) scale(1, 1);
     }
     30% {
-      transform: translateY(0) scaleY(0.9);
-    } // 아주 살짝만 압축
+      transform: translateY(0) scale(1.1, 0.85);
+    } // 도움닫기 전 웅크림 (squash)
     32.5% {
-      transform: translateY(-18px) scaleY(1.05);
-    } // 신속하게 솟구침 (높이 하향)
+      transform: translateY(-18px) scale(0.92, 1.12);
+    } // 신속하게 솟구침 (stretch)
     35% {
-      transform: translateY(0) scaleY(0.9);
-    } // 착지
+      transform: translateY(0) scale(1.08, 0.86);
+    } // 착지 스쿼시
 
     65% {
-      transform: translateY(0) scaleY(0.95);
+      transform: translateY(0) scale(1.04, 0.94);
     }
     67.5% {
-      transform: translateY(-10px) scaleY(1.02);
+      transform: translateY(-10px) scale(0.96, 1.05);
     } // 작은 점프 (높이 하향)
   }
 
@@ -672,12 +729,12 @@ input {
       opacity: 1;
     }
     32.5% {
-      transform: translateX(-50%) scale(0.65);
-      opacity: 0.6;
-    }
+      transform: translateX(-50%) scale(0.5);
+      opacity: 0.45;
+    } // 공중에 뜬 동안 그림자가 바닥에 멀어짐
     67.5% {
-      transform: translateX(-50%) scale(0.8);
-      opacity: 0.8;
+      transform: translateX(-50%) scale(0.7);
+      opacity: 0.65;
     }
   }
 
@@ -687,6 +744,26 @@ input {
     }
     to {
       transform: translateY(-2px);
+    }
+  }
+
+  // 내 고양이 걷기 bob — 발을 뗄 때 살짝 들어 올라가고, 착지 시 스쿼시.
+  // 750ms 주기 안에 bounce 2회(25%, 75%) = 375ms 프레임 교체와 동기화
+  @keyframes me-step-bob {
+    0% {
+      transform: translateY(0) scale(1.03, 0.96);
+    } // 착지 스쿼시
+    25% {
+      transform: translateY(-3px) scale(0.99, 1.03);
+    } // 한 발 뗀 공중
+    50% {
+      transform: translateY(0) scale(1.03, 0.96);
+    } // 반대발 착지 스쿼시
+    75% {
+      transform: translateY(-3px) scale(0.99, 1.03);
+    }
+    100% {
+      transform: translateY(0) scale(1.03, 0.96);
     }
   }
 
@@ -723,8 +800,9 @@ input {
 }
 
 .papyrus-explosion {
-  $piece-count: 50;
-  $duration: 3s;
+  $piece-count: 60;
+  $late-count: 20;
+  $duration: 1.6s;
 
   position: absolute;
   top: 50%;
@@ -734,48 +812,164 @@ input {
 
   .central-flash {
     position: absolute;
-    width: 10px;
-    height: 10px;
+    width: 16px;
+    height: 16px;
     background-color: #ffffff;
-    box-shadow: 0 0 50px 15px #ffffff;
+    box-shadow: 0 0 70px 25px #ffffff, 0 0 150px 55px rgba(255, 214, 112, 0.85);
     border-radius: 50%;
-    animation: flash-burst 0.5s ease-out forwards;
+    animation: flash-burst 0.55s ease-out forwards;
   }
 
-  .piece {
+  // 폭발 순간 팽창하는 충격파 링 3겹 (시간차로 따라잡기)
+  .shockwave {
     position: absolute;
-    width: 30px;
-    height: 30px;
-    border-radius: 30px;
+    width: 24px;
+    height: 24px;
+    margin: -12px 0 0 -12px;
+    border: 5px solid rgba(255, 255, 255, 0.95);
+    border-radius: 50%;
+    opacity: 0;
+    animation: shockwave-burst 0.65s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+
+    &.second {
+      border-width: 2px;
+      border-color: rgba(255, 214, 112, 0.9);
+      animation-delay: 0.12s;
+    }
+
+    &.third {
+      border-width: 1.5px;
+      border-color: rgba(255, 255, 255, 0.7);
+      animation-delay: 0.26s;
+    }
+  }
+
+  // 중심에서 사방으로 뻗어나가는 황금 스파크 광선
+  .rays .ray {
+    position: absolute;
+    left: -4px;
+    top: -90px;
+    width: 8px;
+    height: 90px;
+    border-radius: 999px;
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.95) 55%,
+      #ffe9a8 85%,
+      transparent 100%
+    );
+    transform-origin: 50% 100%;
+    opacity: 0;
+    animation: ray-shoot 0.45s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+  }
+
+  .pieces .piece {
+    position: absolute;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
     opacity: 0;
     will-change: transform, opacity;
-    animation: papyrus-scatter $duration cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+    animation: papyrus-scatter $duration cubic-bezier(0.1, 0.85, 0.3, 1)
+      forwards;
 
+    // 1차 폭발 웨이브
     @for $i from 1 through $piece-count {
       &:nth-child(#{$i}) {
-        $color: hsl(math.random(360), 85%, 65%);
+        $color: hsl(math.random(360), 90%, 68%);
         background-color: $color;
         box-shadow: 0 0 12px $color;
 
-        --tx: #{(math.random(360) - 180)}px;
-        --ty: #{(math.random(360) - 220)}px;
+        --tx: #{(math.random(520) - 260)}px;
+        --ty: #{(math.random(400) - 300)}px;
         --tr: #{(math.random(1200) - 600)}deg;
+        --fall: #{(math.random(120) + 60)}px;
+
+        // 짝수 조각은 납작한 컨페티 종이 모양으로 섞어 입체감 추가
+        @if $i % 2 == 0 {
+          width: 12px;
+          height: 20px;
+          border-radius: 2px;
+        }
 
         animation-delay: #{calc(math.random(250) / 1000)}s;
+      }
+    }
+
+    // 2차 폭발 웨이브: 시간차로 이어 터지며 여운을 만든다
+    &.late {
+      @for $i from 1 through $late-count {
+        &:nth-child(#{$i + $piece-count}) {
+          $color: hsl(math.random(360), 92%, 72%);
+          background-color: $color;
+          box-shadow: 0 0 10px $color;
+
+          --tx: #{(math.random(380) - 190)}px;
+          --ty: #{(math.random(300) - 230)}px;
+          --tr: #{(math.random(1200) - 600)}deg;
+          --fall: #{(math.random(100) + 50)}px;
+
+          @if $i % 2 == 0 {
+            width: 10px;
+            height: 16px;
+            border-radius: 2px;
+          }
+
+          animation-delay: #{calc((math.random(200) + 280) / 1000)}s;
+        }
       }
     }
   }
 
   @keyframes papyrus-scatter {
     0% {
-      transform: translate(0, 0) scale(1) rotate(0);
+      transform: translate(0, 0) scale(1) rotate(0deg);
       opacity: 1;
     }
-    20% {
+    18% {
+      opacity: 1;
+    }
+    // 폭발로 퍼진 뒤 중력에 이끌려 낙하하며 회전
+    50% {
+      transform: translate(calc(var(--tx) * 0.85), calc(var(--ty) * 0.75))
+        scale(0.75) rotate(calc(var(--tr) * 0.5));
       opacity: 1;
     }
     100% {
-      transform: translate(var(--tx), var(--ty)) scale(0.3) rotate(var(--tr));
+      transform: translate(
+          calc(var(--tx) * 1.05),
+          calc(var(--ty) * 0.4 + var(--fall))
+        )
+        scale(0.4) rotate(var(--tr));
+      opacity: 0;
+    }
+  }
+
+  @keyframes ray-shoot {
+    0% {
+      opacity: 0;
+      transform: rotate(var(--angle)) scaleY(0.2);
+    }
+    25% {
+      opacity: 1;
+      transform: rotate(var(--angle)) scaleY(1);
+    }
+    100% {
+      opacity: 0;
+      transform: rotate(var(--angle)) scaleY(1.2);
+    }
+  }
+
+  @keyframes shockwave-burst {
+    0% {
+      transform: scale(0.4);
+      border-width: 6px;
+      opacity: 1;
+    }
+    100% {
+      transform: scale(7);
+      border-width: 1px;
       opacity: 0;
     }
   }
@@ -785,11 +979,11 @@ input {
       transform: scale(1);
       opacity: 1;
     }
-    50% {
+    45% {
       opacity: 1;
     }
     100% {
-      transform: scale(3);
+      transform: scale(5);
       opacity: 0;
     }
   }
@@ -990,8 +1184,10 @@ input {
 .click-catched-cat {
   z-index: 9999;
   position: absolute;
-  top: 0;
-  left: 0;
+  // 깃발 마커(래퍼 100x100 좌상단 기준)에서 발 기준을 깃대 발밑 그라운드 라인에
+  // 맞추고 몸이 깃대 바로 옆에 붙어 등장하도록 오프셋
+  top: -10px;
+  left: 14px;
   width: 120px;
   animation: reaction-fade 2.2s forwards;
   pointer-events: none;

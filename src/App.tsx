@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 
 import Auth from "./components/Auth";
+import ErrorBoundary, { RouteErrorFallback } from "./components/ErrorBoundary";
 import NavigationBlocker from "./components/NavigationBlocker";
 import ReactQueryProvider from "./components/ReactQueryProvider";
 import ToastMessage from "./components/ToastMessage";
@@ -19,6 +20,7 @@ const router = createBrowserRouter(
   [
     {
       path: "/",
+      errorElement: <RouteErrorFallback />,
       element: (
         <>
           <NavigationBlocker />
@@ -56,10 +58,12 @@ const router = createBrowserRouter(
 
 function App() {
   return (
-    <ReactQueryProvider>
-      <RouterProvider router={router} />
-      <ToastMessage />
-    </ReactQueryProvider>
+    <ErrorBoundary>
+      <ReactQueryProvider>
+        <RouterProvider router={router} />
+        <ToastMessage />
+      </ReactQueryProvider>
+    </ErrorBoundary>
   );
 }
 

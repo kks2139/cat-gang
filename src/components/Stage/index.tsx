@@ -85,25 +85,29 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
   const enemyEffect: EffectType | undefined =
     winner === "me"
       ? "lose"
-      : seducedBy === "enemy"
-        ? "seduce"
-        : punchedBy === "me"
-          ? "punch"
-          : usedItem === "fish"
-            ? "item"
-            : undefined;
+      : winner === "enemy"
+        ? "win"
+        : seducedBy === "enemy"
+          ? "seduce"
+          : punchedBy === "me"
+            ? "punch"
+            : usedItem === "fish"
+              ? "item"
+              : undefined;
 
   const myEffect: EffectType | undefined = isRun
     ? "run"
-    : winner === "enemy"
-      ? "lose"
-      : seducedBy === "me"
-        ? "seduce"
-        : punchedBy === "enemy"
-          ? "punch"
-          : usedItem === "catnip" || usedItem === "gukbab"
-            ? "item"
-            : undefined;
+    : winner === "me"
+      ? "win"
+      : winner === "enemy"
+        ? "lose"
+        : seducedBy === "me"
+          ? "seduce"
+          : punchedBy === "enemy"
+            ? "punch"
+            : usedItem === "catnip" || usedItem === "gukbab"
+              ? "item"
+              : undefined;
 
   const checkHasStatusEffect = useCallback(
     (effect: BuffAndDebuff) => {
@@ -410,7 +414,7 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
         )}
       </AnimatePresence>
 
-      <div className={cn("view")}>
+      <div className={cn("view", { "punch-shake": !!punchedBy })}>
         {/* 적 고양이 */}
         <Player
           side="enemy"

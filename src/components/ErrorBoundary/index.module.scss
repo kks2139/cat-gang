@@ -1,0 +1,53 @@
+@use "@/styles/mixins" as *;
+
+.ErrorBoundary {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  background: linear-gradient(160deg, #223047 0%, #0f172a 100%);
+  text-align: center;
+
+  .cat {
+    width: 96px;
+    filter: drop-shadow(0 10px 12px rgba(0, 0, 0, 0.4));
+    animation: cat-wobble 2.4s ease-in-out infinite;
+  }
+
+  .title {
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    color: #ffffff;
+  }
+
+  .description {
+    font-size: 14px;
+    line-height: 1.55;
+    color: rgba(255, 255, 255, 0.75);
+  }
+
+  .actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+  }
+}
+
+@keyframes cat-wobble {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-6deg);
+  }
+  75% {
+    transform: rotate(6deg);
+  }
+}

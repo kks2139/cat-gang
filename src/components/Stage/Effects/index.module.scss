@@ -1,27 +1,90 @@
 .punch {
   z-index: 100;
   position: absolute;
-  left: 30%;
-  top: 30%;
+  left: 35%;
+  top: 35%;
+  width: 0;
+  height: 0;
   pointer-events: none;
 
-  &.second {
-    .paw-stamp,
-    .paw-stamp::before,
-    .paw-stamp::after {
-      animation-delay: 0.15s;
+  // 공격 방향: target이 enemy면 내가 공격(좌하단에서 스윙), me면 적이 공격(우상단에서 스윙)
+  &.enemy {
+    --swipe-from-x: -110px;
+    --swipe-from-y: 70px;
+  }
+
+  &.me {
+    --swipe-from-x: 110px;
+    --swipe-from-y: -70px;
+  }
+
+  // 발톱 스윙: 공격자 쪽에서 세 개의 참격이 순차적으로 날아듦
+  .swipe {
+    position: absolute;
+    left: -50px;
+    top: -55px;
+    width: 100px;
+    height: 110px;
+
+    span {
+      position: absolute;
+      width: 110px;
+      height: 9px;
+      border-radius: 999px;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        #ffffff 35%,
+        #ffd9d4 65%,
+        transparent
+      );
+      box-shadow: 0 0 14px rgba(255, 190, 185, 0.9);
+      opacity: 0;
+      animation: claw-slash 0.32s ease-out both;
+
+      &:nth-child(1) {
+        --tilt: -32deg;
+        top: 6px;
+        left: -8px;
+        animation-delay: 0.02s;
+      }
+
+      &:nth-child(2) {
+        --tilt: -30deg;
+        top: 38px;
+        left: 4px;
+        animation-delay: 0.1s;
+      }
+
+      &:nth-child(3) {
+        --tilt: -34deg;
+        top: 70px;
+        left: -6px;
+        animation-delay: 0.18s;
+      }
     }
   }
 
+  // 발바닥 스탬프 (2연타)
   .paw-stamp {
-    position: relative;
+    position: absolute;
+    left: -30px;
+    top: -25px;
     width: 60px;
     height: 50px;
     display: flex;
     flex-direction: column;
     align-items: center;
     filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.4));
+    opacity: 0;
     animation: punch-slam 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+    animation-delay: 0.1s;
+
+    &.second {
+      left: 16px;
+      top: 8px;
+      animation-delay: 0.55s;
+    }
 
     .pad {
       width: 45px;
@@ -64,80 +127,188 @@
         }
       }
     }
+  }
 
-    // 타격 충격파 효과 1 (빠르게 퍼지는 외곽선)
-    &::before {
-      content: "";
-      position: absolute;
-      width: 150%;
-      height: 150%;
-      top: -25%;
-      left: -25%;
-      border: 6px solid #f5c2bd;
-      border-radius: 50%;
-      animation: punch-shock 0.4s cubic-bezier(0.1, 0.8, 0.3, 1) both;
-      z-index: 1;
+  // 타격 임팩트: 만화풍 버스트 + 방사형 스피드라인 + 비산 파편
+  .impact {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+
+    &.second {
+      left: 46px;
+      top: 33px;
     }
 
-    // 타격 충격파 효과 2 (번쩍이는 빛)
-    &::after {
-      content: "";
+    .burst {
       position: absolute;
-      width: 100%;
-      height: 100%;
+      left: -65px;
+      top: -65px;
+      width: 130px;
+      height: 130px;
       background: radial-gradient(
-        circle,
-        rgba(255, 255, 255, 1) 0%,
-        rgba(253, 224, 221, 0.85) 40%,
-        rgba(229, 113, 103, 0) 80%
+        circle at 50% 50%,
+        #ffffff 0%,
+        #ffe3a1 45%,
+        #ffb08f 100%
       );
+      clip-path: polygon(
+        50% 0%,
+        60.7% 24.1%,
+        85.4% 14.6%,
+        75.9% 39.3%,
+        100% 50%,
+        75.9% 60.7%,
+        85.4% 85.4%,
+        60.7% 75.9%,
+        50% 100%,
+        39.3% 75.9%,
+        14.6% 85.4%,
+        24.1% 60.7%,
+        0% 50%,
+        24.1% 39.3%,
+        14.6% 14.6%,
+        39.3% 24.1%
+      );
+      filter: drop-shadow(0 0 14px rgba(255, 200, 120, 0.8));
+      opacity: 0;
+      animation: burst-pop 0.45s cubic-bezier(0.15, 0.9, 0.3, 1) both;
+      animation-delay: 0.3s;
+      z-index: 3;
+    }
+
+    .speed-lines {
+      position: absolute;
+      left: -85px;
+      top: -85px;
+      width: 170px;
+      height: 170px;
+      background: repeating-conic-gradient(
+        from 0deg,
+        rgba(255, 255, 255, 0.9) 0deg 3deg,
+        transparent 3deg 22.5deg
+      );
+      -webkit-mask-image: radial-gradient(
+        circle,
+        transparent 28%,
+        #000 46%,
+        transparent 72%
+      );
+      mask-image: radial-gradient(
+        circle,
+        transparent 28%,
+        #000 46%,
+        transparent 72%
+      );
+      opacity: 0;
+      animation: lines-burst 0.5s ease-out both;
+      animation-delay: 0.3s;
+      z-index: 2;
+    }
+
+    .debris {
+      position: absolute;
+      left: -4px;
+      top: -4px;
+      width: 9px;
+      height: 9px;
       border-radius: 50%;
-      top: 0;
-      left: 0;
-      animation: punch-flash 0.4s ease-out both;
-      z-index: 0;
+      background: #ee887e;
+      box-shadow: 0 0 6px rgba(238, 136, 126, 0.8);
+      opacity: 0;
+      animation: debris-fly 0.55s cubic-bezier(0.2, 0.7, 0.4, 1) both;
+      animation-delay: 0.3s;
+      z-index: 4;
+    }
+
+    // 2연타: 발바닥 두 번째 타격 시점에 맞춰 딜레이
+    &.second {
+      .burst,
+      .speed-lines,
+      .debris {
+        animation-delay: 0.72s;
+      }
+    }
+  }
+
+  @keyframes claw-slash {
+    0% {
+      opacity: 0;
+      transform: translate(var(--swipe-from-x), var(--swipe-from-y))
+        rotate(var(--tilt)) scaleX(0.4);
+    }
+    35% {
+      opacity: 1;
+    }
+    60% {
+      opacity: 1;
+      transform: translate(0, 0) rotate(var(--tilt)) scaleX(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(14px, -10px) rotate(var(--tilt)) scaleX(0.6);
     }
   }
 
   @keyframes punch-slam {
     0% {
-      transform: scale(3.5) rotate(25deg);
+      transform: translateY(-40px) scale(3.2) rotate(28deg);
       opacity: 0;
     }
-    30% {
-      transform: scale(0.8) rotate(-10deg);
+    35% {
+      transform: translateY(0) scale(0.75) rotate(-12deg);
       opacity: 1;
     }
-    50% {
-      transform: scale(1.1) rotate(5deg);
+    55% {
+      transform: translateY(0) scale(1.15) rotate(6deg);
     }
     100% {
-      transform: scale(1) rotate(0deg);
+      transform: translateY(0) scale(1) rotate(0deg);
       opacity: 1;
     }
   }
 
-  @keyframes punch-shock {
+  @keyframes burst-pop {
     0% {
-      transform: scale(0.3);
-      border-width: 15px;
+      transform: scale(0.2) rotate(-20deg);
+      opacity: 0;
+    }
+    25% {
       opacity: 1;
     }
     100% {
-      transform: scale(2.8);
-      border-width: 0px;
+      transform: scale(1.6) rotate(10deg);
       opacity: 0;
     }
   }
 
-  @keyframes punch-flash {
+  @keyframes lines-burst {
     0% {
-      transform: scale(0.5);
+      transform: scale(0.4) rotate(0deg);
+      opacity: 0;
+    }
+    20% {
       opacity: 1;
     }
     100% {
-      transform: scale(4);
+      transform: scale(1.5) rotate(18deg);
       opacity: 0;
+    }
+  }
+
+  @keyframes debris-fly {
+    0% {
+      opacity: 0;
+      transform: rotate(var(--angle)) translateX(8px) scale(0.6);
+    }
+    15% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: rotate(var(--angle)) translateX(58px) scale(0.4);
     }
   }
 }
@@ -145,115 +316,254 @@
 .seduce {
   z-index: 100;
   position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  row-gap: 20px;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+
+  // 하트 상승 높이 배수 (궤적이 너무 높아 화면 밖으로 나가지 않게 조절)
+  --h: 1;
 
   &.enemy {
-    // 적이 나로부터 유혹당할 때 (내 쪽인 좌측하단에서 적 쪽으로 올라옴)
-    left: -200px;
-    bottom: -200px;
-    transform: none;
-    animation: seduce-enemy-fly 1.5s ease-out forwards;
+    // 내가 적을 유혹할 때 (내 쪽인 좌측하단에서 적 쪽으로 떠오름)
+    // 적 얼굴 위로 너무 높이 날아가 잘 안보이므로 상승 높이를 낮춘다
+    --h: 0.62;
+    left: -150px;
+    top: 110px;
+    animation: seduce-enemy-fly 1.8s ease-in-out forwards;
   }
 
   &.me {
-    // 내가 적으로부터 유혹당할 때 (적 쪽인 우측상단에서 내 쪽으로 내려옴)
-    right: -360px;
-    top: -180px;
-    transform: none;
-    animation: seduce-me-fly 1.5s ease-out forwards;
+    // 적이 나를 유혹할 때 (적 쪽인 우측상단에서 내 쪽으로 내려옴)
+    left: 260px;
+    top: -160px;
+    animation: seduce-me-fly 1.8s ease-in-out forwards;
   }
 
+  // 하트: 크기·출발점이 제각각으로 물결치며 연속 상승
   .heart {
-    position: relative;
-    width: 20px;
-    height: 20px;
+    position: absolute;
+    width: 22px;
+    height: 22px;
     background-color: #ff608c;
-    transform: rotate(45deg);
-    filter: drop-shadow(0 0 10px rgba(255, 96, 140, 0.5));
+    filter: drop-shadow(0 0 8px rgba(255, 96, 140, 0.75));
+    opacity: 0;
+    transform: translate(0, 0) rotate(45deg) scale(0);
+    animation: heart-fly 1.5s ease-out infinite;
+    animation-delay: calc(var(--i) * 0.16s);
 
     &::before,
     &::after {
       content: "";
       position: absolute;
-      width: 20px;
-      height: 20px;
+      width: 22px;
+      height: 22px;
       background-color: #ff608c;
       border-radius: 50%;
     }
 
     &::before {
-      left: -10px;
+      left: -11px;
     }
+
     &::after {
-      top: -10px;
+      top: -11px;
     }
+  }
 
-    @for $i from 1 through 3 {
-      &:nth-child(#{$i}) {
-        animation: heart-pulse 0.6s infinite ease-in-out alternate;
-        margin-left: ($i - 2) * 30px;
-        opacity: 0;
-        animation-delay: ($i - 1) * 0.2s;
-
-        // 등장시 페이드인
-        animation: heart-appear 0.5s forwards;
-        animation-delay: ($i - 1) * 0.2s;
-      }
-    }
+  // 스파클 트레일: 하트 사이사이 반짝임
+  .sparkle {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: #ffe3f1;
+    clip-path: polygon(
+      50% 0%,
+      62% 38%,
+      100% 50%,
+      62% 62%,
+      50% 100%,
+      38% 62%,
+      0% 50%,
+      38% 38%
+    );
+    filter: drop-shadow(0 0 6px rgba(255, 160, 200, 0.9));
+    opacity: 0;
+    animation: sparkle-twinkle 1.1s ease-in-out infinite;
+    animation-delay: calc(var(--i) * 0.25s + 0.35s);
   }
 
   @keyframes seduce-enemy-fly {
     0% {
-      transform: translate(0, 0);
+      transform: translate(0, 0) scale(0.6);
       opacity: 0;
     }
-    10%,
-    70% {
+    12% {
+      transform: translate(20px, -20px) scale(1);
+      opacity: 1;
+    }
+    55% {
       opacity: 1;
     }
     100% {
-      transform: translate(200px, -180px);
+      transform: translate(200px, -115px) scale(0.9);
       opacity: 0;
     }
   }
 
   @keyframes seduce-me-fly {
     0% {
-      transform: translate(0, 0);
+      transform: translate(0, 0) scale(0.6);
       opacity: 0;
     }
-    10%,
-    70% {
+    12% {
+      transform: translate(-20px, 30px) scale(1);
+      opacity: 1;
+    }
+    55% {
       opacity: 1;
     }
     100% {
-      transform: translate(-160px, 180px);
+      transform: translate(-180px, 170px) scale(0.9);
       opacity: 0;
     }
   }
 
-  @keyframes heart-appear {
-    from {
+  @keyframes heart-fly {
+    0% {
       opacity: 0;
-      transform: rotate(45deg) scale(0);
+      transform: translate(0, 0) rotate(45deg) scale(0);
     }
-    to {
+    12% {
       opacity: 1;
-      transform: rotate(45deg) scale(1.2);
+      transform: translate(2px, calc(-8px * var(--h, 1))) rotate(45deg)
+        scale(var(--s, 1));
+    }
+    35% {
+      transform: translate(-8px, calc(-34px * var(--h, 1))) rotate(45deg)
+        scale(calc(var(--s, 1) * 1.05));
+    }
+    60% {
+      opacity: 1;
+      transform: translate(8px, calc(-62px * var(--h, 1))) rotate(45deg)
+        scale(var(--s, 1));
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-4px, calc(-96px * var(--h, 1))) rotate(45deg)
+        scale(calc(var(--s, 1) * 0.5));
     }
   }
 
-  @keyframes heart-pulse {
-    from {
-      transform: rotate(45deg) scale(1);
+  @keyframes sparkle-twinkle {
+    0%,
+    100% {
+      opacity: 0;
+      transform: scale(0.4) rotate(0deg);
     }
-    to {
-      transform: rotate(45deg) scale(1.3);
+    50% {
+      opacity: 1;
+      transform: scale(1.1) rotate(45deg);
+    }
+  }
+}
+
+.win-fx {
+  z-index: 100;
+  position: absolute;
+  left: 50%;
+  top: 30%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+
+  // 승리자 머리 위에서 좌우로 흔들리는 왕관
+  .crown {
+    position: absolute;
+    left: -27px;
+    top: -112px;
+    font-size: 44px;
+    line-height: 1;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.35));
+    transform-origin: 50% 100%;
+    animation: crown-bob 1.1s ease-in-out infinite;
+  }
+
+  // 사방으로 반복 분사되는 컨페티 (색상은 hue 순환)
+  .confetti {
+    position: absolute;
+    left: -5px;
+    top: -7px;
+    width: 10px;
+    height: 14px;
+    border-radius: 2px;
+    opacity: 0;
+    animation: win-confetti-pop 1.5s ease-out infinite;
+    animation-delay: calc(var(--i) * 0.09s);
+
+    @for $i from 1 through 10 {
+      &:nth-child(#{$i}) {
+        background: hsl(($i - 1) * 36, 90%, 65%);
+        box-shadow: 0 0 6px hsl(($i - 1) * 36, 90%, 70%);
+      }
+    }
+  }
+
+  // 반짝임
+  .win-sparkle {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background: #fff6c9;
+    clip-path: polygon(
+      50% 0%,
+      62% 38%,
+      100% 50%,
+      62% 62%,
+      50% 100%,
+      38% 62%,
+      0% 50%,
+      38% 38%
+    );
+    filter: drop-shadow(0 0 6px rgba(255, 240, 160, 0.9));
+    opacity: 0;
+    animation: win-sparkle-twinkle 1.2s ease-in-out infinite;
+    animation-delay: calc(var(--i) * 0.3s);
+  }
+
+  @keyframes crown-bob {
+    0%,
+    100% {
+      transform: rotate(-6deg) translateY(0);
+    }
+    50% {
+      transform: rotate(6deg) translateY(-6px);
+    }
+  }
+
+  @keyframes win-confetti-pop {
+    0% {
+      opacity: 0;
+      transform: rotate(var(--angle)) translateX(12px) scale(0.6);
+    }
+    12% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: rotate(var(--angle)) translateX(var(--dist, 70px)) scale(1)
+        rotate(220deg);
+    }
+  }
+
+  @keyframes win-sparkle-twinkle {
+    0%,
+    100% {
+      opacity: 0;
+      transform: scale(0.4) rotate(0deg);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.1) rotate(45deg);
     }
   }
 }
@@ -303,9 +613,31 @@
     );
     mask-image: radial-gradient(circle, black 0%, transparent 60%);
     -webkit-mask-image: radial-gradient(circle, black 0%, transparent 60%);
-    animation: item-rays-rotate 1.5s linear infinite;
     opacity: 0;
     animation: item-rays-fade 1.2s ease-out forwards;
+  }
+
+  // 비행 중 반짝이는 트레일 (아이템이 날아가는 구간과 타이밍을 맞춤)
+  .trail {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background: #fffbe8;
+    clip-path: polygon(
+      50% 0%,
+      62% 38%,
+      100% 50%,
+      62% 62%,
+      50% 100%,
+      38% 62%,
+      0% 50%,
+      38% 38%
+    );
+    filter: drop-shadow(0 0 6px rgba(255, 240, 180, 0.9));
+    opacity: 0;
+    z-index: 3;
+    animation: item-trail-twinkle 0.6s ease-in-out infinite;
+    animation-delay: calc(1.2s + var(--i) * 0.12s);
   }
 
   img {
@@ -343,15 +675,6 @@
     }
   }
 
-  @keyframes item-rays-rotate {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
   @keyframes item-rays-fade {
     0% {
       opacity: 0;
@@ -384,18 +707,15 @@
     }
   }
 
-  @keyframes item-pop-in {
-    0% {
-      transform: scale(0) rotate(-30deg);
-      opacity: 0;
-    }
-    60% {
-      transform: scale(1.2) rotate(10deg);
-      opacity: 1;
-    }
+  @keyframes item-trail-twinkle {
+    0%,
     100% {
-      transform: scale(1) rotate(0deg);
+      opacity: 0;
+      transform: scale(0.5) rotate(0deg);
+    }
+    50% {
       opacity: 1;
+      transform: scale(1.1) rotate(40deg);
     }
   }
 
