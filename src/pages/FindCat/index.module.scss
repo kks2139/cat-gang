@@ -11,16 +11,16 @@
     height: 100%;
   }
 
-  // 하단 플로팅 글래스 독 — 그린빛 스며든 유리 (원래 그린 그라데이션 정체성 재해석)
+  // 하단 플로팅 글래스 독 — 가로 중앙에 컴팩트하게 모은 캡슐형 독
   .floating-dock {
     @include glass-card(
-      $tint: rgba(220, 252, 231, 0.28),
-      $border: rgba(255, 255, 255, 0.5),
-      $radius: 28px,
-      $blur: 20px,
-      $shadow: 0 12px 32px rgba(22, 163, 74, 0.18),
-      $grad-top: rgba(255, 255, 255, 0.4),
-      $grad-bottom: rgba(187, 247, 208, 0.22)
+      $tint: rgba(15, 23, 42, 0.288),
+      $border: rgba(255, 255, 255, 0.35),
+      $radius: 24px,
+      $blur: 3px,
+      $shadow: 0 10px 28px rgba(0, 0, 0, 0.35),
+      $grad-top: rgba(255, 255, 255, 0.397),
+      $grad-bottom: rgba(0, 0, 0, 0.103)
     );
 
     z-index: 1000;
@@ -28,91 +28,53 @@
     bottom: max(20px, env(safe-area-inset-bottom));
     left: 50%;
     transform: translateX(-50%);
-    width: calc(100% - 32px);
-    max-width: 380px;
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 8px 10px;
+    white-space: nowrap;
 
     .dock-btn {
-      flex: 1;
-      height: 48px;
-      padding: 0 16px;
+      height: 46px;
+      padding: 0 18px;
       border-radius: 20px;
       font-size: 15px;
       font-weight: 700;
+      flex: none;
 
       .btn-label {
         letter-spacing: -0.2px;
+        white-space: nowrap;
       }
 
-      &.my-cats-btn {
-        flex: 1.4;
+      // 짙은 그린-네이비 유리 톤 (어두운 톤 요청 — 기존 밝은 그린 그라데이션에서 조정)
+      --glass-tint: linear-gradient(
+        180deg,
+        rgba(40, 92, 170, 0.795) 0%,
+        rgba(26, 63, 131, 0.9) 55%,
+        rgba(24, 87, 223, 0.92) 100%
+      );
+      --glass-border: rgba(187, 218, 247, 0.35);
+      --glass-grad-top: rgba(255, 255, 255, 0.18);
+      --glass-grad-bottom: rgba(0, 0, 0, 0.2);
+      --glass-highlight: rgba(255, 255, 255, 0.3);
+      --glass-shadow: 0 6px 18px rgba(0, 0, 0, 0.35),
+        0 0 14px rgba(22, 95, 163, 0.18);
 
-        // 그린톤: 프로젝트 메인 컬러
-        --glass-tint: linear-gradient(
-          180deg,
-          #22c55e 0%,
-          #16a34a 55%,
-          #15803d 100%
-        );
-        --glass-border: rgba(190, 242, 100, 0.45);
-        --glass-grad-top: rgba(255, 255, 255, 0.25);
-        --glass-grad-bottom: rgba(0, 0, 0, 0.12);
-        --glass-highlight: rgba(255, 255, 255, 0.4);
-        --glass-shadow: 0 6px 18px rgba(0, 0, 0, 0.28),
-          0 0 16px rgba(34, 197, 94, 0.3);
-
-        .badge {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          min-width: 20px;
-          height: 20px;
-          padding: 0 6px;
-          background: rgba(255, 255, 255, 0.28);
-          color: #ffffff;
-          border-radius: 10px;
-          font-size: 12px;
-          font-weight: 800;
-          line-height: 1;
-          margin-left: 2px;
-        }
-      }
-
-      // 도감 버튼: 내 부하와 같은 그린톤
-      &.book-btn {
-        --glass-tint: linear-gradient(
-          180deg,
-          #22c55e 0%,
-          #16a34a 55%,
-          #15803d 100%
-        );
-        --glass-border: rgba(190, 242, 100, 0.45);
-        --glass-grad-top: rgba(255, 255, 255, 0.25);
-        --glass-grad-bottom: rgba(0, 0, 0, 0.12);
-        --glass-highlight: rgba(255, 255, 255, 0.4);
-        --glass-shadow: 0 6px 18px rgba(0, 0, 0, 0.28),
-          0 0 16px rgba(34, 197, 94, 0.3);
-      }
-
-      &.exit-btn {
-        flex: 1;
-
-        // 붉은톤: 종료 액션 강조
-        --glass-tint: linear-gradient(
-          180deg,
-          #ff7b7b 0%,
-          #ee5253 55%,
-          #c0392b 100%
-        );
-        --glass-border: rgba(255, 205, 205, 0.45);
-        --glass-grad-top: rgba(255, 255, 255, 0.25);
-        --glass-grad-bottom: rgba(0, 0, 0, 0.12);
-        --glass-highlight: rgba(255, 255, 255, 0.4);
-        --glass-shadow: 0 6px 18px rgba(0, 0, 0, 0.28),
-          0 0 16px rgba(238, 82, 83, 0.3);
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        margin-left: 2px;
+        background: rgba(255, 255, 255, 0.28);
+        color: #ffffff;
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 800;
+        line-height: 1;
       }
     }
   }
@@ -144,8 +106,7 @@
 
       width: 100%;
       max-height: 80vh;
-      background:
-        linear-gradient(
+      background: linear-gradient(
           180deg,
           var(--glass-grad-top) 0%,
           var(--glass-grad-bottom) 100%
@@ -201,9 +162,7 @@
           font-size: 14px;
           font-weight: 700;
           cursor: pointer;
-          transition:
-            background-color 0.15s ease,
-            transform 0.15s ease;
+          transition: background-color 0.15s ease, transform 0.15s ease;
 
           &:active {
             background: rgba(255, 255, 255, 0.2);
@@ -228,8 +187,7 @@
     bottom: 0;
     left: 0;
     right: 0;
-    background:
-      radial-gradient(
+    background: radial-gradient(
         ellipse at 50% 0%,
         rgba(74, 222, 128, 0.22) 0%,
         rgba(22, 163, 74, 0.1) 35%,
@@ -238,4 +196,3 @@
       linear-gradient(180deg, #07130b 0%, #0d2015 60%, #07130b 100%);
   }
 }
-

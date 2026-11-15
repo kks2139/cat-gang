@@ -365,8 +365,8 @@ input {
       }
     }
 
-    // ─── 발밑 황금빛 광원 ─────────────────────────
-    .flag-glow-floor {
+    // ─── 발밑 어두운 그림자 ─────────────────────────
+    .flag-shadow-floor {
       z-index: 0;
       position: absolute;
       bottom: -3px;
@@ -377,12 +377,13 @@ input {
       border-radius: 50%;
       background: radial-gradient(
         ellipse at center,
-        rgba(255, 206, 0, 0.5) 0%,
-        rgba(255, 193, 7, 0.22) 50%,
+        rgba(0, 0, 0, 0.42) 0%,
+        rgba(0, 0, 0, 0.22) 50%,
         transparent 75%
       );
       filter: blur(2.5px);
-      animation: flag-glow-breathe 2.8s ease-in-out infinite;
+      // 깃발 물결(flag-wave)과 같은 주기로 숨쉬며 흔들림
+      animation: flag-shadow-breathe $waving-speed ease-in-out infinite;
     }
 
     // ─── 떠오르는 반짝임 별 4개 ─────────────────────
@@ -476,16 +477,25 @@ input {
       }
     }
 
-    // 발밑 광원: 숨쉬듯 확장/수축
-    @keyframes flag-glow-breathe {
+    // 발밑 그림자: 깃발 물결과 같은 위상으로 숨쉬며 좌우 흔들림
+    // (25% 우측 / 75% 좌측 — flag-wave의 skew 방향과 동일)
+    @keyframes flag-shadow-breathe {
       0%,
       100% {
-        opacity: 0.65;
+        opacity: 0.7;
         transform: translateX(-50%) scale(1);
       }
-      50% {
+      25% {
         opacity: 1;
-        transform: translateX(-50%) scale(1.2);
+        transform: translateX(-46%) scale(1.15);
+      }
+      50% {
+        opacity: 0.7;
+        transform: translateX(-50%) scale(1);
+      }
+      75% {
+        opacity: 0.9;
+        transform: translateX(-54%) scale(1.1);
       }
     }
 
@@ -786,7 +796,7 @@ input {
 }
 
 // 희귀함 정도에 따른 부수 효과
-// — 은은한 바닥 광원 + 떠오르는 별, unique엔 궤도 링
+// — 어두운 바닥 그림자 + 떠오르는 별, unique엔 궤도 링
 // 주의: 루트에 transform을 쓰면 스태킹 컨텍스트가 생겨 통째로 캐릭터 뒤에 가려지므로
 // margin으로 중앙정렬한다 (자식들이 캐릭터 이미지와 직접 z-index 비교가 가능해짐)
 .rarity-effect {
@@ -798,9 +808,9 @@ input {
   margin-left: -30px;
   pointer-events: none;
 
-  // ─── 바닥 광원: 은은하게 퍼지는 타원 ─────────────
-  .glow-floor {
-    z-index: 0; // 캐릭터 이미지(z-index 1)보다 뒤 — 발밑 광원 역할
+  // ─── 바닥 그림자: 어두운 톤 (등급 구분은 별빛 색으로) ─────────────
+  .shadow-floor {
+    z-index: 0; // 캐릭터 이미지(z-index 1)보다 뒤 — 발밑 그림자 역할
     position: absolute;
     bottom: 2px;
     left: 50%;
@@ -808,6 +818,13 @@ input {
     height: 14px;
     transform: translateX(-50%);
     border-radius: 50%;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(0, 0, 0, 0.45) 0%,
+      rgba(0, 0, 0, 0.24) 50%,
+      transparent 75%
+    );
+    filter: blur(2.5px);
     animation: glow-breathe 3s ease-in-out infinite;
   }
 
@@ -817,8 +834,8 @@ input {
     z-index: 2;
     position: absolute;
     bottom: 6px;
-    width: 10px;
-    height: 10px;
+    width: 13px;
+    height: 13px;
     clip-path: polygon(
       50% 0%,
       62% 38%,
@@ -829,10 +846,11 @@ input {
       0% 50%,
       38% 38%
     );
-    animation: sparkle-rise 3s ease-in infinite;
+    animation: sparkle-rise 2.6s ease-in infinite;
     opacity: 0;
   }
 
+  // 딜레이를 촘촘히 — 항상 별 2개 이상이 동시에 보이게
   .sparkles span:nth-child(1) {
     left: 4px;
     animation-delay: 0s;
@@ -840,12 +858,12 @@ input {
 
   .sparkles span:nth-child(2) {
     left: 24px;
-    animation-delay: 1s;
+    animation-delay: 0.8s;
   }
 
   .sparkles span:nth-child(3) {
     left: 44px;
-    animation-delay: 2s;
+    animation-delay: 1.6s;
   }
 
   // ─── unique: 고양이 주변을 도는 궤도 링 ─────────
@@ -863,44 +881,26 @@ input {
 
   // ─── 등급별 색상 ──────────────────────────────
   &.rare {
-    .glow-floor {
-      background: radial-gradient(
-        ellipse at center,
-        rgba(120, 190, 255, 0.55) 0%,
-        rgba(90, 160, 240, 0.3) 45%,
-        transparent 75%
-      );
-      filter: blur(2px);
-    }
-
     .sparkles span {
-      background: #a8d4ff;
-      filter: drop-shadow(0 0 4px rgba(160, 210, 255, 1))
-        drop-shadow(0 0 8px rgba(120, 180, 255, 0.8));
+      background: #7bb0ff;
+      filter: drop-shadow(0 0 5px rgba(140, 195, 255, 1))
+        drop-shadow(0 0 11px rgba(100, 165, 250, 1))
+        drop-shadow(0 0 18px rgba(70, 145, 235, 0.8));
     }
   }
 
   &.unique {
-    .glow-floor {
-      background: radial-gradient(
-        ellipse at center,
-        rgba(210, 160, 255, 0.6) 0%,
-        rgba(170, 110, 245, 0.32) 45%,
-        transparent 75%
-      );
-      filter: blur(2px);
-    }
-
     .sparkles span {
-      background: #e3c8ff;
-      filter: drop-shadow(0 0 4px rgba(220, 170, 255, 1))
-        drop-shadow(0 0 8px rgba(180, 120, 255, 0.8));
+      background: #c78bff;
+      filter: drop-shadow(0 0 5px rgba(210, 155, 255, 1))
+        drop-shadow(0 0 11px rgba(165, 100, 250, 1))
+        drop-shadow(0 0 18px rgba(140, 75, 230, 0.8));
     }
 
     .orbit {
-      border: 1.5px solid rgba(200, 140, 255, 0.55);
-      box-shadow: 0 0 8px rgba(190, 120, 255, 0.35),
-        inset 0 0 8px rgba(190, 120, 255, 0.25);
+      border: 1.5px solid rgba(195, 130, 255, 0.7);
+      box-shadow: 0 0 8px rgba(180, 110, 250, 0.5),
+        inset 0 0 8px rgba(180, 110, 250, 0.35);
 
       // 궤도를 따라 도는 빛점
       &::before {
@@ -912,8 +912,8 @@ input {
         height: 7px;
         margin-left: -3.5px;
         border-radius: 50%;
-        background: #e9d5ff;
-        box-shadow: 0 0 6px 2px rgba(216, 180, 254, 0.9);
+        background: #ddbeff;
+        box-shadow: 0 0 6px 2px rgba(205, 160, 252, 1);
       }
     }
   }
@@ -933,20 +933,23 @@ input {
     }
   }
 
-  // 별: 아래에서 위로 떠오르며 반짝임
+  // 별: 아래에서 위로 떠오르며 크게 반짝임 — 노출 구간을 넓혀 존재감 강화
   @keyframes sparkle-rise {
     0% {
       transform: translateY(0) scale(0.5) rotate(0deg);
       opacity: 0;
     }
-    12% {
+    8% {
       opacity: 1;
     }
-    75% {
+    30% {
+      transform: translateY(-18px) scale(1.25) rotate(30deg);
+    }
+    85% {
       opacity: 1;
     }
     100% {
-      transform: translateY(-52px) scale(1.1) rotate(90deg);
+      transform: translateY(-58px) scale(1.1) rotate(90deg);
       opacity: 0;
     }
   }

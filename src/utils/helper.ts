@@ -5,6 +5,7 @@ import {
   Marker,
 } from "maplibre-gl";
 
+import { pawShapeMarkup } from "@/components/PawIcon";
 import type { ItemType } from "@/components/Stage/Inventory";
 
 import { getCat } from "./cats";
@@ -144,15 +145,17 @@ export const createMarker = ({
 
     const pin = document.createElement("div");
     pin.className = "arrow-3d";
-    pin.innerHTML = `<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="me-pin-gradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4ade80"/><stop offset="1" stop-color="#16a34a"/></linearGradient></defs><path d="M18 33C18 33 7.5 21.4 7.5 13.5 7.5 7.7 12.2 3 18 3s10.5 4.7 10.5 10.5C28.5 21.4 18 33 18 33Z" fill="url(#me-pin-gradient)" stroke="#ffffff" stroke-width="2.4" stroke-linejoin="round"/><ellipse cx="18" cy="14.5" rx="3.6" ry="2.9" fill="#fff"/><ellipse cx="13.4" cy="10.6" rx="1.7" ry="2.1" fill="#fff" transform="rotate(-22 13.4 10.6)"/><ellipse cx="18" cy="9.4" rx="1.7" ry="2.2" fill="#fff"/><ellipse cx="22.6" cy="10.6" rx="1.7" ry="2.1" fill="#fff" transform="rotate(22 22.6 10.6)"/></svg>`;
+    // 발바닥 무늬는 공통 도형(PawIcon.pawShapeMarkup)을 중첩 svg로 새겨 넣는다
+    pin.innerHTML = `<svg viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="me-pin-gradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4ade80"/><stop offset="1" stop-color="#16a34a"/></linearGradient></defs><path d="M18 33C18 33 7.5 21.4 7.5 13.5 7.5 7.7 12.2 3 18 3s10.5 4.7 10.5 10.5C28.5 21.4 18 33 18 33Z" fill="url(#me-pin-gradient)" stroke="#ffffff" stroke-width="2.4" stroke-linejoin="round"/><svg x="10.5" y="6" width="15" height="15" viewBox="0 0 24 24" fill="#ffffff">${pawShapeMarkup}</svg></svg>`;
 
     wrapper.appendChild(pin);
     container.appendChild(wrapper);
   }
 
-  // 잡은 고양이일때(깃발) — 광원 + 떠오르는 반짝임 이펙트
+  // 잡은 고양이일때(깃발) — 그림자 + 떠오르는 반짝임 이펙트
   if (type === "owned") {
-    container.classList.add("no-animation", "small-shadow");
+    // 일반 바닥 그림자 대신 어두운 톤 그림자(flag-shadow-floor)만 사용
+    container.classList.add("no-animation", "no-shadow");
 
     const wrapper = document.createElement("div");
     wrapper.className = "flag-wrapper";
@@ -163,9 +166,9 @@ export const createMarker = ({
     const flag = document.createElement("div");
     flag.className = "flag";
 
-    // 깃대 발밑 은은한 황금빛 광원
-    const glowFloor = document.createElement("div");
-    glowFloor.className = "flag-glow-floor";
+    // 깃대 발밑 어두운 그림자
+    const shadowFloor = document.createElement("div");
+    shadowFloor.className = "flag-shadow-floor";
 
     // 깃발 주변을 떠오르는 반짝임 별 4개
     const sparkles = document.createElement("div");
@@ -177,7 +180,7 @@ export const createMarker = ({
 
     wrapper.appendChild(pole);
     wrapper.appendChild(flag);
-    wrapper.appendChild(glowFloor);
+    wrapper.appendChild(shadowFloor);
     wrapper.appendChild(sparkles);
     container.appendChild(wrapper);
   }
@@ -197,8 +200,9 @@ export const createMarker = ({
       const effect = document.createElement("div");
       effect.classList.add("rarity-effect", isRare ? "rare" : "unique");
 
-      const glowFloor = document.createElement("div");
-      glowFloor.className = "glow-floor";
+      // 발밑 어두운 그림자
+      const shadowFloor = document.createElement("div");
+      shadowFloor.className = "shadow-floor";
 
       // 떠오르는 별 3개
       const sparkles = document.createElement("div");
@@ -208,7 +212,7 @@ export const createMarker = ({
         sparkles.appendChild(document.createElement("span"));
       }
 
-      effect.appendChild(glowFloor);
+      effect.appendChild(shadowFloor);
       effect.appendChild(sparkles);
 
       // unique 등급: 고양이 주변을 도는 궤도 링

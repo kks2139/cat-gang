@@ -1,7 +1,6 @@
 import classNames from "classnames/bind";
 import { format } from "date-fns";
 
-import { MAX_ZOOM_LEVEL } from "@/components/Map";
 import Skeleton from "@/components/Skeleton";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
 import { useViewStore } from "@/store/view";
@@ -70,8 +69,14 @@ export default function MyCats({ className, onClickCat }: Props) {
                         return;
                       }
 
-                      const zoom = MAX_ZOOM_LEVEL - (map.getZoom() || 0);
-                      const offsetLat = (30 + zoom * 30) / 111320; // xx m만큼 위로
+                      // 마커가 화면 하단(패딩 영역)에 가리지 않게 위로 띄우기 —
+                      // 현재 줌 레벨의 지상 해상도(m/px)를 이용해 120픽셀을 미터로 환산
+                      const zoom = map.getZoom() || 0;
+                      const metersPerPixel =
+                        (156543.03392 * Math.cos((lat * Math.PI) / 180)) /
+                        Math.pow(2, zoom + 1); // MapLibre 512px 타일 기준
+                      const offsetLat =
+                        (metersPerPixel * 120) / 111320; // 120px만큼 위로
 
                       map.jumpTo({ center: [lng, lat - offsetLat] });
                       onClickCat({ lat, lng, createdAt });

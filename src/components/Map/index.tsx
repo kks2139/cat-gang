@@ -19,6 +19,7 @@ import ImgCatnip from "@/assets/img/item/catnip.png";
 import ImgFish from "@/assets/img/item/fish.png";
 import ImgGukbab from "@/assets/img/item/gukbab.png";
 import noLabelsStyle from "@/assets/no-labels-style.json";
+import PawIcon from "@/components/PawIcon";
 import { useDayAndNight } from "@/hooks/useDayAndNight";
 import { useItemMutation } from "@/queries/useItemMutation";
 import { useItemQuery } from "@/queries/useItemQuery";
@@ -53,7 +54,7 @@ const cn = classNames.bind(styles);
 // MapLibre는 Leaflet과 같은 줌 레벨에서 축척이 2배(512px 타일 기준)이므로
 // Leaflet 줌 19 축척과 동일하게 맞추려면 -1한 값을 사용한다
 export const MAX_ZOOM_LEVEL = 18;
-export const MIN_ZOOM_LEVEL = 18;
+export const MIN_ZOOM_LEVEL = 15; // 핀치 줌 아웃 하한 (기본 18 → 15까지 축소 가능)
 export const INIT_ZOOM_LEVEL = 18;
 const BOUNDARY_METER_OF_ME = 50;
 const OWN_CAT_KEY_TOKEN = "_";
@@ -68,7 +69,8 @@ const STORE_DEBOUNCE_MS = 5000; // 궤적 저장 디바운스 (ms)
 const PAW_SVG = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 11.5c-3.2 0-6 2.6-6 5.2 0 1.8 1.4 3 3.2 3 1 0 1.8-.4 2.8-.4s1.8.4 2.8.4c1.8 0 3.2-1.2 3.2-3 0-2.6-2.8-5.2-6-5.2z"/><ellipse cx="6" cy="8.4" rx="1.9" ry="2.4" transform="rotate(-25 6 8.4)"/><ellipse cx="12" cy="6.6" rx="1.9" ry="2.5"/><ellipse cx="18" cy="8.4" rx="1.9" ry="2.4" transform="rotate(25 18 8.4)"/></svg>`;
 
 // 3D 카메라/지형/하늘 설정
-const MAP_PITCH = 30; // 카메라 기울기 (도) — 3D 효과의 핵심
+const MAP_PITCH = 30; // 카메라 기본 기울기 (도) — 3D 효과의 핵심
+const MAX_PITCH = 55; // 두 손가락 드래그 피치 상한 — 과도한 기울기는 렌더 부하(렉) 유발
 const TERRAIN_EXAGGERATION = 1.3; // 지형 높이 증폭 배율
 const DEM_SOURCE_ID = "terrain-dem";
 
@@ -159,6 +161,32 @@ const DARK_PAINT_OVERRIDES: PaintOverrides = {
 
 // 도로 계열: 채도를 죽이고 어둡게 (라벨 없는 지도 특성상 도로 색만으로 계층 구분)
 const DARK_ROAD_COLOR = "rgb(64, 70, 86)";
+// bridge_*는 map.on("load") 이후에 추가되는 레이어가 아니라 스타일 JSON에 있는 레이어라
+// 같은 목록에서 관리 (고가도로/보행자 경로도 밤에는 어둡게 — 누락 시 흰색 잔여)
+const DARK_BRIDGE_ROADS = [
+  "bridge_motorway_link",
+  "bridge_service_track",
+  "bridge_link",
+  "bridge_street",
+  "bridge_secondary_tertiary",
+  "bridge_trunk_primary",
+  "bridge_motorway",
+  "bridge_major_rail",
+  "bridge_transit_rail",
+  "bridge_path_pedestrian",
+];
+
+const DARK_CASING_COLOR = "rgb(40, 45, 58)";
+const DARK_BRIDGE_CASINGS = [
+  "bridge_motorway_link_casing",
+  "bridge_service_track_casing",
+  "bridge_link_casing",
+  "bridge_street_casing",
+  "bridge_secondary_tertiary_casing",
+  "bridge_trunk_primary_casing",
+  "bridge_motorway_casing",
+  "bridge_path_pedestrian_casing",
+];
 const DARK_ROADS = [
   "road_minor",
   "road_secondary_tertiary",
@@ -168,13 +196,15 @@ const DARK_ROADS = [
   "road_motorway",
   "road_major_rail",
   "road_transit_rail",
+  "road_path_pedestrian",
+  "road_motorway_link",
   "tunnel_minor",
   "tunnel_secondary_tertiary",
   "tunnel_trunk_primary",
   "tunnel_motorway",
+  ...DARK_BRIDGE_ROADS,
 ];
 
-const DARK_CASING_COLOR = "rgb(40, 45, 58)";
 const DARK_CASINGS = [
   "road_minor_casing",
   "road_secondary_tertiary_casing",
@@ -182,10 +212,12 @@ const DARK_CASINGS = [
   "road_service_track_casing",
   "road_link_casing",
   "road_motorway_casing",
+  "road_motorway_link_casing",
   "tunnel_minor_casing",
   "tunnel_secondary_tertiary_casing",
   "tunnel_trunk_primary_casing",
   "tunnel_motorway_casing",
+  ...DARK_BRIDGE_CASINGS,
 ];
 
 // 스타일의 모든 레이어 색을 낮/밤 테마에 맞게 치환
@@ -241,7 +273,9 @@ const applyTheme = (map: MaplibreMap, isNight: boolean, hours: number) => {
 
       const original = ORIGINAL_PAINTS[layerId];
 
-      if (!original) {
+      // 캡처가 실패한 레이어(빈 객체)는 건드리지 않는다 — 잘못된 값 재주입으로
+      // 스펙 검증에 걸려 조용히 무시되며, 실패 상태가 낮에 고착되는 걸 막는다
+      if (!original || Object.keys(original).length === 0) {
         return;
       }
 
@@ -258,7 +292,11 @@ const applyTheme = (map: MaplibreMap, isNight: boolean, hours: number) => {
 
       const original = ORIGINAL_PAINTS[layerId];
 
-      if (original && "line-color" in original) {
+      if (
+        original &&
+        "line-color" in original &&
+        original["line-color"] !== undefined
+      ) {
         map.setPaintProperty(
           layerId,
           "line-color",
@@ -399,8 +437,10 @@ function MapContent({
     [myMarkerRef]
   );
 
-  // dev 모드: 지도 클릭으로 목 위치(mock) 설정 후 캐릭터/고양이 다시 그리기
-  // (createMeAndCats는 아래에서 정의되므로 항상 최신값을 가리키는 ref로 우회)
+  // 위치 구독/dev 목 위치 클릭에서 캐릭터/고양이를 다시 그리기 위한 ref.
+  // createMeAndCats는 map 등 의존성이 바뀔 때마다 재생성되므로 클로저에 직접 담으면
+  // 구독 시점의 옛날 값(map이 null인 상태)에 갇혀 캐릭터가 안 움직이는 원인이 된다.
+  // → 항상 최신값을 가리키는 ref로 우회
   const createMeAndCatsRef = useRef<
     ((usePanTo?: boolean) => Promise<void>) | null
   >(null);
@@ -488,11 +528,22 @@ function MapContent({
     [map]
   );
 
-  // 발자국 간격은 줌이 고정(레벨 19)되어 있으므로 항상 기본 값 사용.
-  // 이전에는 줌 레벨별 간격 보정이 있었으나 줌 기능 제거로 단순화함
+  // 줌 아웃할수록 발자국 간격을 넓혀 아이콘이 겹치지 않게 보정.
+  // 기본 줌(18, 화면상 7m 간격이 적당) 기준으로 줌 레벨이 1 내려갈 때마다
+  // 실제 지상 길이는 2배가 되므로 간격도 2배로 키운다
   const getZoomAwareInterval = useCallback(() => {
-    return PAW_INTERVAL_METER;
-  }, []);
+    if (!map) {
+      return PAW_INTERVAL_METER;
+    }
+
+    const zoomOut = MAX_ZOOM_LEVEL - map.getZoom();
+
+    if (zoomOut <= 0) {
+      return PAW_INTERVAL_METER;
+    }
+
+    return PAW_INTERVAL_METER * Math.pow(2, zoomOut);
+  }, [map]);
 
   const startWalkAnimation = useCallback(() => {
     const catImg = myCatRef.current
@@ -744,10 +795,7 @@ function MapContent({
           return false;
         }
 
-        if (
-          activeTime === "day" &&
-          getNightTime(new Date()).isNightTime
-        ) {
+        if (activeTime === "day" && getNightTime(new Date()).isNightTime) {
           return false;
         }
 
@@ -992,15 +1040,16 @@ function MapContent({
 
     let stopWatch: (() => void) | undefined;
 
+    // 위치변화 감지 시, 다시 그리기
+    // 콜백은 항상 최신 createMeAndCats를 가리키는 ref로 우회 —
+    // 구독(effect 1회 실행) 시점의 클로저에 갇히지 않게 한다
     (async () => {
-      // 위치변화 감지 시, 다시 그리기
-
       const stop = await watchPosition(() => {
         if (!myCatRef.current) {
           return;
         }
 
-        createMeAndCats(true);
+        createMeAndCatsRef.current?.(true);
       });
 
       stopWatch = stop;
@@ -1011,7 +1060,7 @@ function MapContent({
         stopWatch();
       }
     };
-  }, [createMeAndCats, isInitLoading]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- 구독은 마운트 시 1회만, 콜백은 ref로 최신 유지
 
   useEffect(() => {
     // map 세팅 및 이벤트 등록
@@ -1143,7 +1192,9 @@ function MapContent({
 
 export default function Map({ className, ...rest }: Props) {
   const isStopFocusMe = useViewStore((s) => s.isStopFocusMe);
-  const { setMap, setIsStopFocusMe } = useViewStore((s) => s.actions);
+  const { setMap, setIsStopFocusMe, setIsMapLoading } = useViewStore(
+    (s) => s.actions
+  );
 
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MaplibreMap | null>(null);
@@ -1190,14 +1241,16 @@ export default function Map({ className, ...rest }: Props) {
       interactive: true,
       dragPan: true,
       touchZoomRotate: true,
-      // 확대/축소는 비활성 (기존 줌 고정 정책 유지)
+      // 핀치 줌 + 두 손가락 회전 모두 활성
       scrollZoom: false,
       doubleClickZoom: false,
       boxZoom: false,
       keyboard: false,
-      pitchWithRotate: false,
+      pitchWithRotate: true,
       dragRotate: false,
-      touchPitch: false,
+      // 두 손가락 세로 드래그로 카메라 기울기 조절 활성화 (상한 MAX_PITCH로 렉 방지)
+      touchPitch: true,
+      maxPitch: MAX_PITCH,
       cooperativeGestures: false,
     });
 
@@ -1219,7 +1272,9 @@ export default function Map({ className, ...rest }: Props) {
 
     map.on("load", () => {
       // 낮 테마 원본 색 수집 (밤→낮 복원용)
-      // maplibre의 paint 저장 구조(_values)는 비공개 API라 안전하게 any로 접근
+      // 공개 API인 getPaintProperty를 써야 스타일 스펙 값이 그대로 나온다.
+      // (layer.paint._values의 value는 maplibre v6에서 래퍼 객체라 재주입 시
+      //  스펙 검증에 걸려 조용히 무시됨 → 밤 테마가 낮에 고착되는 원인이었음)
       [
         ...Object.keys(DARK_PAINT_OVERRIDES),
         ...DARK_ROADS,
@@ -1232,15 +1287,22 @@ export default function Map({ className, ...rest }: Props) {
         }
 
         const paints: Record<string, unknown> = {};
-        const props = (layer.paint as Record<string, unknown>)?._values as
-          | Record<string, { value: unknown }>
-          | undefined;
+        const paintKeys = Object.keys(DARK_PAINT_OVERRIDES[layerId] ?? {});
 
-        if (props) {
-          Object.keys(props).forEach((key) => {
-            paints[key] = props[key]?.value;
-          });
+        // 도로/casing은 line-color만 치환하므로 그 키만 캡처
+        if (DARK_ROADS.includes(layerId) || DARK_CASINGS.includes(layerId)) {
+          paintKeys.push("line-color");
         }
+
+        paintKeys.forEach((key) => {
+          try {
+            // getPaintProperty는 레이어 타입별 키 유니온이라 동적 키 조회에 any 캐스팅 필요
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            paints[key] = map.getPaintProperty(layerId, key as any);
+          } catch {
+            // layout 속성 등 조회 불가 키는 무시
+          }
+        });
 
         ORIGINAL_PAINTS[layerId] = paints;
       });
@@ -1306,13 +1368,35 @@ export default function Map({ className, ...rest }: Props) {
     };
   }, [setMap, setIsStopFocusMe]);
 
+  // 로딩중(찾는중 UI 노출중)에는 지도의 모든 조작을 비활성화한다
+  // — 드래그 이동/핀치 줌·회전/피치(기울기) 전부 잠금
   useEffect(() => {
+    const map = mapRef.current;
+
+    if (!map) {
+      return;
+    }
+
     if (isLoading) {
-      mapRef.current?.dragPan.disable();
+      map.dragPan.disable();
+      map.touchZoomRotate.disable();
+      map.touchPitch.disable();
     } else {
-      mapRef.current?.dragPan.enable();
+      map.dragPan.enable();
+      map.touchZoomRotate.enable();
+      map.touchPitch.enable();
     }
   }, [isLoading]);
+
+  // 로딩 상태를 전역 스토어에 동기화 — FindCat 페이지에서
+  // 내 부하/도감 버튼 등을 함께 비활성화하는 데 사용
+  useEffect(() => {
+    setIsMapLoading(isLoading);
+
+    return () => {
+      setIsMapLoading(false);
+    };
+  }, [isLoading, setIsMapLoading]);
 
   // 낮/밤 전환 시 하늘 + 지물 색 갱신
   // (스타일 로드 완료 전에 setSky를 호출하면 "Style is not done loading" 에러가 나므로
@@ -1331,7 +1415,8 @@ export default function Map({ className, ...rest }: Props) {
     <div className={cn("map-wrapper")}>
       {/* 상단 산책 거리 플로팅 캡슐 */}
       <div className={cn("distance-display")}>
-        <span className={cn("label")}>오늘 산책</span>
+        <PawIcon size={15} color="#834e00" className={cn("paw-icon")} />
+        <span className={cn("label")}>오늘 산책 거리</span>
         <NumberFlow
           className={cn("distance")}
           value={totalDistance / 1000}
@@ -1366,6 +1451,7 @@ export default function Map({ className, ...rest }: Props) {
         data-name="focus-button"
         className={cn("focus-button", { "stop-focus": isStopFocusMe })}
         aria-label="내 위치로 이동"
+        disabled={isLoading}
         onClick={async () => {
           const marker = myMarkerRef.current;
 

@@ -16,12 +16,15 @@ interface ViewStore {
   // 내 위치 포커스 해제
   isStopFocusMe: boolean;
   isBattleOn: boolean;
+  // 맵 초기 로딩중 ("찾는중" UI 노출중) 여부
+  isMapLoading: boolean;
   actions: {
     addToastMessage: (message: Omit<Message, "id">) => void;
     removeToastMessage: () => void;
     setMap: (map: MaplibreMap | null) => void;
     setIsStopFocusMe: (value: boolean) => void;
     setIsBattleOn: (value: boolean) => void;
+    setIsMapLoading: (value: boolean) => void;
   };
 }
 
@@ -31,6 +34,7 @@ export const useViewStore = create<ViewStore>()(
     map: null,
     isStopFocusMe: false,
     isBattleOn: false,
+    isMapLoading: false,
     actions: {
       addToastMessage({ message, duration = 2000 }) {
         set((state) => {
@@ -63,6 +67,11 @@ export const useViewStore = create<ViewStore>()(
       setIsBattleOn(value) {
         set((state) => {
           state.isBattleOn = value;
+        });
+      },
+      setIsMapLoading(value) {
+        set((state) => {
+          state.isMapLoading = value;
         });
       },
     },

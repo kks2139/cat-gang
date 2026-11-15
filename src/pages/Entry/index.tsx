@@ -7,7 +7,9 @@ import TitleCatImg from "@/assets/img/title/main-title-cat.png";
 import Button from "@/components/Button";
 import Dialog from "@/components/Dialog";
 import Loading from "@/components/Loading";
+import { useBrowserBackGuard } from "@/hooks/useBrowserBackGuard";
 import { useCheckKeypad } from "@/hooks/useCheckKeypad";
+import { useCustomBack } from "@/hooks/useCustomBack";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
 import { useUsersQuery } from "@/queries/useUsersQuery";
 import { useViewStore } from "@/store/view";
@@ -22,6 +24,7 @@ export default function Entry() {
   const navigate = useNavigate();
 
   const [isShowNewCatDialog, setIsShowNewCatDialog] = useState(false);
+  const [isShowExitConfirm, setIsShowExitConfirm] = useState(false);
 
   useMyCatsQuery();
 
@@ -35,6 +38,36 @@ export default function Entry() {
   const titleRef = useRef<HTMLDivElement>(null);
 
   const { isKeypadOpen } = useCheckKeypad();
+
+  // 뒤로가기: 열려있는 다이얼로그부터 닫고, 없으면 종료 컨펌을 띄운다
+  // (AIT 규정: 최초 진입 화면에서 뒤로가기 시 미니앱이 정상 종료되어야 함)
+  useCustomBack(true, () => {
+    if (isShowNewCatDialog) {
+      setIsShowNewCatDialog(false);
+      return;
+    }
+
+    if (isShowExitConfirm) {
+      return;
+    }
+
+    setIsShowExitConfirm(true);
+  });
+
+  // 로컬(브라우저): 시스템 뒤로가기 가로채서 브라우저 기본 컨펌 노출
+  useBrowserBackGuard({
+    message: "냥만시대를 종료할까요?",
+    onConfirm: () => {
+      setIsShowExitConfirm(false);
+      Screen.close();
+    },
+  });
+
+  // 종료 컨펌 확인 시 AIT 환경에선 미니앱을 닫는다 (로컬은 위 컨펌에서 바로 처리)
+  const closeApp = () => {
+    setIsShowExitConfirm(false);
+    Screen.close();
+  };
 
   useEffect(() => {
     if (isKeypadOpen) {
@@ -112,10 +145,9 @@ export default function Entry() {
                     aria-hidden
                   >
                     <ellipse cx="12" cy="16" rx="5.2" ry="4.4" />
-                    <circle cx="5" cy="10.5" r="2.3" />
-                    <circle cx="9.4" cy="6.8" r="2.5" />
-                    <circle cx="14.6" cy="6.8" r="2.5" />
-                    <circle cx="19" cy="10.5" r="2.3" />
+                    <circle cx="6.5" cy="9" r="2.5" />
+                    <circle cx="12" cy="7" r="2.5" />
+                    <circle cx="17.5" cy="9" r="2.5" />
                   </svg>
                   시작하기
                 </span>
@@ -144,6 +176,19 @@ export default function Entry() {
         }}
         onSubButtonClick={() => {
           Screen.close();
+        }}
+      />
+
+      {/* 종료 컨펌 팝업 (뒤로가기 시 노출) */}
+      <Dialog
+        isShow={isShowExitConfirm}
+        title="종료"
+        subTitle="냥만시대를 종료할까요?"
+        buttonLable="네"
+        subButtonLable="닫기"
+        onButtonClick={closeApp}
+        onSubButtonClick={() => {
+          setIsShowExitConfirm(false);
         }}
       />
     </main>

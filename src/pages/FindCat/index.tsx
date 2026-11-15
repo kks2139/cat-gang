@@ -1,13 +1,14 @@
 import { Device } from "@apps-in-toss/web-framework";
 import classNames from "classnames/bind";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Button from "@/components/Button";
 import Dialog from "@/components/Dialog";
 import Map, { type OwnCat } from "@/components/Map";
 import Stage from "@/components/Stage";
+import { useBrowserBackGuard } from "@/hooks/useBrowserBackGuard";
 import { useCustomBack } from "@/hooks/useCustomBack";
 import { useCatchCatMutation } from "@/queries/useCatchCatMutation";
 import { useItemQuery } from "@/queries/useItemQuery";
@@ -34,15 +35,17 @@ export default function FindCat() {
   const navigate = useNavigate();
 
   const { setIsStopFocusMe, setIsBattleOn } = useViewStore((s) => s.actions);
+  const isMapLoading = useViewStore((s) => s.isMapLoading);
   const isShowStage = useCatStore((s) => s.isShowStage);
   const { setSelectedCat, setIsShowStage, setClickedOwnCat } = useCatStore(
-    (s) => s.actions,
+    (s) => s.actions
   );
 
   const [isShowVictoryDialog, setIsShowVictoryDialog] = useState(false);
   const [isShowCatchedCatPopup, setIsShowCatchedCatPopup] = useState(false);
   const [isShowMyInfoPopup, setIsShowMyInfoPopup] = useState(false);
   const [isShowCatBook, setIsShowCatBook] = useState(false);
+  const [isShowExitConfirm, setIsShowExitConfirm] = useState(false);
   const [catchedCat, setCatchedCat] = useState<CatInfo>();
   const [ownCatInfo, setOwnCatInfo] = useState<OwnCat>();
 
@@ -51,13 +54,11 @@ export default function FindCat() {
   // 아이템 조회
   useItemQuery();
 
-  const ownCats = (
-    catList?.map((c) => ({
-      name: c.cat_name,
-      position: c.position,
-      createdAt: c.created_at,
-    })) || []
-  ) as OwnCat[];
+  const ownCats = (catList?.map((c) => ({
+    name: c.cat_name,
+    position: c.position,
+    createdAt: c.created_at,
+  })) || []) as OwnCat[];
 
   // 도감: 잡은 고양이 이름 집합
   const catchedNames = new Set(ownCats.map(({ name }) => name));
@@ -66,8 +67,11 @@ export default function FindCat() {
   // (Stage가 싱글턴 스탯을 읽으므로 부하 목록이 바뀔 때마다 갱신)
   const uniqueMinionCount = new Set(
     ownCats
-      .filter(({ name }) => catCharacters.find((c) => c.name === name)?.rarity === "unique")
-      .map(({ name }) => name),
+      .filter(
+        ({ name }) =>
+          catCharacters.find((c) => c.name === name)?.rarity === "unique"
+      )
+      .map(({ name }) => name)
   ).size;
   const gangInfo = getGangInfo(ownCats.length, uniqueMinionCount);
 
@@ -75,8 +79,13 @@ export default function FindCat() {
     MyCat.getInstance().applyGangBonus(gangInfo);
   }, [gangInfo]);
 
-  useCustomBack(true, () => {
+  // 뒤로가기: 열려있는 레이어부터 닫고, 없으면 나가기 컨펌을 띄운다
+  const closeTopLayer = useCallback(() => {
     if (isShowStage) {
+      return;
+    }
+
+    if (isShowVictoryDialog) {
       return;
     }
 
@@ -90,7 +99,8 @@ export default function FindCat() {
       return;
     }
 
-    if (isShowVictoryDialog) {
+    if (isShowMyInfoPopup) {
+      setIsShowMyInfoPopup(false);
       return;
     }
 
@@ -99,7 +109,31 @@ export default function FindCat() {
       return;
     }
 
-    navigate(-1);
+    if (isShowExitConfirm) {
+      return;
+    }
+
+    setIsShowExitConfirm(true);
+  }, [
+    isShowCatBook,
+    isShowCatchedCatPopup,
+    isShowExitConfirm,
+    isShowMyInfoPopup,
+    isShowStage,
+    isShowVictoryDialog,
+    ownCatInfo,
+  ]);
+
+  // AIT 환경: 시스템 뒤로가기 이벤트 처리
+  useCustomBack(true, closeTopLayer);
+
+  // 로컬(브라우저): 시스템 뒤로가기 가로채서 브라우저 기본 컨펌 노출
+  useBrowserBackGuard({
+    message: "나갈까요?",
+    onConfirm: () => {
+      setIsShowExitConfirm(false);
+      navigate("/");
+    },
   });
 
   return (
@@ -127,6 +161,7 @@ export default function FindCat() {
         <Button
           className={cn("dock-btn", "my-cats-btn")}
           color="primary"
+          disabled={isMapLoading}
           onClick={() => {
             setIsStopFocusMe(true);
             setIsShowCatchedCatPopup(true);
@@ -140,21 +175,13 @@ export default function FindCat() {
         <Button
           className={cn("dock-btn", "book-btn")}
           color="primary"
+          disabled={isMapLoading}
           onClick={() => {
             setIsStopFocusMe(true);
             setIsShowCatBook(true);
           }}
         >
           <span className={cn("btn-label")}>도감</span>
-        </Button>
-        <Button
-          className={cn("dock-btn", "exit-btn")}
-          color="glass"
-          onClick={() => {
-            navigate(-1);
-          }}
-        >
-          <span className={cn("btn-label")}>나가기</span>
         </Button>
       </div>
 
@@ -358,6 +385,22 @@ export default function FindCat() {
         isShow={isShowMyInfoPopup}
         onClose={() => {
           setIsShowMyInfoPopup(false);
+        }}
+      />
+
+      {/* 나가기 컨펌 팝업 (뒤로가기 시 노출) */}
+      <Dialog
+        isShow={isShowExitConfirm}
+        title="나가기"
+        subTitle="지도 화면을 나가서 처음 화면으로 돌아갈까요?"
+        buttonLable="나가기"
+        subButtonLable="닫기"
+        onButtonClick={() => {
+          setIsShowExitConfirm(false);
+          navigate("/");
+        }}
+        onSubButtonClick={() => {
+          setIsShowExitConfirm(false);
         }}
       />
     </main>

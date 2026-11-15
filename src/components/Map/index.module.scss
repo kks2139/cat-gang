@@ -29,7 +29,7 @@
 
 // 상단 산책 거리 플로팅 캡슐 — 공통 글래스 카드 + 발바닥 아이콘 강조
 .distance-display {
-  @include glass-card($tint: rgba(15, 23, 42, 0.5), $radius: 24px, $blur: 16px);
+  @include glass-card($tint: rgba(15, 23, 42, 0.5), $radius: 24px, $blur: 8px);
 
   position: absolute;
   top: max(16px, env(safe-area-inset-top));
@@ -39,28 +39,27 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 20px 10px 14px;
+  padding: 6px 15px;
   pointer-events: none;
   white-space: nowrap;
   user-select: none;
 
-  // 발바닥 아이콘 — 주황 그라데이션 원형 배지
-  &::before {
-    content: "🐾";
+  // 발바닥 아이콘 — 주황 그라데이션 원형 배지 (공통 PawIcon)
+  .paw-icon {
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    font-size: 14px;
     background: linear-gradient(135deg, #fdba74 0%, #f97316 100%);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35),
       0 2px 8px rgba(249, 115, 22, 0.45);
   }
 
   .label {
-    font-size: 11px;
+    font-size: 16px;
     font-weight: 700;
     color: rgba(255, 255, 255, 0.5);
     letter-spacing: 0.02em;
@@ -68,7 +67,7 @@
 
   .distance {
     color: #ffffff;
-    font-size: 19px;
+    font-size: 20px;
     font-weight: 900;
     letter-spacing: -0.3px;
     font-variant-numeric: tabular-nums;
@@ -76,7 +75,7 @@
   }
 
   .unit {
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 700;
     color: rgba(255, 255, 255, 0.45);
     margin-left: -4px;
@@ -97,7 +96,7 @@
 
   z-index: 1000;
   position: absolute;
-  bottom: 112px;
+  bottom: 122px;
   right: 20px;
   width: 44px;
   height: 44px;
@@ -111,13 +110,25 @@
   .gps-icon {
     width: 22px;
     height: 22px;
-    color: #03ff68;
+    color: #00b345;
     filter: drop-shadow(0 1px 2px rgba(20, 83, 45, 0.4));
     transition: color 0.2s ease;
   }
 
-  &:active {
+  &:active:not(:disabled) {
     transform: scale(0.92);
+  }
+
+  // 로딩중 비활성화 상태
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    filter: grayscale(0.6);
+
+    .gps-icon {
+      color: #94a3b8;
+      filter: none;
+    }
   }
 
   &.stop-focus {

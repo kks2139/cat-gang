@@ -26,6 +26,7 @@
   }
 
   .paw-animation {
+    $color: #ff9b54;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -36,7 +37,7 @@
       position: relative;
       width: 12px;
       height: 10px;
-      background-color: #4ade80;
+      background-color: $color; // 발바닥 오렌지 톤
       border-radius: 50% 50% 45% 45%;
       opacity: 0;
       animation: paw-step 1.5s infinite;
@@ -46,14 +47,12 @@
         position: absolute;
         width: 4px;
         height: 5px;
-        background-color: #4ade80;
+        background-color: $color; // 발바닥 오렌지 톤
         border-radius: 50%;
         top: -8px;
         left: 50%;
         transform: translateX(-50%);
-        box-shadow:
-          -6px 2px 0 #4ade80,
-          6px 2px 0 #4ade80;
+        box-shadow: -6px 2px 0 $color, 6px 2px 0 $color;
       }
 
       @for $i from 1 through 3 {
