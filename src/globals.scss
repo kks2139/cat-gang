@@ -990,7 +990,8 @@ input {
 }
 
 // 희귀함 정도에 따른 부수 효과
-// — 어두운 바닥 그림자 + 떠오르는 별, unique엔 궤도 링
+// — 어두운 바닥 그림자 + 등급 색 오라 + 떠오르는 별
+// (unique는 오라/별이 모두 더 강하고 빠르다)
 // 주의: 루트에 transform을 쓰면 스태킹 컨텍스트가 생겨 통째로 캐릭터 뒤에 가려지므로
 // margin으로 중앙정렬한다 (자식들이 캐릭터 이미지와 직접 z-index 비교가 가능해짐)
 .rarity-effect {
@@ -1060,21 +1061,31 @@ input {
     animation-delay: 1.6s;
   }
 
-  // ─── unique: 고양이 주변을 도는 궤도 링 ─────────
-  .orbit {
-    z-index: 2; // 캐릭터 이미지(z-index 1)보다 앞
+  // ─── 등급 색 오라: 발밑에서 숨쉬듯 번지는 색 광원 ─
+  .aura {
+    z-index: 0; // 캐릭터 이미지(z-index 1)보다 뒤 — 바닥 광원 역할
     position: absolute;
-    bottom: 20px;
+    bottom: -2px;
     left: 50%;
-    width: 54px;
-    height: 18px;
-    margin-left: -27px;
+    width: 64px;
+    height: 22px;
+    margin-left: -32px;
     border-radius: 50%;
-    animation: orbit-spin 4s linear infinite;
+    filter: blur(4px);
+    animation: aura-pulse 2.8s ease-in-out infinite;
   }
 
   // ─── 등급별 색상 ──────────────────────────────
   &.rare {
+    .aura {
+      background: radial-gradient(
+        ellipse at center,
+        rgba(120, 180, 255, 0.5) 0%,
+        rgba(120, 180, 255, 0.18) 55%,
+        transparent 75%
+      );
+    }
+
     .sparkles span {
       background: #7bb0ff;
       filter: drop-shadow(0 0 5px rgba(140, 195, 255, 1))
@@ -1084,31 +1095,49 @@ input {
   }
 
   &.unique {
+    // 오라: 더 크고 강하게, 더 빠른 호흡
+    .aura {
+      background: radial-gradient(
+        ellipse at center,
+        rgba(200, 140, 255, 0.62) 0%,
+        rgba(200, 140, 255, 0.24) 55%,
+        transparent 78%
+      );
+      animation-duration: 2.1s;
+    }
+
+    // 별: 5개가 촘촘히 올라오며 더 빠르게 반짝임
     .sparkles span {
       background: #c78bff;
       filter: drop-shadow(0 0 5px rgba(210, 155, 255, 1))
         drop-shadow(0 0 11px rgba(165, 100, 250, 1))
         drop-shadow(0 0 18px rgba(140, 75, 230, 0.8));
+      animation-duration: 2s;
     }
 
-    .orbit {
-      border: 1.5px solid rgba(195, 130, 255, 0.7);
-      box-shadow: 0 0 8px rgba(180, 110, 250, 0.5),
-        inset 0 0 8px rgba(180, 110, 250, 0.35);
+    .sparkles span:nth-child(1) {
+      left: 0;
+      animation-delay: 0s;
+    }
 
-      // 궤도를 따라 도는 빛점
-      &::before {
-        content: "";
-        position: absolute;
-        top: -3px;
-        left: 50%;
-        width: 7px;
-        height: 7px;
-        margin-left: -3.5px;
-        border-radius: 50%;
-        background: #ddbeff;
-        box-shadow: 0 0 6px 2px rgba(205, 160, 252, 1);
-      }
+    .sparkles span:nth-child(2) {
+      left: 12px;
+      animation-delay: 0.4s;
+    }
+
+    .sparkles span:nth-child(3) {
+      left: 24px;
+      animation-delay: 0.8s;
+    }
+
+    .sparkles span:nth-child(4) {
+      left: 36px;
+      animation-delay: 1.2s;
+    }
+
+    .sparkles span:nth-child(5) {
+      left: 47px;
+      animation-delay: 1.6s;
     }
   }
 
@@ -1148,14 +1177,16 @@ input {
     }
   }
 
-  // 궤도: 3D 기울어진 타원을 따라 회전 (요소 자체는 정적, 빛점만 보이게 하려면
-  // rotate로 감점 — 여기선 타원 자체에 회전 애니메이션을 걸지 않고 빛점을 orbit 시킴)
-  @keyframes orbit-spin {
-    0% {
-      transform: rotate(0deg);
-    }
+  // 오라: 숨쉬듯 확장/수축하며 색이 맥동
+  @keyframes aura-pulse {
+    0%,
     100% {
-      transform: rotate(360deg);
+      opacity: 0.55;
+      transform: translateX(-50%) scale(0.85);
+    }
+    50% {
+      opacity: 1;
+      transform: translateX(-50%) scale(1.2);
     }
   }
 }

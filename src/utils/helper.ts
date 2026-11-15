@@ -230,24 +230,21 @@ export const createMarker = ({
       const shadowFloor = document.createElement("div");
       shadowFloor.className = "shadow-floor";
 
-      // 떠오르는 별 3개
+      // 발밑에서 숨쉬듯 번지는 등급 색 오라
+      const aura = document.createElement("div");
+      aura.className = "aura";
+
+      // 떠오르는 별 (unique는 5개로 더 화려하게)
       const sparkles = document.createElement("div");
       sparkles.className = "sparkles";
 
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < (isUnique ? 5 : 3); i++) {
         sparkles.appendChild(document.createElement("span"));
       }
 
       effect.appendChild(shadowFloor);
+      effect.appendChild(aura);
       effect.appendChild(sparkles);
-
-      // unique 등급: 고양이 주변을 도는 궤도 링
-      if (isUnique) {
-        const orbit = document.createElement("div");
-        orbit.className = "orbit";
-
-        effect.appendChild(orbit);
-      }
 
       container.appendChild(effect);
     }

@@ -35,7 +35,7 @@ description: cat-gang(냥만시대) 프로젝트 작업 시 참고. 앱인토스
   - `pnpm deploy` → `ait deploy`
   - `pnpm update-types` → Supabase DB 타입 재생성 → `src/utils/db/types.ts`
 - `@apps-in-toss/devtools`가 devDependencies에 있고 `vite.config.ts` plugins 맨 앞의 `aitDevtools.vite()`가 mock SDK를 제공. `initialState: { deviceModes: { location: "web" } }`로 로컬에서 실제 브라우저 위치(navigator.geolocation) 사용.
-- **SDK 3.x 유의사항**: 3.x 번들을 출시하면 2.x로 롤백 불가. CORS Origin 허용 목록에 `https://cat-gang.web.tossmini.com`(실서비스) / `https://cat-gang.private-web.tossmini.com`(QR 테스트) 등록 필요 (Supabase 등 외부 API용).
+- **SDK 3.x 유의사항**: 3.x 번들을 출시하면 2.x로 롤백 불가. CORS Origin 허용 목록에 `https://cat-gang.web.tossmini.com`(실서비스) / `https://cat-gang.private-web.tossmini.com`(QR 웹 테스트) / `https://cat-gang.private-apps.tossmini.com`(앱 테스트) 등록 필요 (Supabase 등 외부 API용). **앱 테스트 Origin은 `private-web`이 아니라 `private-apps`** — Edge Function(2026-11-15 `auth` 함수에 허용 목록 기반 CORS 적용)이나 외부 API CORS에서 이 도메인 빠지면 기기 테스트에서 `FunctionsFetchError` 발생.
 - **SDK API는 v3 네임스페이스 사용** (v2 함수형 API는 deprecated): `User.getAnonymousKey()`(에러 시 throw, "ERROR" 반환 없음), `Device.getLocation`/`Device.subscribeLocation`(위치), `Device.triggerHaptic`(햅틱), `Screen.close`(닫기), `Environment.environment`(toss/sandbox). v2 최신 유지 API: `graniteEvent.backEvent`, `Storage.getItem/setItem`, `TossAds`.
 
 ## 3. Supabase DB (무료 티어) 구조 & 세팅
