@@ -18,6 +18,13 @@
     &.is-blurred {
       filter: blur(6px);
     }
+
+    // backdrop-filter가 지원되는 웹뷰에서도 WebGL 캔버스를 backdrop으로
+    // 캡처하지 못하는 Chromium 회귀가 있다. 캔버스에 투명 배경을 강제로
+    // 그려 compositor가 backdrop에 포함시키게 한다(투명이라 보이는 변화 없음).
+    canvas {
+      background-image: linear-gradient(transparent, transparent);
+    }
   }
 
   // 하단 플로팅 글래스 독 — 가로 중앙에 컴팩트하게 모은 캡슐형 독
@@ -115,12 +122,6 @@
 
       width: 100%;
       max-height: 80vh;
-      background: linear-gradient(
-          180deg,
-          var(--glass-grad-top) 0%,
-          var(--glass-grad-bottom) 100%
-        ),
-        var(--glass-tint);
       border-bottom: none;
       padding: 16px 20px max(24px, env(safe-area-inset-bottom));
       display: flex;

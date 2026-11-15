@@ -120,6 +120,11 @@ src/
 
 - **환경 분기**: `operEnv`(AIT 운영환경, `Environment.environment`)가 있으면 SDK API(`User.getAnonymousKey`, `Device.getLocation`)를, 없으면 브라우저 폴백(`navigator.geolocation`). 새 기능도 이 분기를 따를 것.
 - **공통 글래스 카드 스타일 (2026-11-15 확정)**: 전 앱의 카드/패널/버튼/캡슐은 `src/styles/_mixins.scss`의 `@mixin glass-card` 로 질감을 통일한다 (반투명 배경 + blur + 흰 하이라이트 1px + 외곽 그림자). **���상톤은 각 UI의 원래 색을 유지**하며 질감만 공유 �� `glass-card($tint, $border, $radius, $shadow, $blur, $grad-top, $grad-bottom)` 파라미터로 톤을 넣는다 (ex. primary 버튼은 그린 톤, 대화창 내 대사는 주황, 적/시스템은 흰+회색). 런타임에 톤을 바꿔야 하면 믹스인이 노출하는 CSS 변수(`--glass-tint`, `--glass-border`, `--glass-grad-top/bottom` 등)를 재정의한다 (예: Control의 `.enemy`). 사용처: Stage Status/대화창/인벤토리, Dialog.content, Button, ToastMessage, 산책 거리 캡슐, FindCat 플로팅 독/바텀시트, MyCats 리스트 카드, CatBook 슬롯, MyInfoDialog/OwnCatInfoDialog 카드. 새 UI 추가 시에도 이 믹스인을 쓸 것.
+- **웹뷰 blur(backdrop-filter) 미지원 (2026-11-15 원인 파악)**: AIT 웹뷰(Android)는 `backdrop-filter`를 **아예 렌더링하지 못한다**. WebGL 캔버스 위에서만 깨지는 게 아니라, 캔버스 없는 Entry 대화상자에서도 블러가 안 되는 게 실측으로 확인됨(코드 쪽 조상 transform/filter 등 원인은 없었음). 유력 배경은 구버전 Android System WebView(backdrop-filter는 WebView 76+ 지원). 따라서:
+  - `glass-card` 믹스인에 `@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))` 폴백이 있음 — 미지원 환경에선 틴트를 한 겹 더 얹어(알파 합성) 카드 가독성을 확보. **블러는 enhancement로 취급**하고, blur 없이도 카드가 읽히게 설계할 것.
+  - 이 폴백을 쓰려면 glass-card 사용처에서 믹스인 뒤에 `background:`를 재선언하지 말 것(폴백을 덮어씀 — 변수만 바꾸면 background는 자동 반영됨).
+  - 지원 기기에서도 WebGL 캔버스 위 backdrop-filter는 Chromium 회귀로 안 될 수 있어 `FindCat`의 `.map canvas`에 투명 `background-image`를 그려 backdrop 캡처를 유도하는 우회가 있음.
+  - 데스크톱 브라우저(`pnpm dev`)에서는 블러가 정상이라 이 문제가 안 보임 — 웹뷰 관련 스타일 검증은 반드시 QR 테스트 기기에서.
 - **스킬 문서 갱신**: 이처럼 확정된 디자인 시스템/공통 규칙이 생기면 이 SKILL.md에도 반영한다.
 - **유저 식별**: `UserKey.getInstance().getKey()` 싱글턴 사용. Supabase 인증은 익명키 → Edge Function `auth` → JWT (만료 60초 전 자동 갱신, 중복 호출 dedupe).
 - **DB 키 컨벤션**: 요청은 snake_case로 나가고(`snakecase-keys`) 응답은 camelCase로 변환(`camelcase-keys`). Supabase 타입(`db/types.ts`)은 snake_case 그대로임에 유의.

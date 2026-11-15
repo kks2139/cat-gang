@@ -89,13 +89,6 @@
 
       &.locked {
         --glass-tint: rgba(255, 255, 255, 0.04);
-        background:
-          linear-gradient(
-            180deg,
-            var(--glass-grad-top) 0%,
-            var(--glass-grad-bottom) 100%
-          ),
-          var(--glass-tint);
       }
 
       .badge {
