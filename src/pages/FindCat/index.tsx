@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { AdBanner, isBannerAdSupported } from "@/components/Ads";
+import { AdBanner } from "@/components/Ads";
 import Button from "@/components/Button";
 import Dialog from "@/components/Dialog";
 import Map, { type OwnCat } from "@/components/Map";
@@ -42,10 +42,6 @@ export default function FindCat() {
   const { setSelectedCat, setIsShowStage, setClickedOwnCat } = useCatStore(
     (s) => s.actions
   );
-
-  const kkangCount = useKkangStore((s) => s.count);
-  const kkangInitialized = useKkangStore((s) => s.isInitialized);
-  const { consumeOne: consumeKkangOne } = useKkangStore((s) => s.actions);
 
   const [isShowVictoryDialog, setIsShowVictoryDialog] = useState(false);
   const [isShowCatchedCatPopup, setIsShowCatchedCatPopup] = useState(false);
@@ -167,25 +163,30 @@ export default function FindCat() {
   });
 
   return (
-    <main className={cn("FindCat", { "has-ad-banner": isBannerAdSupported() })}>
+    <main className={cn("FindCat")}>
       <Map
         className={cn("map", { "is-blurred": isAnySheetOpen })}
         ownCats={ownCats}
         onClickCat={() => {
+          // 마커 클릭 핸들러는 마커 생성 시점의 onClickCat 클로저를 계속 사용한다.
+          // 구독값(kkangCount)을 쓰면 깡이 소모된 뒤에도 예전 값으로 체크해
+          // 깡 0인데 전투가 시작되는 버그가 생기므로 반드시 스토어에서 직접 읽는다
+          const { isInitialized, count, actions } = useKkangStore.getState();
+
           // storage 로드 전(수백 ms)에는 클릭을 무시한다
-          if (!kkangInitialized) {
+          if (!isInitialized) {
             return;
           }
 
           // 깡이 없으면 전투를 시작하지 않는다 (마커 선택 상태도 되돌린다)
-          if (kkangCount <= 0) {
+          if (count <= 0) {
             setSelectedCat(undefined);
             setIsShowKkangEmpty(true);
             return;
           }
 
           // 전투 1회당 깡 1개 소모 (도망/패배해도 환불 없음)
-          consumeKkangOne();
+          actions.consumeOne();
 
           setIsShowStage(true);
           setIsStopFocusMe(true);
@@ -203,9 +204,6 @@ export default function FindCat() {
           setIsShowKkangAd(true);
         }}
       />
-
-      {/* 최상단 테스트 배너 광고 (실제 배포 시 콘솔에서 발급받은 광고 그룹 ID로 교체) */}
-      <AdBanner className={cn("ad-banner")} adGroupId="ait-ad-test-banner-id" />
 
       {/* 하단 플로팅 액션 독 */}
       <div className={cn("floating-dock")}>
@@ -295,6 +293,9 @@ export default function FindCat() {
                   }}
                 />
               </div>
+
+              {/* 시트 하단 배너 광고 (시트 닫힘 시 언마운트 → 자동 destroy) */}
+              <AdBanner className={cn("sheet-ad")} adGroupId="ait-ad-test-banner-id" />
             </motion.div>
           </motion.div>
         )}
@@ -346,6 +347,9 @@ export default function FindCat() {
               <div className={cn("sheet-body")}>
                 <CatBook catchedNames={catchedNames} />
               </div>
+
+              {/* 시트 하단 배너 광고 (시트 닫힘 시 언마운트 → 자동 destroy) */}
+              <AdBanner className={cn("sheet-ad")} adGroupId="ait-ad-test-banner-id" />
             </motion.div>
           </motion.div>
         )}

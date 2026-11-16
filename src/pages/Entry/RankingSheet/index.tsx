@@ -2,6 +2,7 @@ import classNames from "classnames/bind";
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 
+import { AdBanner } from "@/components/Ads";
 import Button from "@/components/Button";
 import Loading from "@/components/Loading";
 import { type RankingRow, useRankingsQuery } from "@/queries/useRankingsQuery";
@@ -144,7 +145,15 @@ export default function RankingSheet({ isShow, onClose }: Props) {
                   className={cn("tab", { active: activeTab === tab.id })}
                   onClick={() => setActiveTab(tab.id)}
                 >
-                  {tab.label}
+                  {activeTab === tab.id && (
+                    <motion.span
+                      layoutId="ranking-tab-pill"
+                      className={cn("tab-pill")}
+                      transition={{ type: "spring", damping: 28, stiffness: 320 }}
+                      aria-hidden
+                    />
+                  )}
+                  <span className={cn("tab-label")}>{tab.label}</span>
                 </button>
               ))}
             </div>
@@ -215,6 +224,9 @@ export default function RankingSheet({ isShow, onClose }: Props) {
                 </ol>
               )}
             </div>
+
+            {/* 시트 하단 배너 광고 (시트 닫힘 시 언마운트 → 자동 destroy) */}
+            <AdBanner className={cn("sheet-ad")} adGroupId="ait-ad-test-banner-id" />
           </motion.div>
         </motion.div>
       )}

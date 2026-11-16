@@ -40,5 +40,12 @@
     }
   }
 
+  // 전투화면 하단 배너 광고 — Control(대화창/메뉴) 아래 화면 바닥에 고정
+  .stage-ad {
+    flex: none;
+    margin-top: auto;
+    padding: 8px 12px max(8px, env(safe-area-inset-bottom));
+  }
+
   // 승/패 마무리 다이얼로그: 버튼은 Dialog가 쓰는 공통 Button 글래스 그대로
 }

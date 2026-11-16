@@ -30,6 +30,12 @@
     flex-direction: column;
   }
 
+  // 시트 하단 배너 광고 (너비/높이는 AdBanner 컴포넌트 기본값 사용)
+  .sheet-ad {
+    flex: none;
+    margin-top: 12px;
+  }
+
   .sheet-header {
     display: flex;
     align-items: center;
@@ -64,39 +70,65 @@
     }
   }
 
-  // 카테고리 탭
+  // 카테고리 탭 — 절제된 트랙 안에서 알약 인디케이터가 슬라이드하는 세그먼트 컨트롤
   .tabs {
+    @include glass-card(
+      $border: rgba(255, 255, 255, 0.1),
+      $radius: 999px,
+      $shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25),
+      $grad-top: rgba(0, 0, 0, 0.18),
+      $grad-bottom: rgba(255, 255, 255, 0.04)
+    );
+
     display: flex;
-    gap: 8px;
+    gap: 4px;
+    padding: 4px;
     margin-bottom: 12px;
-    text-align: center;
 
     .tab {
-      @include glass-card(
-        $border: rgba(255, 255, 255, 0.16),
-        $radius: 999px,
-        $shadow: none,
-        $grad-top: rgba(255, 255, 255, 0.08),
-        $grad-bottom: rgba(0, 0, 0, 0.1)
-      );
-
+      position: relative;
       flex: 1;
-      padding: 8px 4px;
-      font-size: 13px;
+      padding: 9px 4px;
+      background: transparent;
+      border: none;
+      border-radius: 999px;
+      font-size: 15px;
       font-weight: 700;
-      color: rgba(255, 255, 255, 0.6);
+      text-align: center;
+      letter-spacing: -0.2px;
+      color: rgba(255, 255, 255, 0.55);
       cursor: pointer;
-      transition: color 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+      transition: color 0.2s ease, transform 0.15s ease;
 
-      // 선택 탭은 CSS 변수만 재정의해 강조 (background 재선언 금지 — 웹뷰 폴백 보호)
+      &:active {
+        transform: scale(0.96);
+      }
+
       &.active {
-        --glass-tint: linear-gradient(
-          180deg,
-          rgba(41, 194, 102, 0.55) 0%,
-          rgba(24, 87, 223, 0.45) 100%
-        );
-        --glass-border: rgba(187, 247, 208, 0.45);
         color: #ffffff;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      }
+
+      // 선택 알약 — layoutId로 이전 탭에서 슬라이드해 온다
+      // (glass-card를 통째로 새로 적용하므로 background 재선언 충돌 없음)
+      .tab-pill {
+        @include glass-card(
+          $border: rgba(187, 247, 208, 0.4),
+          $radius: 999px,
+          $shadow: 0 4px 12px rgba(22, 163, 74, 0.3),
+          $grad-top: rgba(41, 194, 102, 0.6),
+          $grad-bottom: rgba(0, 70, 12, 0.5)
+        );
+
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+      }
+
+      .tab-label {
+        position: relative;
+        z-index: 1;
       }
     }
   }

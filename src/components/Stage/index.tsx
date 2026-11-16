@@ -10,6 +10,7 @@ import { useCatStore } from "@/store/cat";
 import { type CatInfo, MyCat } from "@/utils/cats";
 import { getPostposition, getRandomNumber, wait } from "@/utils/helper";
 
+import { AdBanner } from "../Ads";
 import Dialog from "../Dialog";
 import Control, { type DialogInfo, type Side } from "./Control";
 import Effects, { type EffectType } from "./Effects";
@@ -675,6 +676,9 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
           }
         }}
       />
+
+      {/* 전투화면 하단 배너 광고 (Stage 언마운트 시 자동 destroy) */}
+      <AdBanner className={cn("stage-ad")} adGroupId="ait-ad-test-banner-id" />
     </div>
   );
 }

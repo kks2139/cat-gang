@@ -1,3 +1,5 @@
+@use "@/styles/mixins" as *;
+
 .Entry {
   position: relative;
   display: flex;
@@ -6,12 +8,7 @@
   align-items: center;
   height: 100vh;
   overflow: hidden;
-  background: radial-gradient(
-    ellipse at 50% 35%,
-    #2c3a5e 0%,
-    #1b2440 55%,
-    #131b31 100%
-  );
+  @include night-sky;
 
   .background {
     position: absolute;
