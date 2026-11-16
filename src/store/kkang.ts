@@ -13,7 +13,7 @@ interface KkangStore {
     init: () => Promise<void>;
     /** 깡 1개 소모 (전투 시작). 0 이하면 아무것도 하지 않는다 */
     consumeOne: () => void;
-    /** 깡 충전 (추후 광고 보상용) */
+    /** 깡 충전 (광고 보상) — 일일 기본 개수와 별도로 보상분은 초과 허용 */
     add: (amount: number) => void;
   };
 }
@@ -48,7 +48,9 @@ export const useKkangStore = create<KkangStore>()(
       },
       add(amount) {
         set((state) => {
-          state.count = Math.min(state.count + amount, DAILY_KKANG_COUNT);
+          // 광고 보상으로 얻은 깡은 일일 기본 개수를 초과해도 그대로 누적한다
+          // (일일 상한으로 막으면 깡이 가득 찼을 때 광고 보상이 사라진다)
+          state.count += amount;
           void storeTodayKkang(state.count);
         });
       },

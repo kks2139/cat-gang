@@ -1,3 +1,4 @@
+import NumberFlow from "@number-flow/react";
 import classNames from "classnames/bind";
 
 import ImgCatMe from "@/assets/img/character/cat-me.png";
@@ -5,23 +6,36 @@ import ImgCatnip from "@/assets/img/item/catnip.png";
 import ImgFish from "@/assets/img/item/fish.png";
 import ImgGukbab from "@/assets/img/item/gukbab.png";
 import Dialog from "@/components/Dialog";
+import type { ItemType } from "@/components/Stage/Inventory";
 import { useItemQuery } from "@/queries/useItemQuery";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
 import { catCharacters, getGangInfo, MyCat } from "@/utils/cats";
+import { NUMBER_FLOW_SPIN_TIMING } from "@/utils/constants";
 
 import styles from "./index.module.scss";
 
 const cn = classNames.bind(styles);
 
+/** 보유 아이템 목록 — 클릭 시 광고 보상으로 2개를 추가한다 */
+const INVENTORY_ITEMS: ReadonlyArray<{
+  type: ItemType;
+  name: string;
+  img: string;
+}> = [
+  { type: "catnip", name: "캣잎", img: ImgCatnip },
+  { type: "fish", name: "생선", img: ImgFish },
+  { type: "gukbab", name: "국밥", img: ImgGukbab },
+];
+
 interface Props {
   onClose?: () => void;
   isShow?: boolean;
+  /** 보유 아이템 클릭 — 광고 충전 다이얼로그는 FindCat 레벨에서 띄운다 (뒤로가기 이중 발화 방지) */
+  onItemAdClick?: (itemType: ItemType) => void;
 }
 
-export default function MyInfoDialog({ onClose, isShow }: Props) {
+export default function MyInfoDialog({ onClose, isShow, onItemAdClick }: Props) {
   const { data: itemCount } = useItemQuery();
-  const { gukbab = 0, catnip = 0, fish = 0 } = itemCount || {};
-
   const { data: catList } = useMyCatsQuery();
 
   const myCat = MyCat.getInstance().getMyCat();
@@ -59,7 +73,7 @@ export default function MyInfoDialog({ onClose, isShow }: Props) {
         <div className={cn("cat-details")}>
           <div className={cn("gang-title")}>{gangInfo.title}</div>
           <div className={cn("name")}>{myCat.name}</div>
-          <div className={cn("crying")}>"{myCat.crying}"</div>
+          <div className={cn("crying")}>“{myCat.crying}”</div>
 
           <div className={cn("stats")}>
             <div className={cn("stat-item")}>
@@ -107,21 +121,24 @@ export default function MyInfoDialog({ onClose, isShow }: Props) {
         <div className={cn("section-title")}>보유 아이템</div>
         <div className={cn("inventory-wrapper")}>
           <ul className={cn("inventory-grid")}>
-            <li className={cn("item-slot")}>
-              <img src={ImgCatnip} alt="캣잎" />
-              <span className={cn("count")}>{catnip}</span>
-              <span className={cn("item-name")}>캣잎</span>
-            </li>
-            <li className={cn("item-slot")}>
-              <img src={ImgFish} alt="생선" />
-              <span className={cn("count")}>{fish}</span>
-              <span className={cn("item-name")}>생선</span>
-            </li>
-            <li className={cn("item-slot")}>
-              <img src={ImgGukbab} alt="국밥" />
-              <span className={cn("count")}>{gukbab}</span>
-              <span className={cn("item-name")}>국밥</span>
-            </li>
+            {INVENTORY_ITEMS.map(({ type, name, img }) => (
+              <li key={type}>
+                <button
+                  type="button"
+                  className={cn("item-slot")}
+                  onClick={() => onItemAdClick?.(type)}
+                  aria-label={`${name} 광고 보고 충전`}
+                >
+                  <img src={img} alt={name} />
+                  <NumberFlow
+                    className={cn("count")}
+                    value={itemCount?.[type] || 0}
+                    spinTiming={NUMBER_FLOW_SPIN_TIMING}
+                  />
+                  <span className={cn("item-name")}>{name}</span>
+                </button>
+              </li>
+            ))}
           </ul>
         </div>
       </div>

@@ -102,7 +102,9 @@ const parseKkangValue = (value: string | null): number => {
       return 0;
     }
 
-    return Math.min(data.count, DAILY_KKANG_COUNT);
+    // 광고 보상으로 일일 기본 개수(5)를 초과한 깡은 그대로 유지한다
+    // (자정 리셋은 위 savedAt 체크에서 처리)
+    return data.count;
   } catch {
     return 0;
   }

@@ -215,17 +215,29 @@
         border-radius: 10px;
       }
 
+      // li는 flex 자식 (가로 스크롤용 고정 폭) — 버튼은 그 안을 꽉 채운다
+      > li {
+        flex: 0 0 80px;
+      }
+
       .item-slot {
-        flex: 0 0 80px; // Fixed width for horizontal scrolling
         position: relative;
         display: flex;
         flex-direction: column;
         align-items: center;
+        width: 100%;
         padding: 10px;
         background: rgba(255, 255, 255, 0.08);
         border: 1px solid rgba(255, 255, 255, 0.16);
         border-radius: 16px;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
         transition: 0.2s ease;
+
+        &:active {
+          background: rgba(255, 255, 255, 0.16);
+          transform: scale(0.95);
+        }
 
         img {
           width: 55px;
@@ -234,19 +246,24 @@
           margin-bottom: 5px;
         }
 
+        // 개수 뱃지 — 그린 그라데이션 알약으로 광고 보상 전/후 증감을 돋보이게
+        // (스크롤 컨테이너가 넘치는 부분을 자르므로 슬롯 안쪽에 배치)
         .count {
           position: absolute;
-          top: 3px;
-          right: 3px;
-          background: var(--main-border);
-          color: white;
-          font-size: 10px;
+          top: 4px;
+          right: 4px;
+          background: linear-gradient(135deg, #36c56b 0%, #095f28 100%);
+          color: #ffffff;
+          font-size: 13px;
           font-weight: 900;
-          padding: 2px 4px;
-          border-radius: 10px;
-          min-width: 20px;
+          padding: 0px 6px;
+          border-radius: 999px;
+          border: 1px solid rgba(255, 255, 255, 0.45);
           text-align: center;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          letter-spacing: -0.2px;
+          font-variant-numeric: tabular-nums;
+          box-shadow: 0 3px 8px rgba(22, 163, 74, 0.45),
+            0 0 10px rgba(74, 222, 128, 0.35);
           z-index: 2;
         }
 

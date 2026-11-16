@@ -29,7 +29,7 @@ import { useCatStore } from "@/store/cat";
 import { useKkangStore } from "@/store/kkang";
 import { useViewStore } from "@/store/view";
 import { catCharacters } from "@/utils/cats";
-import { isDev } from "@/utils/constants";
+import { isDev, NUMBER_FLOW_SPIN_TIMING } from "@/utils/constants";
 import {
   animateMarker,
   type Coords,
@@ -1272,7 +1272,9 @@ function MapContent({
         myPosition.lng,
         70
       );
-      const randomNum = getRandomNumber(10);
+      // 광고 보상(+2)과의 균형을 위해 스폰 확률을 10%(아이템당 약 3.3%)로 낮춘다
+      // — 30번 시도 중 3번만 스폰되며, 각 아이템은 시도당 1/30 확률로 나온다
+      const randomNum = getRandomNumber(30);
       const itemType =
         randomNum === 0
           ? "catnip"
@@ -1636,7 +1638,11 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
           aria-label="깡 충전"
         >
           <span className={cn("kkang-icon")}>⚡</span>
-          <NumberFlow className={cn("count")} value={kkangCount} />
+          <NumberFlow
+            className={cn("count")}
+            value={kkangCount}
+            spinTiming={NUMBER_FLOW_SPIN_TIMING}
+          />
         </button>
       </div>
 

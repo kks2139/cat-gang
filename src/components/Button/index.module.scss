@@ -69,6 +69,23 @@
     color: #ffffff;
   }
 
+  // blue: 푸른 유리 — 광고 보상 받기 등 (내 부하/도감 독 버튼과 동일 톤)
+  &.blue {
+    --glass-tint: linear-gradient(
+      180deg,
+      rgba(40, 92, 170, 0.795) 0%,
+      rgba(26, 63, 131, 0.9) 55%,
+      rgba(24, 87, 223, 0.92) 100%
+    );
+    --glass-border: rgba(187, 218, 247, 0.35);
+    --glass-grad-top: rgba(255, 255, 255, 0.18);
+    --glass-grad-bottom: rgba(0, 0, 0, 0.2);
+    --glass-highlight: rgba(255, 255, 255, 0.3);
+    --glass-shadow: 0 6px 18px rgba(0, 0, 0, 0.35),
+      0 0 14px rgba(22, 95, 163, 0.18);
+    color: #ffffff;
+  }
+
   // glass: 유리 질감은 같고 그림자만 약하게 (보조 액션)
   &.glass {
     --glass-border: rgba(255, 255, 255, 0.18);

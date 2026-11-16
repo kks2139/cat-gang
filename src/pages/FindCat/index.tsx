@@ -4,20 +4,28 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { AdBanner } from "@/components/Ads";
+import { AdBanner, useFullScreenAd } from "@/components/Ads";
 import Button from "@/components/Button";
 import Dialog from "@/components/Dialog";
 import Map, { type OwnCat } from "@/components/Map";
 import Stage from "@/components/Stage";
+import type { ItemType } from "@/components/Stage/Inventory";
 import { useBrowserBackGuard } from "@/hooks/useBrowserBackGuard";
 import { useCustomBack } from "@/hooks/useCustomBack";
 import { useCatchCatMutation } from "@/queries/useCatchCatMutation";
+import { useItemMutation } from "@/queries/useItemMutation";
 import { useItemQuery } from "@/queries/useItemQuery";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
 import { useCatStore } from "@/store/cat";
 import { useKkangStore } from "@/store/kkang";
 import { useViewStore } from "@/store/view";
 import { catCharacters, type CatInfo, getGangInfo, MyCat } from "@/utils/cats";
+import {
+  ITEM_AD_REWARD_COUNT,
+  ITEM_RECHARGE_AD_GROUP_ID,
+  KKANG_AD_REWARD_COUNT,
+  KKANG_RECHARGE_AD_GROUP_ID,
+} from "@/utils/constants";
 import {
   getFireworkElement,
   getPostposition,
@@ -32,6 +40,13 @@ import MyInfoDialog from "./MyInfoDialog";
 import OwnCatInfoDialog from "./OwnCatInfoDialog";
 
 const cn = classNames.bind(styles);
+
+/** 광고 보상으로 지급할 아이템 표시 정보 */
+const ITEM_INFO: Record<ItemType, { name: string }> = {
+  catnip: { name: "캣잎" },
+  fish: { name: "생선" },
+  gukbab: { name: "국밥" },
+};
 
 export default function FindCat() {
   const navigate = useNavigate();
@@ -50,13 +65,82 @@ export default function FindCat() {
   const [isShowExitConfirm, setIsShowExitConfirm] = useState(false);
   const [isShowKkangEmpty, setIsShowKkangEmpty] = useState(false);
   const [isShowKkangAd, setIsShowKkangAd] = useState(false);
+  // 광고로 충전할 아이템 (값이 있으면 아이템 충전 다이얼로그 노출 중)
+  const [itemAdType, setItemAdType] = useState<ItemType>();
   const [catchedCat, setCatchedCat] = useState<CatInfo>();
   const [ownCatInfo, setOwnCatInfo] = useState<OwnCat>();
 
   const { mutate: postCatMutate } = useCatchCatMutation();
   const { data: catList, refetch: fetchMyCats } = useMyCatsQuery();
-  // 아이템 조회
-  useItemQuery();
+  // 아이템 조회 (내 정보 팝업의 보유 아이템 개수 + 광고 보상 계산에 사용)
+  const { data: itemCount } = useItemQuery();
+  const { mutateAsync: updateItemCount } = useItemMutation();
+
+  const { addToastMessage } = useViewStore((s) => s.actions);
+
+  // 깡 충전 보상형 광고 — 진입 시 미리 로드해 딜레이 없이 재생한다
+  const {
+    isLoaded: isKkangAdLoaded,
+    load: loadKkangAd,
+    show: showKkangAd,
+  } = useFullScreenAd(KKANG_RECHARGE_AD_GROUP_ID, {
+    onDismissed: ({ earnedReward }) => {
+      setIsShowKkangAd(false);
+
+      if (!earnedReward) {
+        return;
+      }
+
+      // 광고 시청 완료 → 깡 지급 + 화면 중앙 토스트
+      useKkangStore.getState().actions.add(KKANG_AD_REWARD_COUNT);
+      addToastMessage({
+        message: `깡 ${KKANG_AD_REWARD_COUNT}개를 받았다옹!`,
+        position: "center",
+      });
+    },
+    onError: () => {
+      setIsShowKkangAd(false);
+      addToastMessage({ message: "광고를 재생하지 못했어요" });
+    },
+  });
+
+  // 아이템 충전 보상형 광고 (내 정보 팝업 > 보유 아이템 클릭)
+  const {
+    isLoaded: isItemAdLoaded,
+    load: loadItemAd,
+    show: showItemAd,
+  } = useFullScreenAd(ITEM_RECHARGE_AD_GROUP_ID, {
+    onDismissed: ({ earnedReward }) => {
+      const itemType = itemAdType;
+      setItemAdType(undefined);
+
+      if (!earnedReward || !itemType) {
+        return;
+      }
+
+      // 광고 시청 완료 → 아이템 지급 + 화면 중앙 토스트
+      const itemName = ITEM_INFO[itemType].name;
+
+      void updateItemCount({
+        itemType,
+        count: (itemCount?.[itemType] || 0) + ITEM_AD_REWARD_COUNT,
+      });
+
+      addToastMessage({
+        message: `${itemName} ${ITEM_AD_REWARD_COUNT}개를 받았다옹!`,
+        position: "center",
+      });
+    },
+    onError: () => {
+      setItemAdType(undefined);
+      addToastMessage({ message: "광고를 재생하지 못했어요" });
+    },
+  });
+
+  useEffect(() => {
+    loadKkangAd();
+    loadItemAd();
+  }, [loadItemAd, loadKkangAd]);
 
   const ownCats = (catList?.map((c) => ({
     name: c.cat_name,
@@ -113,6 +197,10 @@ export default function FindCat() {
       return;
     }
 
+    if (itemAdType) {
+      return;
+    }
+
     if (isShowCatchedCatPopup) {
       setIsShowCatchedCatPopup(false);
       return;
@@ -147,6 +235,7 @@ export default function FindCat() {
     isShowMyInfoPopup,
     isShowStage,
     isShowVictoryDialog,
+    itemAdType,
     ownCatInfo,
   ]);
 
@@ -447,6 +536,25 @@ export default function FindCat() {
         onClose={() => {
           setIsShowMyInfoPopup(false);
         }}
+        onItemAdClick={setItemAdType}
+      />
+
+      {/* 아이템 충전 팝업 (보유 아이템 클릭 — 보상형 광고 시청 후 지급) */}
+      <Dialog
+        isShow={!!itemAdType}
+        title="아이템 충전"
+        subTitle={`광고를 보고\n${
+          itemAdType ? ITEM_INFO[itemAdType].name : ""
+        } ${ITEM_AD_REWARD_COUNT}개를 받을 수 있다옹!`}
+        buttonLable="광고 보고 받기"
+        buttonColor="blue"
+        buttonDisabled={!isItemAdLoaded}
+        onButtonClick={() => {
+          showItemAd();
+        }}
+        subButtonLable="닫기"
+        onBackClose={() => setItemAdType(undefined)}
+        onSubButtonClick={() => setItemAdType(undefined)}
       />
 
       {/* 깡 부족 안내 팝업 (고양이 클릭 시 깡이 없으면 노출) */}
@@ -459,14 +567,20 @@ export default function FindCat() {
         onButtonClick={() => setIsShowKkangEmpty(false)}
       />
 
-      {/* 깡 충전 안내 팝업 (깡 캡슐 클릭 — 전면광고 연동은 추후 구현) */}
+      {/* 깡 충전 팝업 (깡 캡슐 클릭 — 보상형 광고 시청 후 깡 지급) */}
       <Dialog
         isShow={isShowKkangAd}
         title="깡 충전"
-        subTitle={"전면광고를 보고\n깡 10개를 받을 수 있다옹! (준비 중)"}
-        buttonLable="닫기"
+        subTitle={`광고를 보고\n깡 ${KKANG_AD_REWARD_COUNT}개를 받을 수 있다옹!`}
+        buttonLable="광고 보고 받기"
+        buttonColor="blue"
+        buttonDisabled={!isKkangAdLoaded}
+        onButtonClick={() => {
+          showKkangAd();
+        }}
+        subButtonLable="닫기"
         onBackClose={() => setIsShowKkangAd(false)}
-        onButtonClick={() => setIsShowKkangAd(false)}
+        onSubButtonClick={() => setIsShowKkangAd(false)}
       />
 
       {/* 나가기 컨펌 팝업 (뒤로가기 시 노출) */}

@@ -4,10 +4,12 @@ import { immer } from "zustand/middleware/immer";
 
 import { getRandomNumber } from "@/utils/helper";
 
-interface Message {
+export interface Message {
   message: string;
   id: number;
   duration?: number;
+  /** 노출 위치 (기본: 하단) — 보상 지급 같은 강조 토스트는 중앙에 띄운다 */
+  position?: "center";
 }
 
 interface ViewStore {
@@ -36,11 +38,12 @@ export const useViewStore = create<ViewStore>()(
     isBattleOn: false,
     isMapLoading: false,
     actions: {
-      addToastMessage({ message, duration = 2000 }) {
+      addToastMessage({ message, duration = 2000, position }) {
         set((state) => {
           state.toastMessages.unshift({
             message,
             id: getRandomNumber(10000),
+            position,
           });
 
           setTimeout(() => {

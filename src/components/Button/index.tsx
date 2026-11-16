@@ -5,7 +5,13 @@ import styles from "./index.module.scss";
 
 const cn = classNames.bind(styles);
 
-export type Color = "primary" | "secondary" | "glass" | "danger" | "green";
+export type Color =
+  | "primary"
+  | "secondary"
+  | "glass"
+  | "danger"
+  | "green"
+  | "blue";
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   className?: string;

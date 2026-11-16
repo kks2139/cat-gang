@@ -14,6 +14,14 @@
   pointer-events: none;
   perspective: 600px;
 
+  // 화면 중앙 토스트 — 광고 보상 지급 등 강조 메시지용
+  &.center {
+    top: 50%;
+    bottom: auto;
+    transform: translate(-50%, -50%);
+    width: auto;
+  }
+
   .messages {
     @include glass-card(
       $tint: rgba(6, 30, 16, 0.75),
