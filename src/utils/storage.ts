@@ -7,7 +7,7 @@ const STORAGE_KEY = "TODAY_WALK";
 const KKANG_STORAGE_KEY = "TODAY_KKANG";
 
 /** 하루에 주어지는 깡 개수 (전투 1회당 1개 소모) */
-export const DAILY_KKANG_COUNT = 10;
+export const DAILY_KKANG_COUNT = 5;
 
 export interface TodayWalkData {
   /** 오늘 누적 산책 거리 (m) */
