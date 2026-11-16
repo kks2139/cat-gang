@@ -110,8 +110,8 @@ export default function Entry() {
         ))}
       </div>
 
-      {/* TODO: id발급 */}
-      {/* <AdBanner adGroupId="" /> */}
+      {/* TODO: 앱인토스 콘솔에서 배너 광고 그룹 ID 발급 후 주석 해제
+          <AdBanner adGroupId="발급받은-ID" /> */}
 
       {isUserLoading || (!user && isError) ? (
         <div className={cn("init-loading")}>

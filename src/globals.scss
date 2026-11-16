@@ -1213,6 +1213,9 @@ input {
 
 // 부하 목록에서 고양이 클릭 시 효과 — 스프링 팝 등장 + 글래스 인사 말풍선
 .click-catched-cat {
+  // 인사 연출 총 시간 — getCatchedCatElement에서 JS 상수(GREETING_DURATION)로
+  // 인라인 덮어쓴다. 아래 값은 CSS만 볼 때의 폴백
+  --greeting-duration: 3s;
   z-index: 9999;
   position: absolute;
   // 깃발 마커(래퍼 100x100 좌상단 기준)에서 발 기준을 깃대 발밑 그라운드 라인에
@@ -1220,7 +1223,7 @@ input {
   top: -10px;
   left: 14px;
   width: 120px;
-  animation: reaction-fade 2.2s forwards;
+  animation: reaction-fade var(--greeting-duration) forwards;
   pointer-events: none;
 
   // 부드러운 바닥 광원 — 등장을 강조
@@ -1240,7 +1243,7 @@ input {
       transparent 75%
     );
     filter: blur(3px);
-    animation: reaction-glow 2.2s ease-out forwards;
+    animation: reaction-glow var(--greeting-duration) ease-out forwards;
   }
 
   .comment {
@@ -1280,7 +1283,7 @@ input {
     }
 
     // 외치는 효과 애니메이션 적용
-    animation: shout-spread 2.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    animation: shout-spread var(--greeting-duration) cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   }
 
   img {
@@ -1292,7 +1295,8 @@ input {
     z-index: 2;
     filter: drop-shadow(0 6px 8px rgba(15, 23, 42, 0.25));
     animation: reaction-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards,
-      hello-swing 2.2s ease-in-out 0.6s;
+      // 등장 팝(0.6s) 이후 시작해 총 시간에 맞춰 스윙 종료
+      hello-swing calc(var(--greeting-duration) - 0.6s) ease-in-out 0.6s;
   }
 
   // 그림자
@@ -1307,7 +1311,7 @@ input {
     border-radius: 50%;
     background-color: hsla(0, 0%, 0%, 0.4);
     filter: blur(2px);
-    animation: reaction-shadow 2.2s ease-out forwards;
+    animation: reaction-shadow var(--greeting-duration) ease-out forwards;
   }
 
   @keyframes reaction-pop {

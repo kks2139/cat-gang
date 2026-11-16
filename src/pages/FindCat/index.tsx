@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+import { AdBanner, isBannerAdSupported } from "@/components/Ads";
 import Button from "@/components/Button";
 import Dialog from "@/components/Dialog";
 import Map, { type OwnCat } from "@/components/Map";
@@ -142,7 +143,7 @@ export default function FindCat() {
   });
 
   return (
-    <main className={cn("FindCat")}>
+    <main className={cn("FindCat", { "has-ad-banner": isBannerAdSupported() })}>
       <Map
         className={cn("map", { "is-blurred": isAnySheetOpen })}
         ownCats={ownCats}
@@ -160,6 +161,9 @@ export default function FindCat() {
           setIsShowMyInfoPopup(true);
         }}
       />
+
+      {/* 최상단 테스트 배너 광고 (실제 배포 시 콘솔에서 발급받은 광고 그룹 ID로 교체) */}
+      <AdBanner className={cn("ad-banner")} adGroupId="ait-ad-test-banner-id" />
 
       {/* 하단 플로팅 액션 독 */}
       <div className={cn("floating-dock")}>

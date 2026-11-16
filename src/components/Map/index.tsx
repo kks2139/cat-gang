@@ -413,6 +413,12 @@ function MapContent({
   const pawToggleRef = useRef<boolean>(false); // false: 왼쪽 발, true: 오른쪽 발
   const storeWalkTimerRef = useRef<number>(undefined); // 궤적 저장 디바운스 타이머
 
+  // 부하 인사 연출 상태 — 재클릭 시 진행 중인 연출을 정리하고 새로 재생하기 위한 ref
+  const greetingRef = useRef<{
+    element: HTMLDivElement;
+    timers: number[];
+  } | null>(null);
+
   // 아이템
   const { data: itemCount } = useItemQuery();
   const { mutateAsync: updateItemCount } = useItemMutation();
@@ -476,16 +482,21 @@ function MapContent({
 
       const el = document.createElement("div");
       el.className = "paw-print";
-      el.innerHTML = `<div class="paw-print-rotate" style="transform: rotate(${
-        bearingDeg + tiltDeg
-      }deg)"><div class="paw-print-inner">${PAW_SVG}</div></div>`;
+      // 진행 방향(bearing)은 Marker rotation에 맡기고(rotationAlignment: "map"),
+      // 좌우 기울기(tilt)만 CSS로 먹인다 — CSS rotate만 쓰면 마커가 화면 공간에
+      // 고정돼 지도를 회전했을 때 발자국 방향이 실제 이동 방향과 어긋난다
+      el.innerHTML = `<div class="paw-print-rotate" style="transform: rotate(${tiltDeg}deg)"><div class="paw-print-inner">${PAW_SVG}</div></div>`;
       el.style.width = `${PAW_ICON_PX}px`;
       el.style.height = `${PAW_ICON_PX}px`;
 
       // z-index를 낮게 — 캐릭터/고양이 마커가 발자국 위에 표시되도록
       el.style.zIndex = "0";
 
-      const pawMarker = new Marker({ element: el })
+      const pawMarker = new Marker({
+        element: el,
+        rotation: bearingDeg,
+        rotationAlignment: "map",
+      })
         .setLngLat([point.lng, point.lat])
         .addTo(map);
 
@@ -545,6 +556,64 @@ function MapContent({
 
     return PAW_INTERVAL_METER * Math.pow(2, zoomOut);
   }, [map]);
+
+  // 세그먼트(from → to) 위 offset(m) 지점마다 발자국 위치를 계산한다.
+  // 좌우 번갈아 찍히는 토글은 pawToggleRef를 공유해 라이브 기록과 복원이 이어지게 한다
+  const buildPawPositions = useCallback(
+    (
+      from: { lat: number; lng: number },
+      to: { lat: number; lng: number },
+      offsetsInMeters: number[],
+      spreadFactor: number
+    ) => {
+      const segLen = distanceInMeters(from, to);
+
+      if (segLen === 0 || offsetsInMeters.length === 0) {
+        return [];
+      }
+
+      const bearingDeg =
+        (Math.atan2(to.lng - from.lng, to.lat - from.lat) * 180) / Math.PI;
+      const metersPerDegLat = 111_320;
+
+      return offsetsInMeters.map((offset) => {
+        const ratio = offset / segLen;
+        const centerPoint = {
+          lat: from.lat + (to.lat - from.lat) * ratio,
+          lng: from.lng + (to.lng - from.lng) * ratio,
+        };
+
+        // 중심축에서 좌우로 벌어진 위치 계산 (위도/경도 거리 비율 보정)
+        const isLeftPaw = !pawToggleRef.current;
+        const metersPerDegLng =
+          111_320 * Math.cos((centerPoint.lat * Math.PI) / 180);
+
+        // 보행 방향(미터 공간) 단위 벡터의 오른쪽 수직 벡터
+        const dirLatM = (to.lat - from.lat) * metersPerDegLat;
+        const dirLngM = (to.lng - from.lng) * metersPerDegLng;
+        const dirNorm = Math.hypot(dirLatM, dirLngM) || 1;
+        const perpLatM = dirLngM / dirNorm; // 시계방향 90도 회전: 오른쪽
+        const perpLngM = -dirLatM / dirNorm;
+
+        const spreadDegLat =
+          (perpLatM * PAW_SPREAD_METER * spreadFactor) / metersPerDegLat;
+        const spreadDegLng =
+          (perpLngM * PAW_SPREAD_METER * spreadFactor) / metersPerDegLng;
+
+        pawToggleRef.current = !pawToggleRef.current;
+
+        return {
+          latLng: {
+            lat: centerPoint.lat + spreadDegLat * (isLeftPaw ? -1 : 1),
+            lng: centerPoint.lng + spreadDegLng * (isLeftPaw ? -1 : 1),
+          },
+          bearingDeg,
+          tiltDeg: isLeftPaw ? 22 : -22, // 왼/오 대각선 번갈아 (방향 반대)
+        };
+      });
+    },
+    []
+  );
 
   const startWalkAnimation = useCallback(() => {
     const myMarker = myCatRef.current;
@@ -623,64 +692,28 @@ function MapContent({
             Math.ceil(dist / MAX_PAWS_PER_MOVE / intervalM) * intervalM;
           const step = Math.max(intervalM, maxStepForCap);
 
-          const bearingDeg =
-            (Math.atan2(
-              newPoint.lng - lastPoint.lng,
-              newPoint.lat - lastPoint.lat
-            ) *
-              180) /
-            Math.PI;
           // 이번 구간 이동 전까지의 세션 누적 거리 (캐릭터 첫 위치 기준)
           const sessionDistanceBefore = sessionDistanceRef.current - dist;
           const traveledSinceLastPaw =
             nextPawDistanceRef.current - sessionDistanceBefore;
 
           // 이동 구간을 따라 step 간격으로 발자국 위치를 미리 계산
-          const pawPositions: {
-            latLng: { lat: number; lng: number };
-            bearingDeg: number;
-            tiltDeg: number;
-          }[] = [];
+          const offsets: number[] = [];
 
           for (
             let remain = traveledSinceLastPaw;
             remain <= dist;
             remain += step
           ) {
-            const ratio = remain / dist;
-            const centerPoint = {
-              lat: lastPoint.lat + (newPoint.lat - lastPoint.lat) * ratio,
-              lng: lastPoint.lng + (newPoint.lng - lastPoint.lng) * ratio,
-            };
-
-            // 중심축에서 좌우로 벌어진 위치 계산 (위도/경도 거리 비율 보정)
-            const isLeftPaw = !pawToggleRef.current;
-            const metersPerDegLat = 111_320;
-            const metersPerDegLng =
-              111_320 * Math.cos((centerPoint.lat * Math.PI) / 180);
-
-            // 보행 방향(미터 공간) 단위 벡터의 오른쪽 수직 벡터
-            const dirLatM = (newPoint.lat - lastPoint.lat) * metersPerDegLat;
-            const dirLngM = (newPoint.lng - lastPoint.lng) * metersPerDegLng;
-            const dirNorm = Math.hypot(dirLatM, dirLngM) || 1;
-            const perpLatM = dirLngM / dirNorm; // 시계방향 90도 회전: 오른쪽
-            const perpLngM = -dirLatM / dirNorm;
-
-            const spreadDegLat =
-              (perpLatM * PAW_SPREAD_METER * spreadDegFactor) / metersPerDegLat;
-            const spreadDegLng =
-              (perpLngM * PAW_SPREAD_METER * spreadDegFactor) / metersPerDegLng;
-
-            pawPositions.push({
-              latLng: {
-                lat: centerPoint.lat + spreadDegLat * (isLeftPaw ? -1 : 1),
-                lng: centerPoint.lng + spreadDegLng * (isLeftPaw ? -1 : 1),
-              },
-              bearingDeg,
-              tiltDeg: isLeftPaw ? 22 : -22, // 왼/오 대각선 번갈아 (방향 반대)
-            });
-            pawToggleRef.current = !pawToggleRef.current;
+            offsets.push(remain);
           }
+
+          const pawPositions = buildPawPositions(
+            lastPoint,
+            newPoint,
+            offsets,
+            spreadDegFactor
+          );
 
           if (pawPositions.length > 0) {
             pawPositions.forEach((paw, index) => {
@@ -761,6 +794,7 @@ function MapContent({
     },
     [
       assignMyMarker,
+      buildPawPositions,
       createPawMarker,
       createStartDot,
       getZoomAwareInterval,
@@ -934,57 +968,80 @@ function MapContent({
     drawOwnCats();
   }, [drawOwnCats]);
 
+  // 진행 중인 부하 인사 연출을 정리한다 (대기 중 타이머 취소 + 노출 중 요소 제거)
+  const clearGreeting = useCallback(() => {
+    const greeting = greetingRef.current;
+
+    if (!greeting) {
+      return;
+    }
+
+    greeting.timers.forEach((timer) => clearTimeout(timer));
+    greeting.element.remove();
+    greetingRef.current = null;
+  }, []);
+
   useEffect(() => {
     // 잡은 고양이목록 클릭 리액션
-    if (clickedOwnCat) {
-      const cat = Object.entries(ownCatMarkersRef.current).find(
-        ([key, marker]) => {
-          const { lat, lng } = marker.getLngLat();
-
-          return (
-            key.includes(clickedOwnCat.createdAt) &&
-            lat === clickedOwnCat.lat &&
-            lng === clickedOwnCat.lng
-          );
-        }
-      );
-
-      if (cat) {
-        const [key, marker] = cat;
-        const catName = key.split(OWN_CAT_KEY_TOKEN)[0];
-        const markerElement = marker.getElement();
-        const catchedCat = markerElement?.querySelector("[data-catched-cat]");
-
-        if (!catName || catchedCat) {
-          return;
-        }
-
-        const catData = catCharacters.find(({ name }) => name === catName);
-
-        if (catData) {
-          // 부하 깃발을 화면 중앙으로 옮긴 뒤 고양이를 등장시킨다
-          // (지도 하단 패딩으로 '나'가 유지되는 지점이 화면 중앙 기준점)
-          const FOCUS_DURATION = 600;
-          const { lat, lng } = marker.getLngLat();
-
-          map?.flyTo({ center: [lng, lat], duration: FOCUS_DURATION });
-
-          const catElement = getCatchedCatElement(
-            catData.img,
-            catData.dialog.greeting[getRandomNumber(3)]
-          );
-
-          wait(FOCUS_DURATION).then(() => {
-            markerElement?.appendChild(catElement);
-
-            setTimeout(() => {
-              markerElement?.removeChild(catElement);
-            }, 2000);
-          });
-        }
-      }
+    if (!clickedOwnCat) {
+      return;
     }
-  }, [clickedOwnCat, map]);
+
+    // 깃발 마커 매칭은 created_at으로만 한다 — 좌표 float 일치 비교는
+    // 미세한 값 차이만으로도 실패해 인사 모션이 간헐적으로 안 나오는 원인이 된다
+    const entry = Object.entries(ownCatMarkersRef.current).find(([key]) =>
+      key.includes(clickedOwnCat.createdAt)
+    );
+
+    if (!entry) {
+      return;
+    }
+
+    const [key, marker] = entry;
+    const catName = key.split(OWN_CAT_KEY_TOKEN)[0];
+    const catData = catCharacters.find(({ name }) => name === catName);
+    const markerElement = marker.getElement();
+
+    if (!catData || !markerElement) {
+      return;
+    }
+
+    // 이전 인사 연출이 아직 진행 중이면 정리 후 새로 재생한다
+    // (기존엔 요소가 남아있으면 조용히 return해서 재클릭 시 지도 이동만 되고 모션이 안 나왔다)
+    clearGreeting();
+
+    // 부하 깃발을 화면 중앙으로 옮긴 뒤 고양이를 등장시킨다
+    // (지도 하단 패딩으로 '나'가 유지되는 지점이 화면 중앙 기준점)
+    const FOCUS_DURATION = 600;
+    const GREETING_DURATION = 3000;
+    const { lat, lng } = marker.getLngLat();
+
+    map?.flyTo({ center: [lng, lat], duration: FOCUS_DURATION });
+
+    const catElement = getCatchedCatElement(
+      catData.img,
+      catData.dialog.greeting[getRandomNumber(3)],
+      GREETING_DURATION
+    );
+
+    const timers: number[] = [];
+    greetingRef.current = { element: catElement, timers };
+
+    // flyTo 완료 후 등장
+    timers.push(
+      window.setTimeout(() => {
+        markerElement.appendChild(catElement);
+      }, FOCUS_DURATION)
+    );
+
+    // 노출 종료 후 제거 — removeChild 대신 remove()로 안전하게 (마커가 먼저 제거돼도 에러 없음)
+    timers.push(
+      window.setTimeout(() => {
+        catElement.remove();
+        greetingRef.current = null;
+      }, FOCUS_DURATION + GREETING_DURATION)
+    );
+  }, [clearGreeting, clickedOwnCat, map]);
 
   // 스토리지에 저장된 오늘 산책 데이터(거리 + 궤적)를 읽어 발자국 트레일을 복원한다
   const restoreTodayWalk = useCallback(async () => {
@@ -999,28 +1056,76 @@ function MapContent({
 
     pathRef.current = todayWalk.path.map(({ lat, lng }) => ({ lat, lng }));
 
-    // 저장된 궤적을 따라 발자국 + 시작점을 다시 그린다 (애니메이션 지연 없이 즉시)
+    // 저장된 궤적은 10m 이상 이동 시점의 좌표만 담고 있어(라이브 기록 조건)
+    // 점 하나당 발자국 하나를 찍으면 듬성듬성 보인다 → 라이브와 동일하게
+    // 세그먼트 사이를 보간해 발자국 간격마다 찍는다
+    const intervalM = getZoomAwareInterval();
+
+    // 세그먼트별 길이와 궤적 전체 길이(m)를 먼저 계산
+    const segmentLengths: number[] = [];
+    let totalLength = 0;
+
+    for (let i = 1; i < pathRef.current.length; i++) {
+      const segLen = distanceInMeters(pathRef.current[i - 1], pathRef.current[i]);
+
+      segmentLengths.push(segLen);
+      totalLength += segLen;
+    }
+
+    // 간격 기준점(k * intervalM)이 걸치는 세그먼트마다 발자국 위치를 계산
+    const allPaws: {
+      latLng: { lat: number; lng: number };
+      bearingDeg: number;
+      tiltDeg: number;
+    }[] = [];
+    let accDistance = 0;
+
     pathRef.current.forEach((point, i) => {
       if (i === 0) {
-        createStartDot(point);
         return;
       }
 
       const prev = pathRef.current[i - 1];
-      const bearingDeg =
-        (Math.atan2(point.lng - prev.lng, point.lat - prev.lat) * 180) /
-        Math.PI;
+      const segLen = segmentLengths[i - 1];
+      const offsets: number[] = [];
 
-      createPawMarker(point, bearingDeg, pawToggleRef.current ? -22 : 22);
-      pawToggleRef.current = !pawToggleRef.current;
+      for (
+        let target = (Math.floor(accDistance / intervalM) + 1) * intervalM;
+        target <= accDistance + segLen;
+        target += intervalM
+      ) {
+        offsets.push(target - accDistance);
+      }
+
+      allPaws.push(...buildPawPositions(prev, point, offsets, 1));
+
+      accDistance += segLen;
     });
 
-    // 다음 발자국 기준을 저장된 궤적 길이 기준으로 맞춘다
+    // 최대 개수 초과분은 가장 오래된(앞쪽) 발자국부터 잘라낸다
+    const drawnPaws = allPaws.slice(-PAW_MAX_COUNT);
+
+    drawnPaws.forEach((paw) => {
+      createPawMarker(paw.latLng, paw.bearingDeg, paw.tiltDeg);
+    });
+
+    // 트레일이 잘리지 않았을 때만 시작점을 찍는다 (잘렸으면 시작점이 트레일 밖에 있다)
+    if (drawnPaws.length === allPaws.length) {
+      createStartDot(pathRef.current[0]);
+    }
+
+    // 복원된 궤적 길이를 세션 거리로 반영해 이후 라이브 발자국 간격 cadence를 이어받는다
+    sessionDistanceRef.current = totalLength;
     nextPawDistanceRef.current =
-      Math.floor(sessionDistanceRef.current / PAW_INTERVAL_METER) *
-        PAW_INTERVAL_METER +
-      PAW_INTERVAL_METER;
-  }, [createPawMarker, createStartDot, map, onDistanceChange]);
+      Math.floor(totalLength / intervalM) * intervalM + intervalM;
+  }, [
+    buildPawPositions,
+    createPawMarker,
+    createStartDot,
+    getZoomAwareInterval,
+    map,
+    onDistanceChange,
+  ]);
 
   useEffect(() => {
     // 지도 인스턴스(store의 map)가 준비된 뒤 1회만 초기화한다
@@ -1190,6 +1295,9 @@ function MapContent({
     return () => {
       clearInterval(catSpawnTimerRef.current);
 
+      // 진행 중인 부하 인사 연출 타이머 정리
+      clearGreeting();
+
       // 대기 중인 궤적 저장 타이머 정리 및 마지막 상태 즉시 저장
       if (storeWalkTimerRef.current) {
         clearTimeout(storeWalkTimerRef.current);
@@ -1205,7 +1313,7 @@ function MapContent({
         }
       }
     };
-  }, []);
+  }, [clearGreeting]);
 
   return <div className={className}></div>;
 }

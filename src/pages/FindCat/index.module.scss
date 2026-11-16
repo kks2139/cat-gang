@@ -27,6 +27,20 @@
     }
   }
 
+  // 배너 광고가 실제로 노출되는 환경에서만 지도 상단 UI에 오프셋을 전달해요
+  // (산책 거리 캡슐 등이 배너에 가려지지 않도록)
+  &.has-ad-banner {
+    --ad-banner-height: 102px;
+  }
+
+  // 최상단 테스트 배너 광고 (너비/높이는 AdBanner 컴포넌트 기본값 사용)
+  .ad-banner {
+    position: absolute;
+    top: env(safe-area-inset-top, 0px);
+    left: 0;
+    z-index: 1100; // 지도 마커 오버레이(z 1000) 위, 바텀시트(z 2000) 아래
+  }
+
   // 하단 플로팅 글래스 독 — 가로 중앙에 컴팩트하게 모은 캡슐형 독
   .floating-dock {
     @include glass-card(

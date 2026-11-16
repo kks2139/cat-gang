@@ -32,7 +32,11 @@
   @include glass-card($tint: rgba(15, 23, 42, 0.5), $radius: 24px, $blur: 8px);
 
   position: absolute;
-  top: max(16px, env(safe-area-inset-top));
+  // 배너 광고가 노출되는 화면(FindCat)에서는 배너 높이 + 숨 간격만큼 아래로 내려가 안 겹쳐요
+  // (개발 mock placeholder는 60px라 실제보다 간격이 넓어 보이는 건 정상)
+  top: calc(
+    max(16px, env(safe-area-inset-top)) + var(--ad-banner-height, 0px) + 10px
+  );
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;

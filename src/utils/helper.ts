@@ -362,9 +362,16 @@ export const safeText = (input: string): string => {
   return cleaned.slice(0, 10);
 };
 
-export const getCatchedCatElement = (imgUrl: string, greet: string) => {
+export const getCatchedCatElement = (
+  imgUrl: string,
+  greet: string,
+  durationMs = 3000,
+) => {
   const container = document.createElement("div");
   container.className = "click-catched-cat";
+  // 인사 연출 총 시간을 CSS 변수로 전달 — 애니메이션 길이와
+  // 호출부의 요소 제거 시점이 한 값(GREETING_DURATION)에서 결정된다
+  container.style.setProperty("--greeting-duration", `${durationMs}ms`);
   container.dataset.catchedCat = "ture";
 
   const comment = document.createElement("div");
