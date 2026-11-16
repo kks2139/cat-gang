@@ -1385,15 +1385,28 @@ function MapContent({
 export default function Map({ className, onClickKkang, ...rest }: Props) {
   const isStopFocusMe = useViewStore((s) => s.isStopFocusMe);
   const kkangCount = useKkangStore((s) => s.count);
-  const { setMap, setIsStopFocusMe, setIsMapLoading } = useViewStore(
-    (s) => s.actions
-  );
+  const { setMap, setIsStopFocusMe, setIsMapLoading, addToastMessage } =
+    useViewStore((s) => s.actions);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MaplibreMap | null>(null);
 
   const [isLoading, setisLoading] = useState(true);
   const [totalDistance, setTotalDistance] = useState(0);
+
+  // 총 산책거리 (서버 누적값 + 오늘 거리) — 오늘 산책 거리 캡슐 클릭 시 토스트로 노출
+  const { data: user } = useUsersQuery();
+  const totalWalkDistance = (user?.total_distance ?? 0) + totalDistance;
+
+  const onClickDistance = () => {
+    addToastMessage({
+      message: `지금까지 총 ${(totalWalkDistance / 1000).toFixed(
+        2
+      )} km 산책했어요`,
+      // 산책 거리 캡슐 바로 아래(화면 상단)에 노출
+      position: "top",
+    });
+  };
 
   const myMarkerRef = useRef<Marker>(null);
 
@@ -1620,7 +1633,12 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
     <div className={cn("map-wrapper")}>
       {/* 상단 플로팅 캡슐 행 — 왼쪽 산책 거리 / 오른쪽 깡 */}
       <div className={cn("top-bar")}>
-        <div className={cn("distance-display")}>
+        <button
+          type="button"
+          className={cn("distance-display")}
+          onClick={onClickDistance}
+          aria-label="총 산책 거리 보기"
+        >
           <PawIcon size={15} color="#834e00" className={cn("paw-icon")} />
           <span className={cn("label")}>오늘 산책 거리</span>
           <NumberFlow
@@ -1629,7 +1647,7 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
             format={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }}
           />
           <span className={cn("unit")}>km</span>
-        </div>
+        </button>
 
         <button
           type="button"

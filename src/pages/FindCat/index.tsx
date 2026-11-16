@@ -86,6 +86,10 @@ export default function FindCat() {
   } = useFullScreenAd(KKANG_RECHARGE_AD_GROUP_ID, {
     onDismissed: ({ earnedReward }) => {
       setIsShowKkangAd(false);
+      // 깡 부족 팝업에서 광고를 보는 경우도 있으므로 함께 닫는다
+      setIsShowKkangEmpty(false);
+      // 소진된 광고를 다시 로드 — 깡 부족 팝업에서 반복해서 광고를 볼 수 있게
+      loadKkangAd();
 
       if (!earnedReward) {
         return;
@@ -100,6 +104,7 @@ export default function FindCat() {
     },
     onError: () => {
       setIsShowKkangAd(false);
+      setIsShowKkangEmpty(false);
       addToastMessage({ message: "광고를 재생하지 못했어요" });
     },
   });
@@ -113,6 +118,7 @@ export default function FindCat() {
     onDismissed: ({ earnedReward }) => {
       const itemType = itemAdType;
       setItemAdType(undefined);
+      loadItemAd();
 
       if (!earnedReward || !itemType) {
         return;
@@ -247,7 +253,9 @@ export default function FindCat() {
     message: "나갈까요?",
     onConfirm: () => {
       setIsShowExitConfirm(false);
-      navigate("/");
+      // push 대신 replace로 나간다 — /find-cat이 히스토리에 남으면
+      // Auth 로딩 중 뒤로가기(가로채기 갭)로 맵 화면에 되돌아올 수 있다
+      navigate("/", { replace: true });
     },
   });
 
@@ -384,7 +392,10 @@ export default function FindCat() {
               </div>
 
               {/* 시트 하단 배너 광고 (시트 닫힘 시 언마운트 → 자동 destroy) */}
-              <AdBanner className={cn("sheet-ad")} adGroupId="ait-ad-test-banner-id" />
+              <AdBanner
+                className={cn("sheet-ad")}
+                adGroupId="ait-ad-test-banner-id"
+              />
             </motion.div>
           </motion.div>
         )}
@@ -438,7 +449,10 @@ export default function FindCat() {
               </div>
 
               {/* 시트 하단 배너 광고 (시트 닫힘 시 언마운트 → 자동 destroy) */}
-              <AdBanner className={cn("sheet-ad")} adGroupId="ait-ad-test-banner-id" />
+              <AdBanner
+                className={cn("sheet-ad")}
+                adGroupId="ait-ad-test-banner-id"
+              />
             </motion.div>
           </motion.div>
         )}
@@ -557,14 +571,20 @@ export default function FindCat() {
         onSubButtonClick={() => setItemAdType(undefined)}
       />
 
-      {/* 깡 부족 안내 팝업 (고양이 클릭 시 깡이 없으면 노출) */}
+      {/* 깡 부족 안내 팝업 (고양이 클릭 시 깡이 없으면 노출) — 광고로 바로 충전 가능 */}
       <Dialog
         isShow={isShowKkangEmpty}
         title="깡 부족"
-        subTitle={"깡이 없어서 싸울 수 없다옹…\n내일 다시 찾아와라옹!"}
-        buttonLable="닫기"
+        subTitle={"깡이 없어서 싸울 수 없다옹…"}
+        buttonLable="광고 보고 받기"
+        buttonColor="blue"
+        buttonDisabled={!isKkangAdLoaded}
+        onButtonClick={() => {
+          showKkangAd();
+        }}
+        subButtonLable="닫기"
         onBackClose={() => setIsShowKkangEmpty(false)}
-        onButtonClick={() => setIsShowKkangEmpty(false)}
+        onSubButtonClick={() => setIsShowKkangEmpty(false)}
       />
 
       {/* 깡 충전 팝업 (깡 캡슐 클릭 — 보상형 광고 시청 후 깡 지급) */}
@@ -593,7 +613,9 @@ export default function FindCat() {
         subButtonLable="닫기"
         onButtonClick={() => {
           setIsShowExitConfirm(false);
-          navigate("/");
+          // push 대신 replace로 나간다 — /find-cat이 히스토리에 남으면
+          // Auth 로딩 중 뒤로가기(가로채기 갭)로 맵 화면에 되돌아올 수 있다
+          navigate("/", { replace: true });
         }}
         onSubButtonClick={() => {
           setIsShowExitConfirm(false);

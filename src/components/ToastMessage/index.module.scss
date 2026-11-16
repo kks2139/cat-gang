@@ -22,6 +22,13 @@
     width: auto;
   }
 
+  // 상단 토스트 — 지도 상단 캡슐(오늘 산책 거리/깡) 아래에 노출
+  // (Map .top-bar: safe-area + 10px, 캡슐 높이 약 34px → 여유 10px 아래)
+  &.top {
+    top: calc(max(16px, env(safe-area-inset-top)) + 70px);
+    bottom: auto;
+  }
+
   .messages {
     @include glass-card(
       $tint: rgba(6, 30, 16, 0.75),
@@ -56,12 +63,10 @@
       box-shadow: 0 0 8px rgba(74, 222, 128, 0.55);
     }
 
-    // 뒤로 쌓인 토스트: 점점 작고 어둡게 — 깊이감
+    // 뒤로 쌓인 토스트가 앞 토스트에 겹치게 하는 간격 (깊이감 밀집)
+    // 투명도/밝기 등 깊이 스타일은 framer-motion이 인덱스 기반으로 처리
     &:not(:first-child) {
       margin-top: -14px;
-      opacity: 0.75 !important;
-      filter: brightness(0.8);
-      border-color: rgba(187, 247, 208, 0.16);
     }
   }
 }

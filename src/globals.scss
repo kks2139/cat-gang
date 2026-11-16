@@ -114,8 +114,6 @@ input {
       position: relative;
       animation: item-appear 1.2s ease-out forwards;
 
-      box-shadow: 0 0 0 1px red;
-
       // 가벼운 별빛 — 아이템 모서리에서 가끔 반짝이는 작은 별 2개.
       // 등급 이펙트보다 작고 점등 시간도 짧아(주기의 ~35%) 은은하게 보인다
       &::before,
@@ -592,7 +590,7 @@ input {
   .arrow-3d-wrapper {
     z-index: 999;
     position: absolute;
-    top: -20px;
+    top: -30px;
     left: 50%;
     transform: translateX(-50%);
     width: 42px;

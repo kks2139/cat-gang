@@ -41,17 +41,24 @@
   padding: 0 16px;
 }
 
-// 산책 거리 캡슐 — 공통 글래스 카드 + 발바닥 아이콘 강조
+// 산책 거리 캡슐 — 공통 글래스 카드 + 발바닥 아이콘 강조 (클릭 시 총 산책 거리 토스트)
 .distance-display {
   @include glass-card($radius: 24px);
 
+  pointer-events: auto;
   display: inline-flex;
   align-items: center;
   gap: 10px;
   padding: 6px 15px;
-  pointer-events: none;
+  cursor: pointer;
   white-space: nowrap;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:active {
+    transform: scale(0.94);
+  }
 
   // 발바닥 아이콘 — 주황 그라데이션 원형 배지 (공통 PawIcon)
   .paw-icon {

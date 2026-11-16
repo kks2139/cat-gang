@@ -2,15 +2,16 @@ import type { Map as MaplibreMap } from "maplibre-gl";
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
-import { getRandomNumber } from "@/utils/helper";
-
 export interface Message {
   message: string;
   id: number;
   duration?: number;
-  /** 노출 위치 (기본: 하단) — 보상 지급 같은 강조 토스트는 중앙에 띄운다 */
-  position?: "center";
+  /** 노출 위치 (기본: 하단) — top은 상단 캡슐 아래, center는 강조 메시지용 중앙 */
+  position?: "top" | "center";
 }
+
+// 토스트 id — 유일성만 필요하므로 단조 증가 카운터로 보장 (랜덤 중복 방지)
+let toastIdSeq = 0;
 
 interface ViewStore {
   toastMessages: Message[];
@@ -38,11 +39,11 @@ export const useViewStore = create<ViewStore>()(
     isBattleOn: false,
     isMapLoading: false,
     actions: {
-      addToastMessage({ message, duration = 2000, position }) {
+      addToastMessage({ message, duration = 2500, position }) {
         set((state) => {
           state.toastMessages.unshift({
             message,
-            id: getRandomNumber(10000),
+            id: ++toastIdSeq,
             position,
           });
 
@@ -78,5 +79,5 @@ export const useViewStore = create<ViewStore>()(
         });
       },
     },
-  })),
+  }))
 );

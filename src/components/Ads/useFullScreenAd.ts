@@ -42,6 +42,10 @@ export function useFullScreenAd(
   const [isLoaded, setIsLoaded] = useState(false);
   const [isShowing, setIsShowing] = useState(false);
 
+  // 콜백(show 이후 onDismissed 등)에서 다시 load()를 호출할 수 있도록
+  // isLoaded의 최신값을 ref로 유지 — 클로저에 갇힌 옛값 가드에 걸리지 않게
+  const isLoadedRef = useRef(false);
+
   const isLoadingRef = useRef(false);
   const unsubscribeLoadRef = useRef<(() => void) | null>(null);
   const unsubscribeShowRef = useRef<(() => void) | null>(null);
@@ -53,7 +57,7 @@ export function useFullScreenAd(
   });
 
   const load = useCallback(() => {
-    if (!isSupported || isLoadingRef.current || isLoaded) return;
+    if (!isSupported || isLoadingRef.current || isLoadedRef.current) return;
 
     isLoadingRef.current = true;
     unsubscribeLoadRef.current?.();
@@ -63,22 +67,24 @@ export function useFullScreenAd(
       onEvent: (event) => {
         if (event.type !== "loaded") return;
         isLoadingRef.current = false;
+        isLoadedRef.current = true;
         unsubscribeLoadRef.current?.();
         unsubscribeLoadRef.current = null;
         setIsLoaded(true);
       },
       onError: (error) => {
         isLoadingRef.current = false;
+        isLoadedRef.current = false;
         unsubscribeLoadRef.current?.();
         unsubscribeLoadRef.current = null;
         console.error("전면 광고 로드 실패:", error);
         callbacksRef.current.onError?.(error);
       },
     });
-  }, [adGroupId, isSupported, isLoaded]);
+  }, [adGroupId, isSupported]);
 
   const show = useCallback(() => {
-    if (!isSupported || !isLoaded || isShowing) return;
+    if (!isSupported || !isLoadedRef.current || isShowing) return;
 
     setIsShowing(true);
     let earnedReward = false;
@@ -95,12 +101,14 @@ export function useFullScreenAd(
 
           case "dismissed":
             setIsShowing(false);
+            isLoadedRef.current = false;
             setIsLoaded(false);
             callbacksRef.current.onDismissed?.({ earnedReward });
             break;
 
           case "failedToShow":
             setIsShowing(false);
+            isLoadedRef.current = false;
             setIsLoaded(false);
             console.error("전면 광고 표시 실패:", event.type);
             break;
@@ -118,12 +126,13 @@ export function useFullScreenAd(
       },
       onError: (error) => {
         setIsShowing(false);
+        isLoadedRef.current = false;
         setIsLoaded(false);
         console.error("전면 광고 표시 실패:", error);
         callbacksRef.current.onError?.(error);
       },
     });
-  }, [adGroupId, isSupported, isLoaded, isShowing]);
+  }, [adGroupId, isSupported, isShowing]);
 
   // 언마운트 시 구독 정리
   useEffect(() => {

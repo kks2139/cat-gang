@@ -187,6 +187,8 @@ export const createMarker = ({
   // 내 고양이일때 — 발바닥이 새겨진 그린 위치 핀으로 표시
   if (type === "me") {
     container.classList.add("no-animation");
+    // 내 위치 핀은 다른 마커(발자국 0 / 캐릭터·아이템 10)에 가려지지 않도록 최상위로
+    container.style.zIndex = "50";
 
     const wrapper = document.createElement("div");
     wrapper.className = "arrow-3d-wrapper";
@@ -306,7 +308,8 @@ export const createMarker = ({
   wrapperEl.style.height = type === "item" ? "60px" : "100px";
   // 발자국(z-index 0)보다 위에 표시되도록 — 발자국은 이후에 DOM에 추가되므로
   // z-index가 없으면(DOM 순서) 발자국이 캐릭터를 덮어버린다
-  wrapperEl.style.zIndex = "10";
+  // 내 위치 핀(me)은 캐릭터/아이템(10)보다도 위에 있어야 하므로 최상위로 둔다
+  wrapperEl.style.zIndex = type === "me" ? "50" : "10";
   wrapperEl.appendChild(container);
 
   // 마커 생성 (MapLibre: setLngLat([lng, lat]) -> 엘리먼트 지정)
