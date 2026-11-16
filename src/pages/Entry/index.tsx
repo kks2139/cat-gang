@@ -16,6 +16,7 @@ import { useViewStore } from "@/store/view";
 
 import AddUserDialog from "./AddUserDialog";
 import styles from "./index.module.scss";
+import RankingSheet from "./RankingSheet";
 
 const cn = classNames.bind(styles);
 
@@ -25,6 +26,7 @@ export default function Entry() {
 
   const [isShowNewCatDialog, setIsShowNewCatDialog] = useState(false);
   const [isShowExitConfirm, setIsShowExitConfirm] = useState(false);
+  const [isShowRanking, setIsShowRanking] = useState(false);
 
   useMyCatsQuery();
 
@@ -42,6 +44,11 @@ export default function Entry() {
   // 뒤로가기: 열려있는 다이얼로그부터 닫고, 없으면 종료 컨펌을 띄운다
   // (AIT 규정: 최초 진입 화면에서 뒤로가기 시 미니앱이 정상 종료되어야 함)
   useCustomBack(true, () => {
+    if (isShowRanking) {
+      setIsShowRanking(false);
+      return;
+    }
+
     if (isShowNewCatDialog) {
       setIsShowNewCatDialog(false);
       return;
@@ -152,6 +159,16 @@ export default function Entry() {
                   시작하기
                 </span>
               </Button>
+
+              <Button
+                className={cn("ranking")}
+                color="secondary"
+                onClick={() => {
+                  setIsShowRanking(true);
+                }}
+              >
+                랭킹
+              </Button>
             </div>
           </div>
         </>
@@ -164,6 +181,9 @@ export default function Entry() {
           setIsShowNewCatDialog(false);
         }}
       />
+
+      {/* 랭킹 팝업 (카테고리별 전체 유저 랭킹) */}
+      <RankingSheet isShow={isShowRanking} onClose={() => setIsShowRanking(false)} />
 
       <Dialog
         isShow={isError}

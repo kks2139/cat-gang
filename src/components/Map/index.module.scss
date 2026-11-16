@@ -27,19 +27,28 @@
   }
 }
 
-// 상단 산책 거리 플로팅 캡슐 — 공통 글래스 카드 + 발바닥 아이콘 강조
-.distance-display {
-  @include glass-card($tint: rgba(15, 23, 42, 0.5), $radius: 24px, $blur: 8px);
-
+// 상단 플로팅 캡슐 행 — 왼쪽 산책 거리 / 오른쪽 깡 (래퍼는 클릭 투과)
+.top-bar {
   position: absolute;
   // 배너 광고가 노출되는 화면(FindCat)에서는 배너 높이 + 숨 간격만큼 아래로 내려가 안 겹쳐요
   // (개발 mock placeholder는 60px라 실제보다 간격이 넓어 보이는 건 정상)
   top: calc(
     max(16px, env(safe-area-inset-top)) + var(--ad-banner-height, 0px) + 10px
   );
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
   z-index: 1000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
+  padding: 0 16px;
+}
+
+// 산책 거리 캡슐 — 공통 글래스 카드 + 발바닥 아이콘 강조
+.distance-display {
+  @include glass-card($tint: rgba(15, 23, 42, 0.5), $radius: 24px, $blur: 8px);
+
   display: inline-flex;
   align-items: center;
   gap: 10px;
@@ -83,6 +92,48 @@
     font-weight: 700;
     color: rgba(255, 255, 255, 0.45);
     margin-left: -4px;
+  }
+}
+
+// 깡 캡슐 — 오렌지 톤 글래스 카드 버튼 (래퍼가 pointer-events: none이라 버튼만 활성)
+.kkang-display {
+  @include glass-card(
+    $tint: rgba(249, 115, 22, 0.32),
+    $border: rgba(255, 214, 165, 0.5),
+    $radius: 24px,
+    $blur: 8px,
+    $shadow: 0 4px 14px rgba(249, 115, 22, 0.25),
+    $grad-top: rgba(255, 237, 213, 0.28),
+    $grad-bottom: rgba(194, 65, 12, 0.18)
+  );
+
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 15px 2px 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:active {
+    transform: scale(0.94);
+  }
+
+  .kkang-icon {
+    font-size: 24px;
+    filter: drop-shadow(0 1px 3px rgba(253, 224, 71, 0.6));
+  }
+
+  .count {
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: -0.3px;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
   }
 }
 

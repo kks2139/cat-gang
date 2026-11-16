@@ -23,10 +23,14 @@ export default function CatBook({ className, catchedNames }: Props) {
   const collectedCount = catCharacters.filter((cat) =>
     catchedNames.has(cat.name),
   ).length;
+  const progressPct = (collectedCount / catCharacters.length) * 100;
 
   return (
     <div className={cn("CatBook", className)}>
-      <div className={cn("progress-bar")}>
+      <div
+        className={cn("progress-bar")}
+        style={{ "--progress": `${progressPct}%` } as React.CSSProperties}
+      >
         <div className={cn("progress-fill")} />
         <span className={cn("progress-label")}>
           {collectedCount} / {catCharacters.length}종 수집

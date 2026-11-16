@@ -23,7 +23,10 @@ import PawIcon from "@/components/PawIcon";
 import { useDayAndNight } from "@/hooks/useDayAndNight";
 import { useItemMutation } from "@/queries/useItemMutation";
 import { useItemQuery } from "@/queries/useItemQuery";
+import { useUpdateTotalDistanceMutation } from "@/queries/useUpdateTotalDistanceMutation";
+import { useUsersQuery } from "@/queries/useUsersQuery";
 import { useCatStore } from "@/store/cat";
+import { useKkangStore } from "@/store/kkang";
 import { useViewStore } from "@/store/view";
 import { catCharacters } from "@/utils/cats";
 import { isDev } from "@/utils/constants";
@@ -66,6 +69,7 @@ const WALK_DURATION = 1500; // 캐릭터 이동 애니메이션 시간 (ms)
 const MAX_PAWS_PER_MOVE = 50; // 한 번의 위치 업데이트당 찍히는 최대 발자국 수
 const MAX_SAVED_PATH = 600; // 스토리지에 저장할 궤적 좌표 최대 개수
 const STORE_DEBOUNCE_MS = 5000; // 궤적 저장 디바운스 (ms)
+const SYNC_MIN_INTERVAL_MS = 60_000; // 총 산책거리 서버 동기화 최소 간격 (ms)
 const PAW_SVG = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 11.5c-3.2 0-6 2.6-6 5.2 0 1.8 1.4 3 3.2 3 1 0 1.8-.4 2.8-.4s1.8.4 2.8.4c1.8 0 3.2-1.2 3.2-3 0-2.6-2.8-5.2-6-5.2z"/><ellipse cx="6" cy="8.4" rx="1.9" ry="2.4" transform="rotate(-25 6 8.4)"/><ellipse cx="12" cy="6.6" rx="1.9" ry="2.5"/><ellipse cx="18" cy="8.4" rx="1.9" ry="2.4" transform="rotate(25 18 8.4)"/></svg>`;
 
 // 3D 카메라/지형/하늘 설정
@@ -352,6 +356,8 @@ interface Props {
   ref?: React.Ref<Marker | null>;
   onClickMe?: () => void;
   onDistanceChange?: (distance: number) => void;
+  /** 깡 캡슐(충전) 클릭 콜백 */
+  onClickKkang?: () => void;
 }
 
 function MapContent({
@@ -364,7 +370,7 @@ function MapContent({
   ref: myMarkerRef,
   onClickMe,
   onDistanceChange,
-}: Props) {
+}: Omit<Props, "onClickKkang">) {
   const isStopFocusMe = useViewStore((s) => s.isStopFocusMe);
   const isBattleOn = useViewStore((s) => s.isBattleOn);
   const { addToastMessage } = useViewStore((s) => s.actions);
@@ -426,6 +432,53 @@ function MapContent({
   // 최신 itemCount를 참조하기 위한 Ref
   const itemCountRef = useRef(itemCount);
   itemCountRef.current = itemCount;
+
+  // 총 산책거리 서버 동기화 (랭킹용) — 서버값 + 오늘 누적거리를 절대값으로 전송
+  const { data: user } = useUsersQuery();
+  const { mutateAsync: syncTotalDistanceRpc } =
+    useUpdateTotalDistanceMutation();
+
+  const serverTotalDistanceRef = useRef(0);
+  const lastSyncedCandidateRef = useRef<number | null>(null);
+  const lastSyncAtRef = useRef(0);
+
+  useEffect(() => {
+    serverTotalDistanceRef.current = user?.total_distance ?? 0;
+  }, [user]);
+
+  const syncTotalDistance = useCallback(
+    async (isFinal = false) => {
+      const candidate =
+        serverTotalDistanceRef.current + totalDistanceRef.current;
+
+      if (candidate === lastSyncedCandidateRef.current) {
+        return;
+      }
+
+      if (
+        !isFinal &&
+        Date.now() - lastSyncAtRef.current < SYNC_MIN_INTERVAL_MS
+      ) {
+        return;
+      }
+
+      lastSyncAtRef.current = Date.now();
+
+      try {
+        // greatest(total_distance, p_distance)로 갱신되므로 중복/재전송에도 멱등
+        await syncTotalDistanceRpc({ distance: candidate });
+        lastSyncedCandidateRef.current = candidate;
+      } catch (e) {
+        // 실패 시 lastSyncedCandidate를 진행하지 않아 다음 주기에 재전송된다
+        console.error("총 산책거리 동기화 실패:", e);
+      }
+    },
+    [syncTotalDistanceRpc]
+  );
+
+  // watchPosition 핸들러/언마운트 클린업이 항상 최신 함수를 쓰도록 ref 유지
+  const syncTotalDistanceRef = useRef(syncTotalDistance);
+  syncTotalDistanceRef.current = syncTotalDistance;
 
   const map = useViewStore((s) => s.map);
 
@@ -742,6 +795,9 @@ function MapContent({
                 .slice(-MAX_SAVED_PATH)
                 .map(({ lat, lng }) => ({ lat, lng })),
             });
+
+            // 총 산책거리 서버 동기화 (내부에서 60초 스로틀)
+            void syncTotalDistanceRef.current();
           }, STORE_DEBOUNCE_MS);
         }
       } else {
@@ -1066,7 +1122,10 @@ function MapContent({
     let totalLength = 0;
 
     for (let i = 1; i < pathRef.current.length; i++) {
-      const segLen = distanceInMeters(pathRef.current[i - 1], pathRef.current[i]);
+      const segLen = distanceInMeters(
+        pathRef.current[i - 1],
+        pathRef.current[i]
+      );
 
       segmentLengths.push(segLen);
       totalLength += segLen;
@@ -1310,6 +1369,9 @@ function MapContent({
               .slice(-MAX_SAVED_PATH)
               .map(({ lat, lng }) => ({ lat, lng })),
           });
+
+          // 앱 종료 전 마지막 동기화 (스로틀 무시)
+          void syncTotalDistanceRef.current(true);
         }
       }
     };
@@ -1318,8 +1380,9 @@ function MapContent({
   return <div className={className}></div>;
 }
 
-export default function Map({ className, ...rest }: Props) {
+export default function Map({ className, onClickKkang, ...rest }: Props) {
   const isStopFocusMe = useViewStore((s) => s.isStopFocusMe);
+  const kkangCount = useKkangStore((s) => s.count);
   const { setMap, setIsStopFocusMe, setIsMapLoading } = useViewStore(
     (s) => s.actions
   );
@@ -1541,16 +1604,28 @@ export default function Map({ className, ...rest }: Props) {
 
   return (
     <div className={cn("map-wrapper")}>
-      {/* 상단 산책 거리 플로팅 캡슐 */}
-      <div className={cn("distance-display")}>
-        <PawIcon size={15} color="#834e00" className={cn("paw-icon")} />
-        <span className={cn("label")}>오늘 산책 거리</span>
-        <NumberFlow
-          className={cn("distance")}
-          value={totalDistance / 1000}
-          format={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }}
-        />
-        <span className={cn("unit")}>km</span>
+      {/* 상단 플로팅 캡슐 행 — 왼쪽 산책 거리 / 오른쪽 깡 */}
+      <div className={cn("top-bar")}>
+        <div className={cn("distance-display")}>
+          <PawIcon size={15} color="#834e00" className={cn("paw-icon")} />
+          <span className={cn("label")}>오늘 산책 거리</span>
+          <NumberFlow
+            className={cn("distance")}
+            value={totalDistance / 1000}
+            format={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }}
+          />
+          <span className={cn("unit")}>km</span>
+        </div>
+
+        <button
+          type="button"
+          className={cn("kkang-display")}
+          onClick={onClickKkang}
+          aria-label="깡 충전"
+        >
+          <span className={cn("kkang-icon")}>⚡</span>
+          <NumberFlow className={cn("count")} value={kkangCount} />
+        </button>
       </div>
 
       <div

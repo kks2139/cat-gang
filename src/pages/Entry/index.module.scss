@@ -265,6 +265,11 @@
           animation: paw-tap 1.6s ease-in-out infinite;
         }
       }
+
+      // 랭킹 버튼 — 시작하기 아래 보조 액션 (가로폭은 .menu에 맞춤)
+      .ranking {
+        width: 100%;
+      }
     }
   }
 

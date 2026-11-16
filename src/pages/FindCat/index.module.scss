@@ -55,7 +55,7 @@
 
     z-index: 1000;
     position: absolute;
-    bottom: max(20px, env(safe-area-inset-bottom));
+    bottom: max(24px, env(safe-area-inset-bottom));
     left: 50%;
     transform: translateX(-50%);
     display: flex;
@@ -68,7 +68,7 @@
       height: 46px;
       padding: 0 18px;
       border-radius: 20px;
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 700;
       flex: none;
 
@@ -93,18 +93,22 @@
 
       .badge {
         display: inline-flex;
-        align-items: center;
+        align-items: baseline;
         justify-content: center;
         min-width: 20px;
-        height: 20px;
-        padding: 0 6px;
+        padding: 0px 6px;
         margin-left: 2px;
         background: rgba(255, 255, 255, 0.28);
         color: #ffffff;
         border-radius: 10px;
-        font-size: 12px;
+        font-size: 16px;
         font-weight: 800;
-        line-height: 1;
+
+        .unit {
+          font-size: 12px;
+          // font-weight: normal;
+          margin-left: 4px;
+        }
       }
     }
   }

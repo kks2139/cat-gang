@@ -15,6 +15,7 @@ import { useCatchCatMutation } from "@/queries/useCatchCatMutation";
 import { useItemQuery } from "@/queries/useItemQuery";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
 import { useCatStore } from "@/store/cat";
+import { useKkangStore } from "@/store/kkang";
 import { useViewStore } from "@/store/view";
 import { catCharacters, type CatInfo, getGangInfo, MyCat } from "@/utils/cats";
 import {
@@ -42,11 +43,17 @@ export default function FindCat() {
     (s) => s.actions
   );
 
+  const kkangCount = useKkangStore((s) => s.count);
+  const kkangInitialized = useKkangStore((s) => s.isInitialized);
+  const { consumeOne: consumeKkangOne } = useKkangStore((s) => s.actions);
+
   const [isShowVictoryDialog, setIsShowVictoryDialog] = useState(false);
   const [isShowCatchedCatPopup, setIsShowCatchedCatPopup] = useState(false);
   const [isShowMyInfoPopup, setIsShowMyInfoPopup] = useState(false);
   const [isShowCatBook, setIsShowCatBook] = useState(false);
   const [isShowExitConfirm, setIsShowExitConfirm] = useState(false);
+  const [isShowKkangEmpty, setIsShowKkangEmpty] = useState(false);
+  const [isShowKkangAd, setIsShowKkangAd] = useState(false);
   const [catchedCat, setCatchedCat] = useState<CatInfo>();
   const [ownCatInfo, setOwnCatInfo] = useState<OwnCat>();
 
@@ -68,6 +75,16 @@ export default function FindCat() {
 
   // 도감: 잡은 고양이 이름 집합
   const catchedNames = new Set(ownCats.map(({ name }) => name));
+
+  // 도감 수집률 (%) — 도감 버튼 badge에 표기
+  const collectionRate = Math.round(
+    (catchedNames.size / catCharacters.length) * 100
+  );
+
+  // 깡: 오늘 남은 개수를 storage에서 로드 (마운트 시 1회)
+  useEffect(() => {
+    void useKkangStore.getState().actions.init();
+  }, []);
 
   // 세력 성장: 부하 수에 따라 내 고양이 스탯 보너스 적용
   // (Stage가 싱글턴 스탯을 읽으므로 부하 목록이 바뀔 때마다 갱신)
@@ -92,6 +109,11 @@ export default function FindCat() {
     }
 
     if (isShowVictoryDialog) {
+      return;
+    }
+
+    // 깡 다이얼로그는 Dialog 자체 dismiss 리스너가 닫는다 (이중 발화 방지)
+    if (isShowKkangEmpty || isShowKkangAd) {
       return;
     }
 
@@ -124,6 +146,8 @@ export default function FindCat() {
     isShowCatBook,
     isShowCatchedCatPopup,
     isShowExitConfirm,
+    isShowKkangAd,
+    isShowKkangEmpty,
     isShowMyInfoPopup,
     isShowStage,
     isShowVictoryDialog,
@@ -148,6 +172,21 @@ export default function FindCat() {
         className={cn("map", { "is-blurred": isAnySheetOpen })}
         ownCats={ownCats}
         onClickCat={() => {
+          // storage 로드 전(수백 ms)에는 클릭을 무시한다
+          if (!kkangInitialized) {
+            return;
+          }
+
+          // 깡이 없으면 전투를 시작하지 않는다 (마커 선택 상태도 되돌린다)
+          if (kkangCount <= 0) {
+            setSelectedCat(undefined);
+            setIsShowKkangEmpty(true);
+            return;
+          }
+
+          // 전투 1회당 깡 1개 소모 (도망/패배해도 환불 없음)
+          consumeKkangOne();
+
           setIsShowStage(true);
           setIsStopFocusMe(true);
           setIsBattleOn(true);
@@ -159,6 +198,9 @@ export default function FindCat() {
         }}
         onClickMe={() => {
           setIsShowMyInfoPopup(true);
+        }}
+        onClickKkang={() => {
+          setIsShowKkangAd(true);
         }}
       />
 
@@ -191,6 +233,12 @@ export default function FindCat() {
           }}
         >
           <span className={cn("btn-label")}>도감</span>
+          {catchedNames.size > 0 && (
+            <span className={cn("badge")}>
+              {collectionRate}
+              <span className={cn("unit")}>%</span>
+            </span>
+          )}
         </Button>
       </div>
 
@@ -395,6 +443,26 @@ export default function FindCat() {
         onClose={() => {
           setIsShowMyInfoPopup(false);
         }}
+      />
+
+      {/* 깡 부족 안내 팝업 (고양이 클릭 시 깡이 없으면 노출) */}
+      <Dialog
+        isShow={isShowKkangEmpty}
+        title="깡 부족"
+        subTitle={"깡이 없어서 싸울 수 없다옹…\n내일 다시 찾아와라옹!"}
+        buttonLable="닫기"
+        onBackClose={() => setIsShowKkangEmpty(false)}
+        onButtonClick={() => setIsShowKkangEmpty(false)}
+      />
+
+      {/* 깡 충전 안내 팝업 (깡 캡슐 클릭 — 전면광고 연동은 추후 구현) */}
+      <Dialog
+        isShow={isShowKkangAd}
+        title="깡 충전"
+        subTitle={"전면광고를 보고\n깡 10개를 받을 수 있다옹! (준비 중)"}
+        buttonLable="닫기"
+        onBackClose={() => setIsShowKkangAd(false)}
+        onButtonClick={() => setIsShowKkangAd(false)}
       />
 
       {/* 나가기 컨펌 팝업 (뒤로가기 시 노출) */}

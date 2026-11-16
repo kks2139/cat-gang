@@ -11,6 +11,8 @@ interface Result {
   name: string;
   crying: string;
   created_at: string;
+  /** 총 누적 산책 거리 (m) — 랭킹용 */
+  total_distance: number;
 }
 
 export const useUsersQuery = ({
