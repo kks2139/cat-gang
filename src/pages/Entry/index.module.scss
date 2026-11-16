@@ -215,7 +215,7 @@
       display: flex;
       flex-direction: column;
       row-gap: 12px;
-      width: 280px;
+      width: 200px;
 
       .start {
         // 글래스 스타일 + 약간 어두운 톤 (FindCat 하단 독과 통일된 짙은 그린 유리)
@@ -266,9 +266,23 @@
         }
       }
 
-      // 랭킹 버튼 — 시작하기 아래 보조 액션 (가로폭은 .menu에 맞춤)
+      // 랭킹 버튼 — 시작하기와 크기·패딩 동일(size=large), 톤만 오렌지
       .ranking {
         width: 100%;
+
+        // 오렌지 톤 유리 (시작하기 그린과 대응되는 구조)
+        --glass-tint: linear-gradient(
+          180deg,
+          rgba(251, 146, 60, 0.82) 0%,
+          rgba(234, 88, 12, 0.85) 55%,
+          rgba(124, 45, 18, 0.85) 100%
+        );
+        --glass-border: rgba(254, 215, 170, 0.4);
+        --glass-grad-top: rgba(255, 255, 255, 0.2);
+        --glass-grad-bottom: rgba(0, 0, 0, 0.2);
+        --glass-highlight: rgba(255, 255, 255, 0.32);
+        --glass-shadow: 0 10px 28px rgba(0, 0, 0, 0.45),
+          0 0 20px rgba(249, 115, 22, 0.25);
       }
     }
   }

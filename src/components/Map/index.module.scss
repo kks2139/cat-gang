@@ -47,7 +47,7 @@
 
 // 산책 거리 캡슐 — 공통 글래스 카드 + 발바닥 아이콘 강조
 .distance-display {
-  @include glass-card($tint: rgba(15, 23, 42, 0.5), $radius: 24px, $blur: 8px);
+  @include glass-card($radius: 24px);
 
   display: inline-flex;
   align-items: center;
@@ -98,13 +98,12 @@
 // 깡 캡슐 — 오렌지 톤 글래스 카드 버튼 (래퍼가 pointer-events: none이라 버튼만 활성)
 .kkang-display {
   @include glass-card(
-    $tint: rgba(249, 115, 22, 0.32),
+    $tint: rgba(249, 115, 22, 0.5),
     $border: rgba(255, 214, 165, 0.5),
     $radius: 24px,
-    $blur: 8px,
     $shadow: 0 4px 14px rgba(249, 115, 22, 0.25),
-    $grad-top: rgba(255, 237, 213, 0.28),
-    $grad-bottom: rgba(194, 65, 12, 0.18)
+    $grad-top: rgba(255, 237, 213, 0.3),
+    $grad-bottom: rgba(194, 65, 12, 0.5)
   );
 
   pointer-events: auto;
@@ -137,16 +136,14 @@
   }
 }
 
-// 내 위치 포커스 플로팅 액션 버튼 (FAB) — 그린빛 스며든 원형 유리
+// 내 위치 포커스 플로팅 액션 버튼 (FAB) — 공통 글래스 + 그린빛 하단 그라데이션
 .focus-button {
   @include glass-card(
-    $tint: rgba(220, 252, 231, 0.3),
     $border: rgba(255, 255, 255, 0.55),
     $radius: 50%,
-    $blur: 14px,
     $shadow: 0 4px 16px rgba(22, 163, 74, 0.2),
-    $grad-top: rgba(255, 255, 255, 0.5),
-    $grad-bottom: rgba(187, 247, 208, 0.3)
+    $grad-top: rgba(255, 255, 255, 0.2),
+    $grad-bottom: rgba(187, 247, 208, 0.2)
   );
 
   z-index: 1000;
@@ -165,8 +162,8 @@
   .gps-icon {
     width: 22px;
     height: 22px;
-    color: #00b345;
-    filter: drop-shadow(0 1px 2px rgba(20, 83, 45, 0.4));
+    color: #00c44b;
+    filter: drop-shadow(0 1px 5px rgb(56, 56, 56));
     transition: color 0.2s ease;
   }
 

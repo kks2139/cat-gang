@@ -26,10 +26,8 @@
 
     li > button {
       @include glass-card(
-        $tint: rgba(255, 255, 255, 0.08),
         $border: rgba(255, 255, 255, 0.2),
         $radius: 18px,
-        $blur: 12px,
         $shadow: 0 2px 12px rgba(0, 0, 0, 0.25),
         $grad-top: rgba(255, 255, 255, 0.12),
         $grad-bottom: rgba(0, 0, 0, 0.1)

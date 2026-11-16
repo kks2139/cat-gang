@@ -162,7 +162,7 @@ export default function Entry() {
 
               <Button
                 className={cn("ranking")}
-                color="secondary"
+                size="large"
                 onClick={() => {
                   setIsShowRanking(true);
                 }}

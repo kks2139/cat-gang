@@ -2,10 +2,8 @@
 
 .OwnCatInfoDialog {
   @include glass-card(
-    $tint: rgba(255, 255, 255, 0.08),
     $border: rgba(187, 247, 208, 0.35),
     $radius: 20px,
-    $blur: 16px,
     $shadow: 0 4px 20px rgba(0, 0, 0, 0.3),
     $grad-top: rgba(255, 255, 255, 0.12),
     $grad-bottom: rgba(0, 0, 0, 0.1)

@@ -9,10 +9,8 @@
 
 .Input {
   @include glass-card(
-    $tint: rgba(255, 255, 255, 0.08),
     $border: rgba(255, 255, 255, 0.2),
     $radius: 14px,
-    $blur: 10px,
     $shadow: none,
     $grad-top: rgba(255, 255, 255, 0.1),
     $grad-bottom: rgba(0, 0, 0, 0.08)

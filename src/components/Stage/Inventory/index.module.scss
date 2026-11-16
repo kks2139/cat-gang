@@ -8,10 +8,9 @@
   align-items: center;
   justify-content: center;
   background-color: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
 
   .inventoryPanel {
-    @include glass-card($tint: rgba(15, 23, 42, 0.6), $radius: 24px, $shadow: 0 16px 40px rgba(0, 0, 0, 0.45));
+    @include glass-card($radius: 24px, $shadow: 0 16px 40px rgba(0, 0, 0, 0.45));
 
     width: 320px;
     overflow: hidden;

@@ -16,10 +16,9 @@
 
   .messages {
     @include glass-card(
-      $tint: rgba(6, 30, 16, 0.55),
+      $tint: rgba(6, 30, 16, 0.75),
       $border: rgba(187, 247, 208, 0.3),
       $radius: 16px,
-      $blur: 12px,
       $shadow: 0 8px 24px rgba(3, 18, 10, 0.35),
       $grad-top: rgba(74, 222, 128, 0.12),
       $grad-bottom: rgba(0, 0, 0, 0.15)

@@ -8,16 +8,14 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background-color: rgba(15, 23, 42, 0.45);
+  background-color: rgba(15, 23, 42, 0.7);
   display: flex;
   align-items: flex-end;
 
   .sheet-container {
     @include glass-card(
-      $tint: rgba(15, 23, 42, 0.62),
       $border: rgba(255, 255, 255, 0.22),
       $radius: 28px 28px 0 0,
-      $blur: 24px,
       $shadow: 0 -10px 40px rgba(0, 0, 0, 0.4),
       $grad-top: rgba(255, 255, 255, 0.1),
       $grad-bottom: rgba(0, 0, 0, 0.15)
@@ -75,10 +73,8 @@
 
     .tab {
       @include glass-card(
-        $tint: rgba(15, 23, 42, 0.35),
         $border: rgba(255, 255, 255, 0.16),
         $radius: 999px,
-        $blur: 6px,
         $shadow: none,
         $grad-top: rgba(255, 255, 255, 0.08),
         $grad-bottom: rgba(0, 0, 0, 0.1)
@@ -140,10 +136,8 @@
 
     .ranking-row {
       @include glass-card(
-        $tint: rgba(15, 23, 42, 0.32),
         $border: rgba(255, 255, 255, 0.14),
         $radius: 14px,
-        $blur: 6px,
         $shadow: none,
         $grad-top: rgba(255, 255, 255, 0.06),
         $grad-bottom: rgba(0, 0, 0, 0.08)

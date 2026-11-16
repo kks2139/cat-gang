@@ -14,16 +14,16 @@
 }
 
 // ─── 공통 글래스 카드 질감 ──────────────────────────────
-// 이 프로젝트의 표준 카드/패널/버튼 질감. 색상톤을 그대로 복사하는 게 아니라
-// 각 UI의 원래 색 정체성을 글래스에 맞게 재해석해 틴트로 넣는다.
-// (ex. 흰 톤 → 밝은 유리, 그린 톤 → 그린빛 스며든 유리, 다크 톤 → 짙은 유리)
+// 이 프로젝트의 표준 카드/패널/버튼 질감. 모든 글래스 UI는 이 믹스인으로 그린다.
+// backdrop-filter(블러)는 앱인토스 웹뷰에서 렌더링되지 않아(실측 확인) 사용하지
+// 않는다. 대신 틴트 알파를 0.75로 통일해 블러 없이도 카드 가독성을 확보한다.
+// (색조를 살려야 하는 UI만 $tint로 알파 0.75인 틴트를 넘긴다)
 // 런타임에 톤을 바꿔야 하면 CSS 변수(--glass-*)를 재정의한다.
 @mixin glass-card(
-  $tint: rgba(15, 23, 42, 0.55),
+  $tint: rgba(15, 23, 42, 0.75),
   $border: rgba(255, 255, 255, 0.25),
   $radius: 20px,
   $shadow: 0 8px 24px rgba(0, 0, 0, 0.35),
-  $blur: 12px,
   $highlight: rgba(255, 255, 255, 0.25),
   $grad-top: rgba(255, 255, 255, 0.18),
   $grad-bottom: rgba(0, 0, 0, 0.1)
@@ -44,25 +44,6 @@
     ),
     var(--glass-tint);
   border: 1px solid var(--glass-border);
-  backdrop-filter: blur($blur);
-  -webkit-backdrop-filter: blur($blur);
-
-  // 웹뷰(구버전 Android System WebView 등)는 backdrop-filter를 렌더링하지 못하는
-  // 기기가 있다(Entry 대화상자도 안 됨 — 실측 확인). 미지원 환경에서는 틴트를
-  // 한 겹 더 얹어(알파 합성 ≈ 2a - a²) 카드 가독성을 확보한다. 블러는 enhancement.
-  @supports not (
-    (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
-  ) {
-    background:
-      linear-gradient(
-        180deg,
-        var(--glass-grad-top) 0%,
-        var(--glass-grad-bottom) 100%
-      ),
-      var(--glass-tint),
-      var(--glass-tint);
-  }
-
   box-shadow:
     inset 0 1px 0 var(--glass-highlight),
     var(--glass-shadow);

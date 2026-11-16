@@ -8,20 +8,17 @@
   left: 0;
   right: 0;
   background-color: rgba(15, 23, 42, 0.5);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
   padding: 30px 16px;
 
   .content {
-    @include glass-card($radius: 24px, $blur: 20px, $shadow: 0 16px 48px rgba(0, 0, 0, 0.4));
+    @include glass-card($radius: 24px, $shadow: 0 16px 48px rgba(0, 0, 0, 0.4));
 
     // 어두운 글래스 + 흰 텍스트 (전투 화면 스타일 기준)
     --glass-grad-top: rgba(255, 255, 255, 0.1);
     --glass-grad-bottom: rgba(0, 0, 0, 0.15);
-    --glass-tint: rgba(15, 23, 42, 0.62);
     --glass-border: rgba(255, 255, 255, 0.22);
 
     padding: 28px 24px 20px;

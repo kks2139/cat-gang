@@ -12,9 +12,8 @@
   font-weight: 700;
   letter-spacing: -0.2px;
 
-  // 전투 화면 인벤토리 스타일: 다크 글래스 + 흰 텍스트
+  // 전투 화면 인벤토리 스타일: 다크 글래스 + 흰 텍스트 (틴트는 공통 기본값)
   @include glass-card(
-    $tint: rgba(15, 23, 42, 0.55),
     $border: rgba(255, 255, 255, 0.18),
     $radius: 18px,
     $shadow: 0 8px 24px rgba(0, 0, 0, 0.35),
@@ -33,9 +32,8 @@
     filter 0.15s ease;
   overflow: hidden;
 
-  // secondary: 유리 질감은 같고 밝기만 살짝 올림 (비강조 액션)
+  // secondary: 유리 질감은 같고 테두리만 밝게 (비강조 액션)
   &.secondary {
-    --glass-tint: rgba(255, 255, 255, 0.14);
     --glass-border: rgba(255, 255, 255, 0.3);
     --glass-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
     color: #ffffff;
@@ -71,9 +69,8 @@
     color: #ffffff;
   }
 
-  // glass: 유리 질감은 같고 더 투명하게 (보조 액션)
+  // glass: 유리 질감은 같고 그림자만 약하게 (보조 액션)
   &.glass {
-    --glass-tint: rgba(255, 255, 255, 0.06);
     --glass-border: rgba(255, 255, 255, 0.18);
     --glass-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     color: #ffffff;
