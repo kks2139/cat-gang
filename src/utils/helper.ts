@@ -110,6 +110,28 @@ export const getFireworkElement = () => {
   return explosion;
 };
 
+// 등급 이펙트 별(스파클) 설정 — 별마다 위치/높이/크기/지연/속도/좌우 흔들림(drift)을
+// 달리해 화려하고 다이나믹하게 보이게 한다. 값은 CSS 변수로 span에 주입되고
+// 움직임 자체는 globals.scss의 sparkle-rise 키프레임이 담당한다
+const RARE_STAR_STYLES = [
+  { left: 2, bottom: 5, size: 12, delay: 0, duration: 2.6, drift: 6 },
+  { left: 13, bottom: 8, size: 15, delay: 0.9, duration: 2.9, drift: -7 },
+  { left: 25, bottom: 4, size: 11, delay: 1.7, duration: 2.4, drift: 8 },
+  { left: 37, bottom: 9, size: 14, delay: 0.5, duration: 3.0, drift: -6 },
+  { left: 47, bottom: 6, size: 12, delay: 1.3, duration: 2.7, drift: 5 },
+];
+
+const UNIQUE_STAR_STYLES = [
+  { left: 0, bottom: 5, size: 13, delay: 0, duration: 2.0, drift: 8 },
+  { left: 8, bottom: 9, size: 17, delay: 0.7, duration: 2.3, drift: -9 },
+  { left: 16, bottom: 4, size: 12, delay: 1.4, duration: 1.9, drift: 7 },
+  { left: 24, bottom: 10, size: 18, delay: 0.3, duration: 2.4, drift: -8 },
+  { left: 33, bottom: 5, size: 12, delay: 1.1, duration: 2.1, drift: 9 },
+  { left: 41, bottom: 9, size: 16, delay: 1.8, duration: 2.5, drift: -7 },
+  { left: 49, bottom: 4, size: 13, delay: 0.5, duration: 2.0, drift: 6 },
+  { left: 54, bottom: 8, size: 15, delay: 1.5, duration: 2.2, drift: -6 },
+];
+
 type MarkerType = "me" | "owned" | "enemy" | "item";
 
 interface CreateOverlayOptions {
@@ -230,20 +252,24 @@ export const createMarker = ({
       const shadowFloor = document.createElement("div");
       shadowFloor.className = "shadow-floor";
 
-      // 발밑에서 숨쉬듯 번지는 등급 색 오라
-      const aura = document.createElement("div");
-      aura.className = "aura";
-
-      // 떠오르는 별 (unique는 5개로 더 화려하게)
+      // 떠오르는 별 — unique는 더 많고 크고 빠르게 (레어 5개 / 유니크 8개)
       const sparkles = document.createElement("div");
       sparkles.className = "sparkles";
 
-      for (let i = 0; i < (isUnique ? 5 : 3); i++) {
-        sparkles.appendChild(document.createElement("span"));
-      }
+      (isUnique ? UNIQUE_STAR_STYLES : RARE_STAR_STYLES).forEach(
+        ({ left, bottom, size, delay, duration, drift }) => {
+          const star = document.createElement("span");
+          star.style.setProperty("--star-left", `${left}px`);
+          star.style.setProperty("--star-bottom", `${bottom}px`);
+          star.style.setProperty("--star-size", `${size}px`);
+          star.style.setProperty("--star-delay", `${delay}s`);
+          star.style.setProperty("--star-duration", `${duration}s`);
+          star.style.setProperty("--star-drift", `${drift}px`);
+          sparkles.appendChild(star);
+        }
+      );
 
       effect.appendChild(shadowFloor);
-      effect.appendChild(aura);
       effect.appendChild(sparkles);
 
       container.appendChild(effect);

@@ -109,7 +109,7 @@ src/
 `src/components/Map/index.tsx`는 지도 렌더링과 게임 로직(마커, 발자국, 스폰)을 함께 담당한다.
 
 - **구성**: 바깥 `Map`(지도 인스턴스 생성/테마) + 내부 `MapContent`(마커/게임 로직). 지도 인스턴스는 `useViewStore`의 `map`에 등록해 공유.
-- **지도 설정**: 기본 줌 18(Leaflet 줌 19 축척과 동일 — MapLibre는 512px 타일이라 같은 줌에서 축척 2배)이며 핀치 줌/회전 활성(min 15, `pitchWithRotate: true`), pitch 30 3D 카메라 + 두 손가락 세로 드래그 피치 조절 활성(상한 55도 — 과도한 기울기 렌더 부하 방지). 손가락 한 개 드래그 회전(`dragRotate`)/스크롤/더블클릭 줌은 비활성. 줌 아웃 시 발자국 간격을 2^(줌차이)배로 보정(`getZoomAwareInterval`). `map.setPadding(bottom 25%)`로 3D 피치에서 캐릭터를 화면 중앙에 유지.
+- **지도 설정**: 기본 줌 18(Leaflet 줌 19 축척과 동일 — MapLibre는 512px 타일이라 같은 줌에서 축척 2배)이며 핀치 줌/회전 활성(min 15, `pitchWithRotate: true`), pitch 30 3D 카메라 + 두 손가락 세로 드래그 피치 조절 활성(상한 55도 — 과도한 기울기 렌더 부하 방지). 손가락 한 개 드래그 회전(`dragRotate`)/스크롤은 비활성, 더블탭(더블클릭) 줌은 활성 — 단 마커 위 더블탭은 `dblclick` 핸들러에서 `preventDefault()`로 게임 동작(전투 시작 등)과의 충돌을 막음. 줌 아웃 시 발자국 간격을 2^(줌차이)배로 보정(`getZoomAwareInterval`). `map.setPadding(bottom 25%)`로 3D 피치에서 캐릭터를 화면 중앙에 유지.
 - **3D 지형/하늘**: AWS Terrain Tiles(terrarium DEM, 무료·키 불필요) 소스로 terrain + hillshade, `setSky`로 낮/노을/밤 하늘색. 건물 3D 조명은 `setLight`.
 - **낮/밤 다크 테마**: `applyTheme()`이 `useDayAndNight` 기준으로 스타일 레이어 색을 런타임에 치환/복원. 원본 색은 로드 시점에 수집(`ORIGINAL_PAINTS`). `setSky`/`setPaintProperty`는 스타일 로드 완료(`load` 이벤트) 전에 호출하면 에러남.
 - **마커**: 전부 DOM element 기반 `Marker` (me/enemy/owned/item 타입 — `createMarker`는 `utils/helper.ts`). 마커 클릭은 `e.originalEvent.target`에서 `[data-marker-container]` 등을 `closest()`로 찾는 MapLibre 방식.

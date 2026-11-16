@@ -111,7 +111,48 @@ input {
 
   &[data-type="item"] {
     .item {
+      position: relative;
       animation: item-appear 1.2s ease-out forwards;
+
+      // 가벼운 별빛 — 아이템 모서리에서 가끔 반짝이는 작은 별 2개.
+      // 등급 이펙트보다 작고 점등 시간도 짧아(주기의 ~35%) 은은하게 보인다
+      &::before,
+      &::after {
+        content: "";
+        position: absolute;
+        z-index: 2;
+        width: 9px;
+        height: 9px;
+        background: #fff3b0;
+        clip-path: polygon(
+          50% 0%,
+          62% 38%,
+          100% 50%,
+          62% 62%,
+          50% 100%,
+          38% 62%,
+          0% 50%,
+          38% 38%
+        );
+        filter: drop-shadow(0 0 4px rgba(255, 236, 150, 0.9));
+        opacity: 0;
+        pointer-events: none;
+        animation: item-twinkle 3.2s ease-in-out infinite;
+      }
+
+      &::before {
+        top: -3px;
+        left: -5px;
+      }
+
+      // 두 번째 별은 절반 시점에 반대쪽 모서리에서 — 번갈아 반짝임
+      &::after {
+        bottom: -1px;
+        right: -6px;
+        width: 7px;
+        height: 7px;
+        animation-delay: 1.6s;
+      }
     }
 
     img {
@@ -123,6 +164,13 @@ input {
       z-index: 1000;
       animation: item-collected 2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
       pointer-events: none;
+
+      // 수집 연출 중에는 별빛 끔 — 깔끔한 수집 팝
+      .item::before,
+      .item::after {
+        animation: none;
+        opacity: 0;
+      }
     }
   }
 
@@ -1024,13 +1072,16 @@ input {
   }
 
   // ─── 떠오르는 별 ──────────────────────────────
-  // 캐릭터 이미지(z-index 1)보다 앞 — 등급 효과가 가려지지 않도록
+  // 캐릭터 이미지(z-index 1)보다 앞 — 등급 효과가 가려지지 않도록.
+  // 별마다 위치/크기/속도/흔들림을 CSS 변수로 받아(helper.ts에서 주입)
+  // 각기 다르게 움직여 다이나믹한 군집 효과를 만든다
   .sparkles span {
     z-index: 2;
     position: absolute;
-    bottom: 6px;
-    width: 13px;
-    height: 13px;
+    bottom: var(--star-bottom, 6px);
+    left: var(--star-left, 24px);
+    width: var(--star-size, 13px);
+    height: var(--star-size, 13px);
     clip-path: polygon(
       50% 0%,
       62% 38%,
@@ -1041,51 +1092,13 @@ input {
       0% 50%,
       38% 38%
     );
-    animation: sparkle-rise 2.6s ease-in infinite;
+    animation: sparkle-rise var(--star-duration, 2.6s) linear
+      var(--star-delay, 0s) infinite;
     opacity: 0;
-  }
-
-  // 딜레이를 촘촘히 — 항상 별 2개 이상이 동시에 보이게
-  .sparkles span:nth-child(1) {
-    left: 4px;
-    animation-delay: 0s;
-  }
-
-  .sparkles span:nth-child(2) {
-    left: 24px;
-    animation-delay: 0.8s;
-  }
-
-  .sparkles span:nth-child(3) {
-    left: 44px;
-    animation-delay: 1.6s;
-  }
-
-  // ─── 등급 색 오라: 발밑에서 숨쉬듯 번지는 색 광원 ─
-  .aura {
-    z-index: 0; // 캐릭터 이미지(z-index 1)보다 뒤 — 바닥 광원 역할
-    position: absolute;
-    bottom: -2px;
-    left: 50%;
-    width: 64px;
-    height: 22px;
-    margin-left: -32px;
-    border-radius: 50%;
-    filter: blur(4px);
-    animation: aura-pulse 2.8s ease-in-out infinite;
   }
 
   // ─── 등급별 색상 ──────────────────────────────
   &.rare {
-    .aura {
-      background: radial-gradient(
-        ellipse at center,
-        rgba(120, 180, 255, 0.5) 0%,
-        rgba(120, 180, 255, 0.18) 55%,
-        transparent 75%
-      );
-    }
-
     .sparkles span {
       background: #7bb0ff;
       filter: drop-shadow(0 0 5px rgba(140, 195, 255, 1))
@@ -1095,49 +1108,11 @@ input {
   }
 
   &.unique {
-    // 오라: 더 크고 강하게, 더 빠른 호흡
-    .aura {
-      background: radial-gradient(
-        ellipse at center,
-        rgba(200, 140, 255, 0.62) 0%,
-        rgba(200, 140, 255, 0.24) 55%,
-        transparent 78%
-      );
-      animation-duration: 2.1s;
-    }
-
-    // 별: 5개가 촘촘히 올라오며 더 빠르게 반짝임
     .sparkles span {
       background: #c78bff;
       filter: drop-shadow(0 0 5px rgba(210, 155, 255, 1))
         drop-shadow(0 0 11px rgba(165, 100, 250, 1))
         drop-shadow(0 0 18px rgba(140, 75, 230, 0.8));
-      animation-duration: 2s;
-    }
-
-    .sparkles span:nth-child(1) {
-      left: 0;
-      animation-delay: 0s;
-    }
-
-    .sparkles span:nth-child(2) {
-      left: 12px;
-      animation-delay: 0.4s;
-    }
-
-    .sparkles span:nth-child(3) {
-      left: 24px;
-      animation-delay: 0.8s;
-    }
-
-    .sparkles span:nth-child(4) {
-      left: 36px;
-      animation-delay: 1.2s;
-    }
-
-    .sparkles span:nth-child(5) {
-      left: 47px;
-      animation-delay: 1.6s;
     }
   }
 
@@ -1156,37 +1131,36 @@ input {
     }
   }
 
-  // 별: 아래에서 위로 떠오르며 크게 반짝임 — 노출 구간을 넓혀 존재감 강화
+  // 별: 아래에서 위로 떠오르며 크게 반짝임 — 좌우 드리프트(--star-drift)로
+  // 흔들리는 궤적과 중간 트윙클(크기/투명도 진동)을 넣어 다이나믹하게
   @keyframes sparkle-rise {
     0% {
-      transform: translateY(0) scale(0.5) rotate(0deg);
+      transform: translate(0, 0) scale(0.3) rotate(0deg);
       opacity: 0;
     }
-    8% {
+    10% {
       opacity: 1;
+      transform: translate(calc(var(--star-drift, 0px) * 0.4), -10px)
+        scale(1.15) rotate(35deg);
     }
-    30% {
-      transform: translateY(-18px) scale(1.25) rotate(30deg);
+    28% {
+      transform: translate(calc(var(--star-drift, 0px) * -0.3), -24px)
+        scale(0.7) rotate(70deg);
     }
-    85% {
+    45% {
       opacity: 1;
+      transform: translate(calc(var(--star-drift, 0px) * 0.5), -38px)
+        scale(1.3) rotate(100deg);
+    }
+    70% {
+      opacity: 0.85;
+      transform: translate(calc(var(--star-drift, 0px) * -0.2), -54px)
+        scale(0.85) rotate(135deg);
     }
     100% {
-      transform: translateY(-58px) scale(1.1) rotate(90deg);
+      transform: translate(var(--star-drift, 0px), -74px) scale(0.4)
+        rotate(180deg);
       opacity: 0;
-    }
-  }
-
-  // 오라: 숨쉬듯 확장/수축하며 색이 맥동
-  @keyframes aura-pulse {
-    0%,
-    100% {
-      opacity: 0.55;
-      transform: translateX(-50%) scale(0.85);
-    }
-    50% {
-      opacity: 1;
-      transform: translateX(-50%) scale(1.2);
     }
   }
 }
@@ -1283,7 +1257,8 @@ input {
     }
 
     // 외치는 효과 애니메이션 적용
-    animation: shout-spread var(--greeting-duration) cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    animation: shout-spread var(--greeting-duration)
+      cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
   }
 
   img {
@@ -1434,10 +1409,37 @@ input {
 
 @keyframes item-float {
   from {
-    transform: translateY(0);
+    transform: translateY(0) rotate(-2.5deg);
   }
   to {
-    transform: translateY(-8px);
+    transform: translateY(-8px) rotate(2.5deg);
+  }
+}
+
+// 아이템 별빛: 팝 하고 반짝이다 사라지는 짧은 점등 — 주기 대부분은 숨어
+// 있어서 자주 반짝이는 등급 이펙트와 톤이 구분된다
+@keyframes item-twinkle {
+  0%,
+  55% {
+    transform: scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  62% {
+    transform: scale(1.25) rotate(25deg);
+    opacity: 1;
+  }
+  72% {
+    transform: scale(0.85) rotate(45deg);
+    opacity: 0.8;
+  }
+  82% {
+    transform: scale(1.1) rotate(60deg);
+    opacity: 1;
+  }
+  92%,
+  100% {
+    transform: scale(0) rotate(75deg);
+    opacity: 0;
   }
 }
 

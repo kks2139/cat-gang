@@ -1434,7 +1434,8 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
       touchZoomRotate: true,
       // 핀치 줌 + 두 손가락 회전 모두 활성
       scrollZoom: false,
-      doubleClickZoom: false,
+      // 더블탭/더블클릭 줌 활성 (마커 위 더블탭은 dblclick 핸들러에서 제외)
+      doubleClickZoom: true,
       boxZoom: false,
       keyboard: false,
       pitchWithRotate: true,
@@ -1459,6 +1460,17 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
 
     map.on("dragstart", () => {
       setIsStopFocusMe(true);
+    });
+
+    // 더블탭(더블클릭) 줌 — 마커 위에서는 제외한다.
+    // 마커 더블탭은 전투 시작/인사 등 게임 동작의 연타와 겹치므로
+    // preventDefault로 내장 줌을 막고 클릭 이벤트만 전달되게 한다
+    map.on("dblclick", (e) => {
+      const target = e.originalEvent.target;
+
+      if (target instanceof Element && target.closest(".maplibregl-marker")) {
+        e.preventDefault();
+      }
     });
 
     map.on("load", () => {
