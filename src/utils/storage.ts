@@ -85,39 +85,41 @@ export const storeTodayWalk = async (data: TodayWalkData) => {
   localStorage.setItem(STORAGE_KEY, value);
 };
 
-const parseKkangValue = (value: string | null): number => {
+// 오늘 저장된 깡 값이 없으면(첫 접속/날짜 지남) null, 있으면 그 값을 반환한다.
+// 0개도 "저장된 값"이므로 null과 구분해야 소진 후 재진입 시 리셋되는 버그가 생기지 않는다
+const parseKkangValue = (value: string | null): number | null => {
   if (!value) {
-    return 0;
+    return null;
   }
 
   try {
     const data = JSON.parse(value) as { count: number; savedAt?: string };
 
-    // 저장 시점이 오늘이 아니면 리셋 (자정 초기화)
+    // 저장 시점이 오늘이 아니면 리셋 대상 (자정 초기화)
     if (!data?.savedAt || !isToday(new Date(data.savedAt))) {
-      return 0;
+      return null;
     }
 
     if (typeof data.count !== "number" || data.count < 0) {
-      return 0;
+      return null;
     }
 
     // 광고 보상으로 일일 기본 개수(5)를 초과한 깡은 그대로 유지한다
     // (자정 리셋은 위 savedAt 체크에서 처리)
     return data.count;
   } catch {
-    return 0;
+    return null;
   }
 };
 
-/** 오늘 남은 깡 개수를 읽어온다. 오늘 날짜가 아니면 0 (스토어에서 기본값으로 초기화) */
-export const getTodayKkang = async (): Promise<number> => {
+/** 오늘 남은 깡 개수를 읽어온다. 오늘 저장된 값이 없으면 null (스토어에서 기본값으로 초기화) */
+export const getTodayKkang = async (): Promise<number | null> => {
   if (operEnv) {
     try {
       return parseKkangValue(await Storage.getItem(KKANG_STORAGE_KEY));
     } catch (e) {
       console.error("getTodayKkang 에러:", e);
-      return 0;
+      return null;
     }
   }
 

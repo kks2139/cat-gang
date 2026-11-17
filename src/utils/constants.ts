@@ -1,5 +1,7 @@
 import { Environment } from "@apps-in-toss/web-framework";
 
+import type { CatInfo } from "./cats";
+
 export const isDev = import.meta.env.MODE === "development";
 
 export const operEnv = (() => {
@@ -18,6 +20,13 @@ export const operEnv = (() => {
 
 /** 깡 충전(보상형) 광고로 지급하는 깡 개수 */
 export const KKANG_AD_REWARD_COUNT = 2;
+
+/** 전투 1회당 소모되는 깡 개수 — 상대 고양이 등급이 높을수록 많이 든다 */
+export const KKANG_COST_BY_RARITY: Record<CatInfo["rarity"], number> = {
+  common: 1,
+  rare: 2,
+  unique: 3,
+};
 
 /** 아이템 충전(보상형) 광고로 지급하는 아이템 개수 */
 export const ITEM_AD_REWARD_COUNT = 2;

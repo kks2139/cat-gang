@@ -11,8 +11,8 @@ interface KkangStore {
   actions: {
     /** storage에서 오늘 깡을 로드한다. 값이 없으면(오늘 첫 접속) 기본 개수로 초기화 */
     init: () => Promise<void>;
-    /** 깡 1개 소모 (전투 시작). 0 이하면 아무것도 하지 않는다 */
-    consumeOne: () => void;
+    /** 깡 소모 (전투 시작 — 상대 등급별 소모량). 잔량 부족하면 아무것도 하지 않는다 */
+    consume: (amount: number) => void;
     /** 깡 충전 (광고 보상) — 일일 기본 개수와 별도로 보상분은 초과 허용 */
     add: (amount: number) => void;
   };
@@ -25,7 +25,9 @@ export const useKkangStore = create<KkangStore>()(
     actions: {
       async init() {
         const stored = await getTodayKkang();
-        const count = stored > 0 ? stored : DAILY_KKANG_COUNT;
+        // 오늘 저장된 값이 없을 때(첫 접속/자정 지남)만 기본 개수로 초기화한다.
+        // 0개(소진)도 유효한 오늘 값이므로 그대로 유지 — 재진입 시 리셋 방지
+        const count = stored ?? DAILY_KKANG_COUNT;
 
         set((state) => {
           state.count = count;
@@ -35,13 +37,13 @@ export const useKkangStore = create<KkangStore>()(
         // 오늘 첫 접속이면 기본 개수를 저장해 둔다
         await storeTodayKkang(count);
       },
-      consumeOne() {
+      consume(amount) {
         set((state) => {
-          if (state.count <= 0) {
+          if (state.count < amount) {
             return;
           }
 
-          state.count -= 1;
+          state.count -= amount;
           // storage 저장은 fire-and-forget — 실패해도 다음 변이가 전체 값을 다시 쓴다
           void storeTodayKkang(state.count);
         });

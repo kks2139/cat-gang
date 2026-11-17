@@ -1,6 +1,6 @@
 import NumberFlow from "@number-flow/react";
 import classNames from "classnames/bind";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import {
   config,
   Map as MaplibreMap,
@@ -19,6 +19,7 @@ import ImgCatnip from "@/assets/img/item/catnip.png";
 import ImgFish from "@/assets/img/item/fish.png";
 import ImgGukbab from "@/assets/img/item/gukbab.png";
 import noLabelsStyle from "@/assets/no-labels-style.json";
+import CloudReveal from "@/components/CloudReveal";
 import PawIcon from "@/components/PawIcon";
 import { useDayAndNight } from "@/hooks/useDayAndNight";
 import { useItemMutation } from "@/queries/useItemMutation";
@@ -49,7 +50,6 @@ import {
 } from "@/utils/native";
 import { getTodayWalk, storeTodayWalk } from "@/utils/storage";
 
-import Loading from "../Loading";
 import styles from "./index.module.scss";
 
 const cn = classNames.bind(styles);
@@ -977,6 +977,7 @@ function MapContent({
         const marker = createMarker({
           position: [position.lng, position.lat],
           type: "owned",
+          catName: cat.name,
           map,
         });
 
@@ -1629,6 +1630,23 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
     applyTheme(map, isNight, hours);
   }, [isNight, hours]);
 
+  // 웹뷰 백그라운드 복귀 시 GPU 텍스처가 버려져 지도 캔버스가 깨지는 현상 대응 —
+  // 화면 복귄 시 강제로 한 프레임 다시 그린다 (마커 이미지 재디코드는 App의
+  // 이미지 리커버리 훅이 담당)
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        mapRef.current?.triggerRepaint();
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
+
   return (
     <div className={cn("map-wrapper")}>
       {/* 상단 플로팅 캡슐 행 — 왼쪽 산책 거리 / 오른쪽 깡 */}
@@ -1726,18 +1744,10 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
         </svg>
       </button>
 
+      {/* 첫 진입 리빌 — 구름/안개가 화면을 덮고 로딩 완료 후 양쪽으로 흩어진다
+          (연출 상세는 CloudReveal 컴포넌트 담당) */}
       <AnimatePresence>
-        {isLoading && (
-          <motion.div
-            className={cn("loading")}
-            initial={{ opacity: 0, y: -5, translateX: "-50%" }}
-            animate={{ opacity: 1, y: 0, translateX: "-50%" }}
-            exit={{ opacity: 0, y: -5, translateX: "-50%" }}
-            transition={{ duration: 0.2 }}
-          >
-            <Loading text="찾는중..." />
-          </motion.div>
-        )}
+        {isLoading && <CloudReveal isNight={isNight} />}
       </AnimatePresence>
     </div>
   );

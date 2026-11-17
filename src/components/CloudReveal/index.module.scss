@@ -1,0 +1,144 @@
+// ─── 맵 첫 진입 리빌: 크고작은 구름 + 안개 → 양쪽으로 흩어짐 ────────────
+// 지도 초기 로딩(스타일/타일 그리기 + 내 위치 이동) 동안 안개 베이스가 화면을
+// 통째로 덮어 렉이나 타일 로딩이 노출되지 않게 하고, 그 위로 구름들이
+// 천천히 드리프트하며 입체감을 준다. 로딩 완료 시 구름은 중앙에 가까운 것부터
+// 양쪽으로 흩어지고(framer 이탈 모션), 안개는 서서히 걷힌다.
+.cloud-reveal {
+  z-index: 5000;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+
+  // 낮 톤 — 흰 구름 + 회청색 안개 (구름 아랫그늘로 입체감)
+  --cloud-color: #ffffff;
+  --cloud-shade: rgba(146, 168, 199, 0.55);
+}
+
+.cloud-reveal.night {
+  // 밤 톤 — 어두운 남색 안개 위 하얀 구름 (달빛 받은 구름 느낌)
+  --cloud-color: #b3bfd8;
+  --cloud-shade: rgba(10, 16, 30, 0.5);
+}
+
+// 안개 베이스 — 불투명(지도를 완전히 가림). 큰 안개 패치로 질감을 내고
+// 갈라질 때는 framer exit로 서서히 걷힌다
+.fog-base {
+  position: absolute;
+  inset: -12%;
+  background: radial-gradient(
+      62% 42% at 18% 16%,
+      rgba(255, 255, 255, 0.62) 0%,
+      rgba(255, 255, 255, 0) 70%
+    ),
+    radial-gradient(
+      52% 36% at 76% 28%,
+      rgba(255, 255, 255, 0.5) 0%,
+      rgba(255, 255, 255, 0) 70%
+    ),
+    radial-gradient(
+      58% 42% at 48% 74%,
+      rgba(255, 255, 255, 0.55) 0%,
+      rgba(255, 255, 255, 0) 70%
+    ),
+    linear-gradient(180deg, #c7d8ed 0%, #b3c6e0 100%);
+}
+
+.cloud-reveal.night .fog-base {
+  background: radial-gradient(
+      62% 42% at 18% 16%,
+      rgba(205, 218, 240, 0.26) 0%,
+      rgba(205, 218, 240, 0) 70%
+    ),
+    radial-gradient(
+      52% 36% at 76% 28%,
+      rgba(205, 218, 240, 0.2) 0%,
+      rgba(205, 218, 240, 0) 70%
+    ),
+    radial-gradient(
+      58% 42% at 48% 74%,
+      rgba(190, 205, 232, 0.22) 0%,
+      rgba(190, 205, 232, 0) 70%
+    ),
+    linear-gradient(180deg, #2b3554 0%, #3a4668 100%);
+}
+
+// 구름 이탈 모션 래퍼 — framer가 위치 transform을 담당
+.cloud-move {
+  position: absolute;
+  will-change: transform;
+}
+
+// 구름 몸체 — 몽글몽글 귀여운 느낌: 위로 솟은 동그란 뭉게 3개 + 넓게 깔린
+// 몸통(바닥이 평평한 구름) + 연한 아랫그늘. 그라데이션 경계를 여유 있게
+// 페이드시켜 blur와 어우러져 폭신폭신한 실루엣이 된다. CSS 드리프트 애니메이션으로
+// 로딩 중에도 천천히 흘러가며(래퍼의 이탈 transform과 요소가 달라 충돌 없음)
+.cloud {
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+      56% 26% at 50% 96%,
+      var(--cloud-shade) 0%,
+      transparent 70%
+    ),
+    // 아래 몸통 — 넓고 낮은 타원 3개가 바닥을 채움
+    radial-gradient(
+      46% 40% at 50% 74%,
+      var(--cloud-color) 0%,
+      var(--cloud-color) 52%,
+      transparent 74%
+    ),
+    radial-gradient(
+      34% 40% at 26% 78%,
+      var(--cloud-color) 0%,
+      var(--cloud-color) 50%,
+      transparent 72%
+    ),
+    radial-gradient(
+      34% 40% at 74% 78%,
+      var(--cloud-color) 0%,
+      var(--cloud-color) 50%,
+      transparent 72%
+    ),
+    // 위 뭉게 — 크기가 다른 동그란 덩이 3개가 솟아있음
+    radial-gradient(
+      30% 44% at 34% 44%,
+      var(--cloud-color) 0%,
+      var(--cloud-color) 52%,
+      transparent 74%
+    ),
+    radial-gradient(
+      36% 52% at 52% 32%,
+      var(--cloud-color) 0%,
+      var(--cloud-color) 54%,
+      transparent 76%
+    ),
+    radial-gradient(
+      30% 44% at 68% 46%,
+      var(--cloud-color) 0%,
+      var(--cloud-color) 52%,
+      transparent 74%
+    );
+  animation: cloud-drift var(--drift-duration, 10s) ease-in-out
+    var(--drift-delay, 0s) infinite;
+}
+
+// 구름의 대기 중 흐름 — 좌우로 느리게 왕복하며 살짝 부풀었다 줄어든다
+// (음수 딜레이로 구름마다 다른 위상에서 시작해 한꺼번에 움직이지 않게)
+@keyframes cloud-drift {
+  0%,
+  100% {
+    transform: translateX(calc(var(--drift-x, 10px) * -1)) scale(1);
+  }
+  50% {
+    transform: translateX(var(--drift-x, 10px)) scale(1.04);
+  }
+}
+
+// 로딩 표시 — 배경 없이 컴포넌트(Loading) 자체 글래스만 노출
+.loading {
+  z-index: 9999;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+}

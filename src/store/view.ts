@@ -21,6 +21,8 @@ interface ViewStore {
   isBattleOn: boolean;
   // 맵 초기 로딩중 ("찾는중" UI 노출중) 여부
   isMapLoading: boolean;
+  // 맵(/find-cat) 첫 진입 여부 — keep-alive 유지 판단용 (진행 후 되돌릴 일 없음)
+  isFindCatCached: boolean;
   actions: {
     addToastMessage: (message: Omit<Message, "id">) => void;
     removeToastMessage: () => void;
@@ -28,6 +30,7 @@ interface ViewStore {
     setIsStopFocusMe: (value: boolean) => void;
     setIsBattleOn: (value: boolean) => void;
     setIsMapLoading: (value: boolean) => void;
+    setIsFindCatCached: (value: boolean) => void;
   };
 }
 
@@ -38,6 +41,7 @@ export const useViewStore = create<ViewStore>()(
     isStopFocusMe: false,
     isBattleOn: false,
     isMapLoading: false,
+    isFindCatCached: false,
     actions: {
       addToastMessage({ message, duration = 2500, position }) {
         set((state) => {
@@ -76,6 +80,11 @@ export const useViewStore = create<ViewStore>()(
       setIsMapLoading(value) {
         set((state) => {
           state.isMapLoading = value;
+        });
+      },
+      setIsFindCatCached(value) {
+        set((state) => {
+          state.isFindCatCached = value;
         });
       },
     },

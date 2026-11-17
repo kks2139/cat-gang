@@ -210,6 +210,15 @@ export const createMarker = ({
     const wrapper = document.createElement("div");
     wrapper.className = "flag-wrapper";
 
+    // 등급별 깃발 색/반짝임 — 잡은 고양이의 희귀도를 클래스로 노출 (globals.scss 참고)
+    if (isRare) {
+      wrapper.classList.add("rare");
+    }
+
+    if (isUnique) {
+      wrapper.classList.add("unique");
+    }
+
     const pole = document.createElement("div");
     pole.className = "pole";
 
@@ -220,11 +229,13 @@ export const createMarker = ({
     const shadowFloor = document.createElement("div");
     shadowFloor.className = "flag-shadow-floor";
 
-    // 깃발 주변을 떠오르는 반짝임 별 4개
+    // 깃발 주변을 떠오르는 반짝임 별 — 등급이 높을수록 많이 (일반 4 / 레어 6 / 유니크 8)
     const sparkles = document.createElement("div");
     sparkles.className = "flag-sparkles";
 
-    for (let i = 0; i < 4; i++) {
+    const sparkleCount = isUnique ? 8 : isRare ? 6 : 4;
+
+    for (let i = 0; i < sparkleCount; i++) {
       sparkles.appendChild(document.createElement("span"));
     }
 

@@ -193,10 +193,5 @@
   }
 }
 
-// 맵 로딩 표시 — 배경 없이 컴포넌트(Loading) 자체 글래스만 노출
-.loading {
-  z-index: 9999;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-}
+// 맵 첫 진입 리빌(구름/안개 갈라짐) 연출은 CloudReveal 컴포넌트로 분리됨
+// — components/CloudReveal/index.module.scss 참고

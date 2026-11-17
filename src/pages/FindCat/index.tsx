@@ -2,7 +2,7 @@ import { Device } from "@apps-in-toss/web-framework";
 import classNames from "classnames/bind";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import { AdBanner, useFullScreenAd } from "@/components/Ads";
 import Button from "@/components/Button";
@@ -24,6 +24,7 @@ import {
   ITEM_AD_REWARD_COUNT,
   ITEM_RECHARGE_AD_GROUP_ID,
   KKANG_AD_REWARD_COUNT,
+  KKANG_COST_BY_RARITY,
   KKANG_RECHARGE_AD_GROUP_ID,
 } from "@/utils/constants";
 import {
@@ -65,6 +66,8 @@ export default function FindCat() {
   const [isShowExitConfirm, setIsShowExitConfirm] = useState(false);
   const [isShowKkangEmpty, setIsShowKkangEmpty] = useState(false);
   const [isShowKkangAd, setIsShowKkangAd] = useState(false);
+  // 깡 부족 팝업에 표시할 필요 깡 개수 (상대 등급별 소모량)
+  const [kkangNeed, setKkangNeed] = useState(KKANG_COST_BY_RARITY.common);
   // 광고로 충전할 아이템 (값이 있으면 아이템 충전 다이얼로그 노출 중)
   const [itemAdType, setItemAdType] = useState<ItemType>();
   const [catchedCat, setCatchedCat] = useState<CatInfo>();
@@ -77,6 +80,7 @@ export default function FindCat() {
   const { mutateAsync: updateItemCount } = useItemMutation();
 
   const { addToastMessage } = useViewStore((s) => s.actions);
+  const kkangCount = useKkangStore((s) => s.count);
 
   // 깡 충전 보상형 광고 — 진입 시 미리 로드해 딜레이 없이 재생한다
   const {
@@ -245,11 +249,16 @@ export default function FindCat() {
     ownCatInfo,
   ]);
 
+  // keep-alive(App 라우트 유지)로 숨겨진 상태에서는 뒤로가기 가드를 끈다 —
+  // 숨겨진 FindCat의 가드가 현재 화면(Entry 등)의 뒤로가기를 가로채는 걸 방지
+  const isMapScreen = useLocation().pathname.startsWith("/find-cat");
+
   // AIT 환경: 시스템 뒤로가기 이벤트 처리
-  useCustomBack(true, closeTopLayer);
+  useCustomBack(isMapScreen, closeTopLayer);
 
   // 로컬(브라우저): 시스템 뒤로가기 가로채서 브라우저 기본 컨펌 노출
   useBrowserBackGuard({
+    enabled: isMapScreen,
     message: "나갈까요?",
     onConfirm: () => {
       setIsShowExitConfirm(false);
@@ -275,15 +284,21 @@ export default function FindCat() {
             return;
           }
 
-          // 깡이 없으면 전투를 시작하지 않는다 (마커 선택 상태도 되돌린다)
-          if (count <= 0) {
+          // 상대 등급에 따라 깡 소모량이 다르다 (common 1 / rare 2 / unique 3)
+          const selectedRarity =
+            useCatStore.getState().selectedCat?.rarity ?? "common";
+          const cost = KKANG_COST_BY_RARITY[selectedRarity];
+
+          // 깡이 부족하면 전투를 시작하지 않는다 (마커 선택 상태도 되돌린다)
+          if (count < cost) {
+            setKkangNeed(cost);
             setSelectedCat(undefined);
             setIsShowKkangEmpty(true);
             return;
           }
 
-          // 전투 1회당 깡 1개 소모 (도망/패배해도 환불 없음)
-          actions.consumeOne();
+          // 전투 시작 — 등급별 소모량만큼 깡 소모 (도망/패배해도 환불 없음)
+          actions.consume(cost);
 
           setIsShowStage(true);
           setIsStopFocusMe(true);
@@ -571,11 +586,11 @@ export default function FindCat() {
         onSubButtonClick={() => setItemAdType(undefined)}
       />
 
-      {/* 깡 부족 안내 팝업 (고양이 클릭 시 깡이 없으면 노출) — 광고로 바로 충전 가능 */}
+      {/* 깡 부족 안내 팝업 (고양이 클릭 시 깡이 부족하면 노출) — 광고로 바로 충전 가능 */}
       <Dialog
         isShow={isShowKkangEmpty}
         title="깡 부족"
-        subTitle={"깡이 없어서 싸울 수 없다옹…"}
+        subTitle={`깡 ${kkangNeed}개가 필요한데\n지금 ${kkangCount}개밖에 없다옹…`}
         buttonLable="광고 보고 받기"
         buttonColor="blue"
         buttonDisabled={!isKkangAdLoaded}

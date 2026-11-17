@@ -64,12 +64,18 @@ src/
 ├─ App.tsx                  # react-router-dom v7 createBrowserRouter
 │                           #   / → Entry(Auth 감싸줌), /find-cat → FindCat, /test → Test, * → /
 │                           #   최상단에 "maplibre-gl/dist/maplibre-gl.css" 임포트
+│                           #   + useImageRecovery (화면 복귀 시 img src 재할당 — 웹뷰 이미지 깨짐 대응)
+│                           #   + RootLayout keep-alive: /find-cat 첫 진입 후엔 라우트를 벗어나도
+│                           #     FindCat를 언마운트하지 않고 display 토글로 숨김 (맵 재로딩 방지.
+│                           #     캐시 플래그는 view store isFindCatCached. 숨김 중엔 FindCat의
+│                           #     useCustomBack/useBrowserBackGuard가 isMapScreen=false로 꺼짐)
 ├─ pages/                   # 라우트 페이지
 │   ├─ Entry/               # 홈 (유저 등록 AddUserDialog)
 │   ├─ FindCat/             # 메인 게임 (지도, MyCats, MyInfoDialog, OwnCatInfoDialog)
 │   └─ Test/                # 테스트 페이지
 ├─ components/              # 재사용 컴포넌트 (각 폴더 index.tsx + index.module.scss)
 │   ├─ Auth/                # 로그인/인증 게이트 (initAuth 호출)
+│   ├─ CloudReveal/         # 맵 첫 진입 리빌 — 구름/안개 오버레이, 로딩 완료 시 양쪽으로 흩어짐
 │   ├─ Map/                 # MapLibre 지도 + 게임 로직 전부 포함한 단일 컴포넌트 (하단 §4.5)
 │   ├─ Stage/               # 전투 스테이지 (Player — 하위 Status/StatusEffect, Control, Inventory, Effects)
 │   ├─ ReactQueryProvider/  # QueryClientProvider
@@ -114,6 +120,10 @@ src/
 - **낮/밤 다크 테마**: `applyTheme()`이 `useDayAndNight` 기준으로 스타일 레이어 색을 런타임에 치환/복원. 원본 색은 로드 시점에 수집(`ORIGINAL_PAINTS`). `setSky`/`setPaintProperty`는 스타일 로드 완료(`load` 이벤트) 전에 호출하면 에러남.
 - **마커**: 전부 DOM element 기반 `Marker` (me/enemy/owned/item 타입 — `createMarker`는 `utils/helper.ts`). 마커 클릭은 `e.originalEvent.target`에서 `[data-marker-container]` 등을 `closest()`로 찾는 MapLibre 방식.
 - **발자국 트레일**: 이동 시 7m 간격으로 좌우 번갈아 발자국 마커 생성, 최대 200개(성능 보호), 궤적+거리는 `storage.ts`에 디바운스 저장 후 재접속 시 복원.
+- **맵 첫 진입 리빌**: 별도 컴포넌트 `CloudReveal` 담당. 초기 로딩 중 안개 베이스(`.fog-base`, 불투명)가 지도를 완전히 가리고 크고작은 구름(`REVEAL_CLOUDS` 상수, 24뭉치)이 CSS 드리프트로 떠 있다. 로딩+내 위치 이동 완료(`isLoading=false`) 시 구름은 중앙에 가까운 것부터 framer exit(구름별 속도/거리/회전 개별)로 양쪽으로 흩어지고 안개는 페이드아웃된다. `REVEAL_HOLD`(0.5s)만큼 유지 후 걷혀 다크 테마 전환 깜빡임을 가린다. 낮/밤 톤은 `isNight` 클래스로 분기.
+- **깃발(잡은 부하) 등급 표시**: `flag-wrapper`에 rare/unique 클래스가 붙어 깃발 색(골드/파랑/보라)·물결 속도·반짝임 별 개수(4/6/8)가 달라진다. `createMarker`에 `catName`을 전달해야 등급 판별됨.
+- **깡(전투 티켓)**: 하루 5개 자정 리셋. **소모량은 상대 등급별로 다름** — `KKANG_COST_BY_RARITY` (common 1 / rare 2 / unique 3). 스토어 `consume(amount)`, 잔량 부족 시 팝업에 필요 개수 표시. `getTodayKkang()`은 "오늘 값 없음"을 `null`로 반환(0개와 구분 — 소진 상태 재진입 시 리셋 버그 방지).
+- **웹뷰 백그라운드 복귀 대응**: `visibilitychange` visible 시 App의 `useImageRecovery`가 전체 img src를 재할당(재디코드 유도), Map이 `triggerRepaint()`로 캔버스 재렌더 — 화면 복귀 시 이미지/지도 깨짐 방지.
 - **immer 주의**: `useViewStore`의 `map`에 MapLibre 인스턴스 저장 시 `as never` 캐스팅으로 immer 프록시를 우회 (GL 내부 구조 보호). MapLibre 인스턴스/마커를 상태에 넣을 땐 항상 이 패턴.
 
 ## 5. 핵심 패턴 & 주의사항

@@ -7,6 +7,8 @@ import { operEnv } from "@/utils/constants";
 const GUARD_KEY = "catGangBackGuard";
 
 interface Options {
+  /** 가드 활성화 여부 (기본 true) — 화면이 숨김 상태(keep-alive)면 꺼서 다른 화면의 뒤로가기를 방해하지 않게 한다 */
+  enabled?: boolean;
   /** 뒤로가기 시 브라우저 기본 컨펌(window.confirm)에 노출할 문구 */
   message: string;
   /** 컨펌 확인 시 실행 — 페이지 이동/종료는 호출부가 처리한다 */
@@ -22,7 +24,11 @@ interface Options {
  *   (페이지 이동이나 탭 종료 시엔 무시되고, window.close()가 막힌 로컬에선
  *    계속 뒤로가기를 가로챈 상태를 유지한다)
  */
-export const useBrowserBackGuard = ({ message, onConfirm }: Options) => {
+export const useBrowserBackGuard = ({
+  enabled = true,
+  message,
+  onConfirm,
+}: Options) => {
   // 최신 onConfirm을 ref에 동기화 (렌더 중이 아닌 effect에서만 갱신)
   const onConfirmRef = useRef(onConfirm);
 
@@ -31,7 +37,7 @@ export const useBrowserBackGuard = ({ message, onConfirm }: Options) => {
   }, [onConfirm]);
 
   useEffect(() => {
-    if (operEnv) {
+    if (!enabled || operEnv) {
       return;
     }
 
@@ -80,5 +86,5 @@ export const useBrowserBackGuard = ({ message, onConfirm }: Options) => {
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, [message]);
+  }, [enabled, message]);
 };
