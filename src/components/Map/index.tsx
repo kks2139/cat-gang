@@ -11,6 +11,7 @@ import {
   type TerrainSpecification,
 } from "maplibre-gl";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 import ImgCatMe from "@/assets/img/character/cat-me.png";
 import ImgCatMeWalk1 from "@/assets/img/character/cat-me-walk-1.png";
@@ -1393,6 +1394,13 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
   const mapRef = useRef<MaplibreMap | null>(null);
 
   const [isLoading, setisLoading] = useState(true);
+  // 재진입 리빌 — keep-alive로 지도가 살아있는 상태에서 /find-cat에 다시 들어오면
+  // CloudReveal을 즉시 마운트했다 exit시켜 구름 갈라짐(REVEAL_HOLD 유지 포함)을 재생한다
+  const [isReentering, setIsReentering] = useState(false);
+  // 리빌 exit 연출이 끝나기까지(핀치/드래그) 지도 조작을 잠그는 플래그 —
+  // AnimatePresence onExitComplete에서 해제한다
+  const [isRevealLock, setIsRevealLock] = useState(false);
+  const location = useLocation();
   const [totalDistance, setTotalDistance] = useState(0);
 
   // 총 산책거리 (서버 누적값 + 오늘 거리) — 오늘 산책 거리 캡슐 클릭 시 토스트로 노출
@@ -1437,158 +1445,181 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
     // (BASE_URL은 앱인토스 배포 경로에서도 올바르게 리졸브됨)
     config.WORKER_URL = `${import.meta.env.BASE_URL}maplibre-gl-worker.mjs`;
 
-    const map = new MaplibreMap({
-      container,
-      style: noLabelsStyle as unknown as StyleSpecification,
-      center: [126.978, 37.5665], // 센터 기본값 서울시청
-      zoom: INIT_ZOOM_LEVEL,
-      maxZoom: MAX_ZOOM_LEVEL,
-      minZoom: MIN_ZOOM_LEVEL,
-      attributionControl: false, // 하단 저작권 표시줄 전체 삭제
-      interactive: true,
-      dragPan: true,
-      touchZoomRotate: true,
-      // 핀치 줌 + 두 손가락 회전 모두 활성
-      scrollZoom: false,
-      // 더블탭/더블클릭 줌 활성 (마커 위 더블탭은 dblclick 핸들러에서 제외)
-      doubleClickZoom: true,
-      boxZoom: false,
-      keyboard: false,
-      pitchWithRotate: true,
-      dragRotate: false,
-      // 두 손가락 세로 드래그로 카메라 기울기 조절 활성화 (상한 MAX_PITCH로 렉 방지)
-      touchPitch: true,
-      maxPitch: MAX_PITCH,
-      cooperativeGestures: false,
-    });
+    let cancelled = false;
 
-    // 3D 피치 상태에서는 '지도 중심'이 화면 중앙(지평선 쪽)으로 시각적으로 밀려난다.
-    // 하단 패딩을 주면 center 기준점이 화면 하단으로 내려가 캐릭터가 화면 중앙에 보이고,
-    // 반경 50m 스폰 고양이들이 화면 안에 들어온다.
-    map.setPadding({
-      top: 0,
-      bottom: Math.round(window.innerHeight * 0.25),
-      left: 0,
-      right: 0,
-    });
+    (async () => {
+      // 첫 렌더 center를 현위치로 잡기 위해 지도 생성 전에 위치를 먼저 조회한다.
+      // (시청 기본값으로 만든 뒤 현위치로 jumpTo하면 장거리 이동이 되어
+      //  웹뷰에서 타일/지형 재로딩 잔렉이 남는 원인이 됨.
+      //  위치 조회는 CloudReveal 로딩 화면이 지도를 가리는 동안 이뤄지므로 지연이 노출되지 않음)
+      const coords = await getCurrentPosition();
 
-    mapRef.current = map;
-
-    map.on("dragstart", () => {
-      setIsStopFocusMe(true);
-    });
-
-    // 더블탭(더블클릭) 줌 — 마커 위에서는 제외한다.
-    // 마커 더블탭은 전투 시작/인사 등 게임 동작의 연타와 겹치므로
-    // preventDefault로 내장 줌을 막고 클릭 이벤트만 전달되게 한다
-    map.on("dblclick", (e) => {
-      const target = e.originalEvent.target;
-
-      if (target instanceof Element && target.closest(".maplibregl-marker")) {
-        e.preventDefault();
+      if (cancelled || !containerRef.current || mapRef.current) {
+        return;
       }
-    });
 
-    map.on("load", () => {
-      // 낮 테마 원본 색 수집 (밤→낮 복원용)
-      // 공개 API인 getPaintProperty를 써야 스타일 스펙 값이 그대로 나온다.
-      // (layer.paint._values의 value는 maplibre v6에서 래퍼 객체라 재주입 시
-      //  스펙 검증에 걸려 조용히 무시됨 → 밤 테마가 낮에 고착되는 원인이었음)
-      [
-        ...Object.keys(DARK_PAINT_OVERRIDES),
-        ...DARK_ROADS,
-        ...DARK_CASINGS,
-      ].forEach((layerId) => {
-        const layer = map.getLayer(layerId);
+      // 위치 조회 실패 시 기존 기본값(서울시청)으로 폴백
+      const map = new MaplibreMap({
+        container,
+        style: noLabelsStyle as unknown as StyleSpecification,
+        center: coords ? [coords.longitude, coords.latitude] : [126.978, 37.5665],
+        zoom: INIT_ZOOM_LEVEL,
+        maxZoom: MAX_ZOOM_LEVEL,
+        minZoom: MIN_ZOOM_LEVEL,
+        attributionControl: false, // 하단 저작권 표시줄 전체 삭제
+        interactive: true,
+        dragPan: true,
+        touchZoomRotate: true,
+        // 핀치 줌 + 두 손가락 회전 모두 활성
+        scrollZoom: false,
+        // 더블탭/더블클릭 줌 활성 (마커 위 더블탭은 dblclick 핸들러에서 제외)
+        doubleClickZoom: true,
+        boxZoom: false,
+        keyboard: false,
+        pitchWithRotate: true,
+        dragRotate: false,
+        // 두 손가락 세로 드래그로 카메라 기울기 조절 활성화 (상한 MAX_PITCH로 렉 방지)
+        touchPitch: true,
+        maxPitch: MAX_PITCH,
+        cooperativeGestures: false,
+      });
 
-        if (!layer) {
-          return;
+      // 3D 피치 상태에서는 '지도 중심'이 화면 중앙(지평선 쪽)으로 시각적으로 밀려난다.
+      // 하단 패딩을 주면 center 기준점이 화면 하단으로 내려가 캐릭터가 화면 중앙에 보이고,
+      // 반경 50m 스폰 고양이들이 화면 안에 들어온다.
+      map.setPadding({
+        top: 0,
+        bottom: Math.round(window.innerHeight * 0.25),
+        left: 0,
+        right: 0,
+      });
+
+      mapRef.current = map;
+
+      map.on("dragstart", () => {
+        setIsStopFocusMe(true);
+      });
+
+      // 더블탭(더블클릭) 줌 — 마커 위에서는 제외한다.
+      // 마커 더블탭은 전투 시작/인사 등 게임 동작의 연타와 겹치므로
+      // preventDefault로 내장 줌을 막고 클릭 이벤트만 전달되게 한다
+      map.on("dblclick", (e) => {
+        const target = e.originalEvent.target;
+
+        if (target instanceof Element && target.closest(".maplibregl-marker")) {
+          e.preventDefault();
         }
+      });
 
-        const paints: Record<string, unknown> = {};
-        const paintKeys = Object.keys(DARK_PAINT_OVERRIDES[layerId] ?? {});
+      map.on("load", () => {
+        // 낮 테마 원본 색 수집 (밤→낮 복원용)
+        // 공개 API인 getPaintProperty를 써야 스타일 스펙 값이 그대로 나온다.
+        // (layer.paint._values의 value는 maplibre v6에서 래퍼 객체라 재주입 시
+        //  스펙 검증에 걸려 조용히 무시됨 → 밤 테마가 낮에 고착되는 원인이었음)
+        [
+          ...Object.keys(DARK_PAINT_OVERRIDES),
+          ...DARK_ROADS,
+          ...DARK_CASINGS,
+        ].forEach((layerId) => {
+          const layer = map.getLayer(layerId);
 
-        // 도로/casing은 line-color만 치환하므로 그 키만 캡처
-        if (DARK_ROADS.includes(layerId) || DARK_CASINGS.includes(layerId)) {
-          paintKeys.push("line-color");
-        }
-
-        paintKeys.forEach((key) => {
-          try {
-            // getPaintProperty는 레이어 타입별 키 유니온이라 동적 키 조회에 any 캐스팅 필요
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            paints[key] = map.getPaintProperty(layerId, key as any);
-          } catch {
-            // layout 속성 등 조회 불가 키는 무시
+          if (!layer) {
+            return;
           }
+
+          const paints: Record<string, unknown> = {};
+          const paintKeys = Object.keys(DARK_PAINT_OVERRIDES[layerId] ?? {});
+
+          // 도로/casing은 line-color만 치환하므로 그 키만 캡처
+          if (DARK_ROADS.includes(layerId) || DARK_CASINGS.includes(layerId)) {
+            paintKeys.push("line-color");
+          }
+
+          paintKeys.forEach((key) => {
+            try {
+              // getPaintProperty는 레이어 타입별 키 유니온이라 동적 키 조회에 any 캐스팅 필요
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              paints[key] = map.getPaintProperty(layerId, key as any);
+            } catch {
+              // layout 속성 등 조회 불가 키는 무시
+            }
+          });
+
+          ORIGINAL_PAINTS[layerId] = paints;
         });
 
-        ORIGINAL_PAINTS[layerId] = paints;
-      });
+        // 3D 지형: AWS Terrain Tiles(terrarium DEM, 무료/키 불필요)
+        map.addSource(DEM_SOURCE_ID, {
+          type: "raster-dem",
+          tiles: [
+            "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
+          ],
+          encoding: "terrarium",
+          tileSize: 256,
+          maxzoom: 15,
+        });
 
-      // 3D 지형: AWS Terrain Tiles(terrarium DEM, 무료/키 불필요)
-      map.addSource(DEM_SOURCE_ID, {
-        type: "raster-dem",
-        tiles: [
-          "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
-        ],
-        encoding: "terrarium",
-        tileSize: 256,
-        maxzoom: 15,
-      });
-
-      const terrain: TerrainSpecification = {
-        source: DEM_SOURCE_ID,
-        exaggeration: TERRAIN_EXAGGERATION,
-      };
-      map.setTerrain(terrain);
-
-      // 지형 음영(햇빛 그림자 느낌): 위 DEM 소스를 재사용 — 추가 타일 다운로드 없음.
-      // 레이어는 background 바로 위(스타일 지물 레이어들보다 아래)에 삽입해 지물에 가리지 않게 한다.
-      map.addLayer(
-        {
-          id: "terrain-hillshade",
-          type: "hillshade",
+        const terrain: TerrainSpecification = {
           source: DEM_SOURCE_ID,
-          paint: {
-            // 은은한 수준으로 조정 — 이전 1.0은 지져분해 보였음
-            "hillshade-exaggeration": 0.5,
-            "hillshade-shadow-color": "#8a8a8a", // 중립 회색 — 갈색 톤이 지저분해 보여 중화
-            "hillshade-highlight-color": "#ffffff",
-            "hillshade-accent-color": "#aaaaaa",
-            "hillshade-illumination-direction": 315,
-            "hillshade-illumination-altitude": 45,
+          exaggeration: TERRAIN_EXAGGERATION,
+        };
+        map.setTerrain(terrain);
+
+        // 지형 음영(햇빛 그림자 느낌): 위 DEM 소스를 재사용 — 추가 타일 다운로드 없음.
+        // 레이어는 background 바로 위(스타일 지물 레이어들보다 아래)에 삽입해 지물에 가리지 않게 한다.
+        map.addLayer(
+          {
+            id: "terrain-hillshade",
+            type: "hillshade",
+            source: DEM_SOURCE_ID,
+            paint: {
+              // 은은한 수준으로 조정 — 이전 1.0은 지져분해 보였음
+              "hillshade-exaggeration": 0.5,
+              "hillshade-shadow-color": "#8a8a8a", // 중립 회색 — 갈색 톤이 지저분해 보여 중화
+              "hillshade-highlight-color": "#ffffff",
+              "hillshade-accent-color": "#aaaaaa",
+              "hillshade-illumination-direction": 315,
+              "hillshade-illumination-altitude": 45,
+            },
           },
-        },
-        "natural_earth" // background 다음 = 지물 레이어 전부보다 아래
-      );
+          "natural_earth" // background 다음 = 지물 레이어 전부보다 아래
+        );
 
-      // 3D 건물 조명: 광원 방향을 지정해 면에 명암(그림자 느낌)을 강화한다.
-      // (MapLibre는 건물의 지면 투영 그림자는 미지원 — 조명 음영이 대체 수단)
-      map.setLight({
-        anchor: "viewport",
-        position: [1.5, 315, 40],
-        color: "#ffffff",
-        intensity: 0.35,
+        // 3D 건물 조명: 광원 방향을 지정해 면에 명암(그림자 느낌)을 강화한다.
+        // (MapLibre는 건물의 지면 투영 그림자는 미지원 — 조명 음영이 대체 수단)
+        map.setLight({
+          anchor: "viewport",
+          position: [1.5, 315, 40],
+          color: "#ffffff",
+          intensity: 0.35,
+        });
+
+        // 하늘/안개 효과 + 지물 다크 테마 적용
+        applyTheme(map, skyStateRef.current.isNight, skyStateRef.current.hours);
+
+        // 3D 카메라 기울기
+        map.setPitch(MAP_PITCH);
+
+        setMap(map);
       });
+    })();
 
-      // 하늘/안개 효과 + 지물 다크 테마 적용
-      applyTheme(map, skyStateRef.current.isNight, skyStateRef.current.hours);
-
-      // 3D 카메라 기울기
-      map.setPitch(MAP_PITCH);
-
-      setMap(map);
-    });
-
+    // 위치 조회 대기 중 언마운트되면 cancelled 플래그로 지도 생성을 막는다.
+    // 이미 생성된 경우(위치 조회가 빠르게 끝난 뒤 언마운트)에는 인스턴스를 정리한다.
     return () => {
-      map.remove();
+      cancelled = true;
+
+      if (mapRef.current) {
+        mapRef.current.remove();
+      }
+
       mapRef.current = null;
     };
   }, [setMap, setIsStopFocusMe]);
 
-  // 로딩중(찾는중 UI 노출중)에는 지도의 모든 조작을 비활성화한다
-  // — 드래그 이동/핀치 줌·회전/피치(기울기) 전부 잠금
+  // 로딩중(찾는중 UI 노출중) 또는 재진입 리빌 재생중에는 지도의 모든 조작을
+  // 비활성화한다 — 드래그 이동/핀치 줌·회전/피치(기울기) 전부 잠금
+  // (안개에 가려진 상태에서 조작되면 리빌 종료 시점에 상태가 튀는 걸 방지)
   useEffect(() => {
     const map = mapRef.current;
 
@@ -1596,7 +1627,7 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
       return;
     }
 
-    if (isLoading) {
+    if (isLoading || isReentering || isRevealLock) {
       map.dragPan.disable();
       map.touchZoomRotate.disable();
       map.touchPitch.disable();
@@ -1605,7 +1636,7 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
       map.touchZoomRotate.enable();
       map.touchPitch.enable();
     }
-  }, [isLoading]);
+  }, [isLoading, isReentering, isRevealLock]);
 
   // 로딩 상태를 전역 스토어에 동기화 — FindCat 페이지에서
   // 내 부하/도감 버튼 등을 함께 비활성화하는 데 사용
@@ -1616,6 +1647,40 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
       setIsMapLoading(false);
     };
   }, [isLoading, setIsMapLoading]);
+
+  // 재진입 리빌 — 첫 로딩이 끝난 뒤(/find-cat에서 나갔다) 다시 맵 화면에
+  // 들어오면 구름 갈라짐을 다시 보여준다. 지도는 이미 준비돼 있으므로 로딩
+  // 표시 없이, CloudReveal의 REVEAL_HOLD(1초) 유지 뒤 갈라짐만 재생한다.
+  const isFindCatCached = useViewStore((s) => s.isFindCatCached);
+  const isMapScreen = location.pathname.startsWith("/find-cat");
+  // 라우트 전환 감지는 렌더 중 이전 값과 비교해 처리한다 (effect에서
+  // setState하면 cascading render라 react-hooks 규칙에 걸림)
+  const [prevIsMapScreen, setPrevIsMapScreen] = useState(isMapScreen);
+
+  if (prevIsMapScreen !== isMapScreen) {
+    setPrevIsMapScreen(isMapScreen);
+
+    if (!isMapScreen) {
+      // 맵을 벗어나면 리빌 상태를 해제 — 다음 재진입에 다시 재생되게 한다
+      setIsReentering(false);
+    } else if (!isLoading && isFindCatCached) {
+      // keep-alive로 살아있는 지도에 다시 들어온 순간 — 구름을 마운트하고
+      // 다음 프레임에 exit시켜 REVEAL_HOLD(1초) 유지 후 갈라짐이 재생되게 한다
+      setIsReentering(true);
+      setIsRevealLock(true);
+    }
+  }
+
+  // 리빌 마운트 다음 프레임에 exit — AnimatePresence exit 모션이 재생된다
+  useEffect(() => {
+    if (!isReentering) {
+      return;
+    }
+
+    const raf = requestAnimationFrame(() => setIsReentering(false));
+
+    return () => cancelAnimationFrame(raf);
+  }, [isReentering]);
 
   // 낮/밤 전환 시 하늘 + 지물 색 갱신
   // (스타일 로드 완료 전에 setSky를 호출하면 "Style is not done loading" 에러가 나므로
@@ -1745,9 +1810,20 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
       </button>
 
       {/* 첫 진입 리빌 — 구름/안개가 화면을 덮고 로딩 완료 후 양쪽으로 흩어진다
-          (연출 상세는 CloudReveal 컴포넌트 담당) */}
-      <AnimatePresence>
-        {isLoading && <CloudReveal isNight={isNight} />}
+          (연출 상세는 CloudReveal 컴포넌트 담당)
+          재진입에도 다시 재생하고, exit 연출이 끝나면 조작 잠금을 푼다 */}
+      <AnimatePresence
+        onExitComplete={() => {
+          setIsRevealLock(false);
+        }}
+      >
+        {(isLoading || isReentering) && (
+          <CloudReveal
+            isNight={isNight}
+            hideLoading={!isLoading}
+            isReenter={!isLoading}
+          />
+        )}
       </AnimatePresence>
     </div>
   );

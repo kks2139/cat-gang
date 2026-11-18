@@ -84,7 +84,9 @@ export default function FindCat() {
 
   // 깡 충전 보상형 광고 — 진입 시 미리 로드해 딜레이 없이 재생한다
   const {
+    isSupported: isKkangAdSupported,
     isLoaded: isKkangAdLoaded,
+    isFailed: isKkangAdFailed,
     load: loadKkangAd,
     show: showKkangAd,
   } = useFullScreenAd(KKANG_RECHARGE_AD_GROUP_ID, {
@@ -115,7 +117,9 @@ export default function FindCat() {
 
   // 아이템 충전 보상형 광고 (내 정보 팝업 > 보유 아이템 클릭)
   const {
+    isSupported: isItemAdSupported,
     isLoaded: isItemAdLoaded,
+    isFailed: isItemAdFailed,
     load: loadItemAd,
     show: showItemAd,
   } = useFullScreenAd(ITEM_RECHARGE_AD_GROUP_ID, {
@@ -572,13 +576,30 @@ export default function FindCat() {
       <Dialog
         isShow={!!itemAdType}
         title="아이템 충전"
-        subTitle={`광고를 보고\n${
-          itemAdType ? ITEM_INFO[itemAdType].name : ""
-        } ${ITEM_AD_REWARD_COUNT}개를 받을 수 있다옹!`}
-        buttonLable="광고 보고 받기"
+        subTitle={
+          isItemAdSupported
+            ? `광고를 보고\n${
+                itemAdType ? ITEM_INFO[itemAdType].name : ""
+              } ${ITEM_AD_REWARD_COUNT}개를 받을 수 있다옹!`
+            : `이 기기에서는 광고를 볼 수 없다옹…\n토스앱 최신 버전에서 시도해 주세요!`
+        }
+        buttonLable={
+          !isItemAdSupported
+            ? "광고를 사용할 수 없어요"
+            : isItemAdFailed
+              ? "다시 시도"
+              : "광고 보고 받기"
+        }
         buttonColor="blue"
-        buttonDisabled={!isItemAdLoaded}
+        buttonDisabled={
+          isItemAdSupported ? !isItemAdLoaded && !isItemAdFailed : true
+        }
         onButtonClick={() => {
+          if (!isItemAdSupported) return;
+          if (isItemAdFailed) {
+            loadItemAd();
+            return;
+          }
           showItemAd();
         }}
         subButtonLable="닫기"
@@ -590,11 +611,28 @@ export default function FindCat() {
       <Dialog
         isShow={isShowKkangEmpty}
         title="깡 부족"
-        subTitle={`깡 ${kkangNeed}개가 필요한데\n지금 ${kkangCount}개밖에 없다옹…`}
-        buttonLable="광고 보고 받기"
+        subTitle={
+          isKkangAdSupported
+            ? `깡 ${kkangNeed}개가 필요한데\n지금 ${kkangCount}개밖에 없다옹…`
+            : `이 기기에서는 광고를 볼 수 없다옹…\n토스앱 최신 버전에서 시도해 주세요!`
+        }
+        buttonLable={
+          !isKkangAdSupported
+            ? "광고를 사용할 수 없어요"
+            : isKkangAdFailed
+              ? "다시 시도"
+              : "광고 보고 받기"
+        }
         buttonColor="blue"
-        buttonDisabled={!isKkangAdLoaded}
+        buttonDisabled={
+          isKkangAdSupported ? !isKkangAdLoaded && !isKkangAdFailed : true
+        }
         onButtonClick={() => {
+          if (!isKkangAdSupported) return;
+          if (isKkangAdFailed) {
+            loadKkangAd();
+            return;
+          }
           showKkangAd();
         }}
         subButtonLable="닫기"
@@ -606,11 +644,28 @@ export default function FindCat() {
       <Dialog
         isShow={isShowKkangAd}
         title="깡 충전"
-        subTitle={`광고를 보고\n깡 ${KKANG_AD_REWARD_COUNT}개를 받을 수 있다옹!`}
-        buttonLable="광고 보고 받기"
+        subTitle={
+          isKkangAdSupported
+            ? `광고를 보고\n깡 ${KKANG_AD_REWARD_COUNT}개를 받을 수 있다옹!`
+            : `이 기기에서는 광고를 볼 수 없다옹…\n토스앱 최신 버전에서 시도해 주세요!`
+        }
+        buttonLable={
+          !isKkangAdSupported
+            ? "광고를 사용할 수 없어요"
+            : isKkangAdFailed
+              ? "다시 시도"
+              : "광고 보고 받기"
+        }
         buttonColor="blue"
-        buttonDisabled={!isKkangAdLoaded}
+        buttonDisabled={
+          isKkangAdSupported ? !isKkangAdLoaded && !isKkangAdFailed : true
+        }
         onButtonClick={() => {
+          if (!isKkangAdSupported) return;
+          if (isKkangAdFailed) {
+            loadKkangAd();
+            return;
+          }
           showKkangAd();
         }}
         subButtonLable="닫기"

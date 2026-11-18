@@ -41,6 +41,8 @@ export function useFullScreenAd(
   const [isSupported] = useState(() => isFullScreenAdSupported());
   const [isLoaded, setIsLoaded] = useState(false);
   const [isShowing, setIsShowing] = useState(false);
+  // 마지막 로드/표시 시도가 실패했는지 — 실패 시 UI에서 "다시 시도"를 노출할 수 있어요
+  const [isFailed, setIsFailed] = useState(false);
 
   // 콜백(show 이후 onDismissed 등)에서 다시 load()를 호출할 수 있도록
   // isLoaded의 최신값을 ref로 유지 — 클로저에 갇힌 옛값 가드에 걸리지 않게
@@ -70,6 +72,7 @@ export function useFullScreenAd(
         isLoadedRef.current = true;
         unsubscribeLoadRef.current?.();
         unsubscribeLoadRef.current = null;
+        setIsFailed(false);
         setIsLoaded(true);
       },
       onError: (error) => {
@@ -77,6 +80,7 @@ export function useFullScreenAd(
         isLoadedRef.current = false;
         unsubscribeLoadRef.current?.();
         unsubscribeLoadRef.current = null;
+        setIsFailed(true);
         console.error("전면 광고 로드 실패:", error);
         callbacksRef.current.onError?.(error);
       },
@@ -110,6 +114,7 @@ export function useFullScreenAd(
             setIsShowing(false);
             isLoadedRef.current = false;
             setIsLoaded(false);
+            setIsFailed(true);
             console.error("전면 광고 표시 실패:", event.type);
             break;
 
@@ -128,6 +133,7 @@ export function useFullScreenAd(
         setIsShowing(false);
         isLoadedRef.current = false;
         setIsLoaded(false);
+        setIsFailed(true);
         console.error("전면 광고 표시 실패:", error);
         callbacksRef.current.onError?.(error);
       },
@@ -144,5 +150,5 @@ export function useFullScreenAd(
     };
   }, []);
 
-  return { isSupported, isLoaded, isShowing, load, show } as const;
+  return { isSupported, isLoaded, isFailed, isShowing, load, show } as const;
 }

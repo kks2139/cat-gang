@@ -16,6 +16,14 @@ export interface CatCatched {
   createdAt: string;
 }
 
+type Rarity = CatInfo["rarity"];
+
+const RARITY_LABEL: Record<Rarity, string> = {
+  common: "일반",
+  rare: "레어",
+  unique: "유니크",
+};
+
 interface Props {
   className?: string;
   onClickCat: (info: CatCatched) => void;
@@ -58,12 +66,13 @@ export default function MyCats({ className, onClickCat }: Props) {
         {myCats?.length ? (
           <ul>
             {myCats.map((cat, i) => {
-              const { name, img, crying, lat, lng, createdAt } = cat;
+              const { name, rarity, img, crying, lat, lng, createdAt } = cat;
 
               return (
                 <li key={name + i}>
                   <button
                     type="button"
+                    data-rarity={rarity}
                     onClick={() => {
                       if (!map) {
                         return;
@@ -85,19 +94,21 @@ export default function MyCats({ className, onClickCat }: Props) {
                     <img src={img} alt={name} width={100} height={100} />
                     <div className={cn("info")}>
                       <div className={cn("row")}>
-                        <span>{name} :</span>
-                        <span>{crying}</span>
+                        <span className={cn("name")}>{name}</span>
+                        {rarity !== "common" && (
+                          <span className={cn("rarity")}>
+                            {RARITY_LABEL[rarity]}
+                          </span>
+                        )}
                       </div>
-                      <div className={cn("row")}>
-                        <span>잡은 날:</span>
-                        <span>
-                          {format(
-                            createdAt || new Date(),
-                            "yy년 MM월 dd일 HH:mm",
-                          )}
-                        </span>
-                      </div>
+                      <p className={cn("crying")}>{crying}</p>
+                      <p className={cn("date")}>
+                        포획 · {format(createdAt || new Date(), "yy-MM-dd HH:mm")}
+                      </p>
                     </div>
+                    <span className={cn("locate")} aria-hidden="true">
+                      ›
+                    </span>
                   </button>
                 </li>
               );

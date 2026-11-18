@@ -11,6 +11,10 @@ const cn = classNames.bind(styles);
 // 구름 뒤로 가리기 위해 구름/안개가 바로 걷히지 않게 1초 여유를 둔다
 const REVEAL_HOLD = 1;
 
+// 재진입 리빌 유지 시간(s) — 지도가 이미 그려져 있어 지물 색 전환 깜빡임이
+// 없으므로 짧게 유지한다
+export const REVEAL_HOLD_REENTER = 0.2;
+
 // ─── 리빌 구름 구성 ────────────────────────────────────────
 // 크고작은 구름들이 안개 위에 떠 있고, 로딩 완료 시 화면 중앙에 가까운
 // 구름부터 양쪽으로 흩어지며 지도를 드러낸다. 구름마다 크기/위치/드리프트/
@@ -456,6 +460,14 @@ const REVEAL_CLOUDS: RevealCloudConfig[] = [
 interface Props {
   /** 낮/밤 톤 — 밤이면 남색 안개/구름 */
   isNight: boolean;
+  /** "찾는중" 로딩 표시 숨김 — 지도가 이미 로딩돼 있는 재진입 리빌에서 사용 */
+  hideLoading?: boolean;
+  /**
+   * 재진입 리빌 톤 — 지도가 이미 그려져 있어 깜빡임 가림이 필요 없다:
+   * ① 유지 시간을 1초 → 0.5초로 줄이고 ② 첫 렌더부터 불투명하게 그려
+   *  마운트 페이드인 사이 지도가 비치는 것을 막는다
+   */
+  isReenter?: boolean;
 }
 
 /**
@@ -463,22 +475,27 @@ interface Props {
  * 로딩이 끝나면(parent가 언마운트) 구름이 중앙에 가까운 것부터 양쪽으로
  * 흩어지며 지도를 드러낸다. AnimatePresence 안에서 isShow 토글로 사용한다.
  */
-function CloudReveal({ isNight }: Props) {
+function CloudReveal({ isNight, hideLoading, isReenter }: Props) {
+  // 재진입 시엔 유지 시간을 0.5초로 — 첫 로딩(REVEAL_HOLD)보다 짧게
+  const revealHold = isReenter ? REVEAL_HOLD_REENTER : REVEAL_HOLD;
+
   return (
     <motion.div
       className={cn("cloud-reveal", { night: isNight })}
-      initial={{ opacity: 0 }}
+      // 재진입 리빌은 페이드인 없이 첫 프레임부터 불투명 — 마운트 사이에
+      // 지도가 비치는 걸 막는다. (첫 로딩은 페이드인으로 부드럽게 덮는다)
+      initial={{ opacity: isReenter ? 1 : 0 }}
       animate={{ opacity: 1, transition: { duration: 0.3 } }}
     >
       {/* 안개 베이스 — 불투명, 로딩중 지도를 완전히 가림. 갈라질 땐 서서히 걷힘.
-          다크 테마 전환 깜빡임을 가리기 위해 REVEAL_HOLD만큼 늦게 시작 */}
+          다크 테마 전환 깜빡임을 가리기 위해 revealHold만큼 늦게 시작 */}
       <motion.div
         className={cn("fog-base")}
         exit={{
           opacity: 0,
           transition: {
             duration: 1.2,
-            delay: REVEAL_HOLD + 0.15,
+            delay: revealHold + 0.15,
             ease: "easeOut",
           },
         }}
@@ -504,29 +521,29 @@ function CloudReveal({ isNight }: Props) {
             transition: {
               x: {
                 duration: cloud.exitDuration,
-                delay: REVEAL_HOLD + cloud.exitDelay,
+                delay: revealHold + cloud.exitDelay,
                 ease: [0.62, 0, 0.36, 1],
               },
               y: {
                 duration: cloud.exitDuration,
-                delay: REVEAL_HOLD + cloud.exitDelay,
+                delay: revealHold + cloud.exitDelay,
                 ease: "easeOut",
               },
               rotate: {
                 duration: cloud.exitDuration,
-                delay: REVEAL_HOLD + cloud.exitDelay,
+                delay: revealHold + cloud.exitDelay,
                 ease: "easeOut",
               },
               scale: {
                 duration: cloud.exitDuration,
-                delay: REVEAL_HOLD + cloud.exitDelay,
+                delay: revealHold + cloud.exitDelay,
                 ease: "easeOut",
               },
               // 이동이 거의 끝나는 마지막 구간에만 서서히 사라진다 —
               // 화면 밖으로 못 나간 구름이 하드컷되지 않게
               opacity: {
                 duration: 0.4,
-                delay: REVEAL_HOLD + cloud.exitDelay + cloud.exitDuration - 0.4,
+                delay: revealHold + cloud.exitDelay + cloud.exitDuration - 0.4,
               },
             },
           }}
@@ -548,15 +565,18 @@ function CloudReveal({ isNight }: Props) {
         </motion.div>
       ))}
 
-      <motion.div
-        className={cn("loading")}
-        initial={{ opacity: 0, y: -5, translateX: "-50%" }}
-        animate={{ opacity: 1, y: 0, translateX: "-50%" }}
-        exit={{ opacity: 0, y: -5, translateX: "-50%" }}
-        transition={{ duration: 0.2 }}
-      >
-        <Loading text="찾는중..." />
-      </motion.div>
+      {/* 재진입 리빌(지도가 이미 로딩돼 있을 때)은 로딩 표시 없이 바로 갈라진다 */}
+      {!hideLoading && (
+        <motion.div
+          className={cn("loading")}
+          initial={{ opacity: 0, y: -5, translateX: "-50%" }}
+          animate={{ opacity: 1, y: 0, translateX: "-50%" }}
+          exit={{ opacity: 0, y: -5, translateX: "-50%" }}
+          transition={{ duration: 0.2 }}
+        >
+          <Loading text="찾는중..." />
+        </motion.div>
+      )}
     </motion.div>
   );
 }
