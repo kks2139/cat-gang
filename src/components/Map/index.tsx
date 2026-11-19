@@ -21,6 +21,7 @@ import ImgFish from "@/assets/img/item/fish.png";
 import ImgGukbab from "@/assets/img/item/gukbab.png";
 import noLabelsStyle from "@/assets/no-labels-style.json";
 import CloudReveal from "@/components/CloudReveal";
+import CatTower, { TOWER_HIT_LAYERS } from "@/components/Map/CatTower";
 import PawIcon from "@/components/PawIcon";
 import { useDayAndNight } from "@/hooks/useDayAndNight";
 import { useItemMutation } from "@/queries/useItemMutation";
@@ -28,6 +29,7 @@ import { useItemQuery } from "@/queries/useItemQuery";
 import { useUpdateTotalDistanceMutation } from "@/queries/useUpdateTotalDistanceMutation";
 import { useUsersQuery } from "@/queries/useUsersQuery";
 import { useCatStore } from "@/store/cat";
+import { useCatTowerStore } from "@/store/catTower";
 import { useKkangStore } from "@/store/kkang";
 import { useViewStore } from "@/store/view";
 import { catCharacters } from "@/utils/cats";
@@ -359,6 +361,10 @@ interface Props {
   onDistanceChange?: (distance: number) => void;
   /** 깡 캡슐(충전) 클릭 콜백 */
   onClickKkang?: () => void;
+  /** 캣 타워 팝업의 작업고양이 추가 클릭 — 고양이 목록 시트를 연다 */
+  onTowerAddCats?: () => void;
+  /** 캣 타워를 새로 세웠을 때 */
+  onTowerPlaced?: () => void;
 }
 
 function MapContent({
@@ -371,6 +377,8 @@ function MapContent({
   ref: myMarkerRef,
   onClickMe,
   onDistanceChange,
+  onTowerAddCats,
+  onTowerPlaced,
 }: Omit<Props, "onClickKkang">) {
   const isStopFocusMe = useViewStore((s) => s.isStopFocusMe);
   const isBattleOn = useViewStore((s) => s.isBattleOn);
@@ -512,6 +520,23 @@ function MapContent({
     }
 
     const onClick = (e: MapMouseEvent) => {
+      // 캣 타워 위치 지정 중에는 캐릭터를 움직이지 않는다
+      const towerState = useCatTowerStore.getState();
+
+      if (towerState.isPlacingTower) {
+        return;
+      }
+
+      // 타워가 세워져 있을 땐 지면 클릭만 캐릭터 이동으로 처리한다 —
+      // 타워 지물(기둥/기초 지반/발판) 클릭은 팝업 토글이 가야 한다
+      if (
+        towerState.tower &&
+        map.queryRenderedFeatures(e.point, { layers: TOWER_HIT_LAYERS })
+          .length > 0
+      ) {
+        return;
+      }
+
       setMockLocation(e.lngLat.lat, e.lngLat.lng);
       createMeAndCatsRef.current?.(true);
     };
@@ -717,6 +742,12 @@ function MapContent({
 
   const drawMe = useCallback(
     async (usePanTo?: boolean) => {
+      // 캣 타워 위치 지정(새로 세우기/이동) 중에는 캐릭터 이동,
+      // 발자국, 거리 기록을 모두 멈춘다 (GPS가 와도 자리를 지킨다)
+      if (useCatTowerStore.getState().isPlacingTower) {
+        return undefined;
+      }
+
       const coords: Coords | undefined = await getCurrentPosition();
 
       if (!coords || !map) {
@@ -822,6 +853,11 @@ function MapContent({
         });
 
         marker.on("click", () => {
+          // 캣 타워 위치 지정 중에는 다른 마커 동작을 막는다
+          if (useCatTowerStore.getState().isPlacingTower) {
+            return;
+          }
+
           onClickMe?.();
         });
 
@@ -929,6 +965,11 @@ function MapContent({
         });
 
         marker.on("click", (e) => {
+          // 캣 타워 위치 지정 중에는 다른 마커 동작(전투 시작 등)을 막는다
+          if (useCatTowerStore.getState().isPlacingTower) {
+            return;
+          }
+
           // MapLibre 마커 클릭 이벤트의 originalEvent.target은 실제 클릭된 DOM 노드
           // — data-status를 가진 컨테이너를 찾아 올라간다
           const domTarget =
@@ -983,6 +1024,11 @@ function MapContent({
         });
 
         marker.on("click", () => {
+          // 캣 타워 위치 지정 중에는 다른 마커 동작을 막는다
+          if (useCatTowerStore.getState().isPlacingTower) {
+            return;
+          }
+
           onClickOwnCat?.(cat);
         });
 
@@ -1304,6 +1350,11 @@ function MapContent({
       });
 
       marker.on("click", async (e) => {
+        // 캣 타워 위치 지정 중에는 아이템 줍기도 막는다
+        if (useCatTowerStore.getState().isPlacingTower) {
+          return;
+        }
+
         // MapLibre 클릭 이벤트의 originalEvent.target은 실제 클릭된 DOM 노드
         // — 아이템 컨테이너를 찾아 올라간다
         const domTarget =
@@ -1381,7 +1432,22 @@ function MapContent({
     };
   }, [clearGreeting]);
 
-  return <div className={className}></div>;
+  // 캣 타워 위치 지정 구역의 중심이 될 내 캐릭터 위치 (마커가 생기기 전엔 undefined)
+  const getMyPosition = useCallback(() => {
+    const position = myCatRef.current?.getLngLat();
+
+    return position ? { lat: position.lat, lng: position.lng } : undefined;
+  }, []);
+
+  return (
+    <div className={className}>
+      <CatTower
+        getMyPosition={getMyPosition}
+        onAddCats={onTowerAddCats}
+        onTowerPlaced={onTowerPlaced}
+      />
+    </div>
+  );
 }
 
 export default function Map({ className, onClickKkang, ...rest }: Props) {
@@ -1389,6 +1455,8 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
   const kkangCount = useKkangStore((s) => s.count);
   const { setMap, setIsStopFocusMe, setIsMapLoading, addToastMessage } =
     useViewStore((s) => s.actions);
+  // 캣 타워 위치 지정(새로 세우기/이동) 중엔 상단 버튼/내 위치 버튼을 잠근다
+  const isPlacingTower = useCatTowerStore((s) => s.isPlacingTower);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MaplibreMap | null>(null);
@@ -1719,6 +1787,7 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
         <button
           type="button"
           className={cn("distance-display")}
+          disabled={isLoading || isPlacingTower}
           onClick={onClickDistance}
           aria-label="총 산책 거리 보기"
         >
@@ -1735,6 +1804,7 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
         <button
           type="button"
           className={cn("kkang-display")}
+          disabled={isLoading || isPlacingTower}
           onClick={onClickKkang}
           aria-label="깡 충전"
         >
@@ -1773,7 +1843,7 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
         data-name="focus-button"
         className={cn("focus-button", { "stop-focus": isStopFocusMe })}
         aria-label="내 위치로 이동"
-        disabled={isLoading}
+        disabled={isLoading || isPlacingTower}
         onClick={async () => {
           const marker = myMarkerRef.current;
 

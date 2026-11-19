@@ -151,8 +151,8 @@
 
   z-index: 1000;
   position: absolute;
-  bottom: 122px;
-  right: 20px;
+  bottom: calc(max(24px, env(safe-area-inset-bottom)) + 24px);
+  right: 16px;
   width: 44px;
   height: 44px;
   display: flex;
@@ -195,3 +195,11 @@
 
 // 맵 첫 진입 리빌(구름/안개 갈라짐) 연출은 CloudReveal 컴포넌트로 분리됨
 // — components/CloudReveal/index.module.scss 참고
+
+// 캣 타워 위치 지정 모드 등에서 상단 버튼 잠금 표시
+.distance-display:disabled,
+.kkang-display:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  pointer-events: none;
+}

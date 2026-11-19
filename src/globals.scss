@@ -1616,4 +1616,339 @@ input {
     opacity: 1;
   }
 }
+
+//----------------------------------------
+
+// ----- 캣 타워 높이 라벨 (타워 발밑 안내판) -----
+.cat-tower-label {
+  // maplibre 마커 기본 스타일 제거
+  background: transparent;
+  border: none;
+  // 클릭이 지도(타워 클릭 판정)로 그대로 전달되게 한다
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: linear-gradient(
+    135deg,
+    rgba(147, 51, 234, 0.88) 0%,
+    rgba(236, 72, 153, 0.88) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 3px 10px rgba(88, 28, 135, 0.4);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  user-select: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+
+  .cat-tower-label-icon {
+    font-size: 13px;
+  }
+
+  .cat-tower-label-num {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cat-tower-label-unit {
+    font-size: 11px;
+    font-weight: 700;
+    opacity: 0.85;
+  }
+}
+
+// ----- 캣 타워 공사중 모션 (작업중 부하가 있을 때만 표시) -----
+// 기초 지반 주변에서 먼지 구름이 계속 피어오르고(.cat-tower-work-dust),
+// 망치 1개가 주변을 돌아다니며 망치질한다(.cat-tower-work-hammer).
+// 맵 마커 래퍼엔 transform 애니메이션을 걸지 않는다 (maplibre 배치 transform
+// 덮어쓰기 함정 — 애니메이션은 반드시 내부 요소에).
+.cat-tower-work-dust {
+  // maplibre 마커 기본 스타일 제거
+  background: transparent;
+  border: none;
+  // 클릭이 지도로 그대로 전달되게 한다
+  pointer-events: none;
+  user-select: none;
+  position: relative;
+  width: 0;
+  height: 0;
+
+  i {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 30px;
+    height: 22px;
+    border-radius: 50%;
+    // 구름처럼 뭉게뭉게 — 부드러운 흰 원
+    background: radial-gradient(
+      closest-side,
+      rgba(255, 255, 255, 0.95),
+      rgba(255, 255, 255, 0)
+    );
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.4);
+    animation: cat-tower-work-puff 2.6s ease-out infinite;
+    will-change: transform, opacity;
+  }
+
+  // 뭉게 형태 — 본체 위 양쪽에 작은 봉우리 2개
+  i::before,
+  i::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    background: inherit;
+  }
+
+  i::before {
+    left: 4px;
+    bottom: 8px;
+    width: 18px;
+    height: 18px;
+  }
+
+  i::after {
+    right: 6px;
+    bottom: 5px;
+    width: 13px;
+    height: 13px;
+  }
+}
+
+.cat-tower-work-hammer {
+  // maplibre 마커 기본 스타일 제거
+  background: transparent;
+  border: none;
+  pointer-events: none;
+  user-select: none;
+  position: relative;
+  width: 0;
+  height: 0;
+
+  i {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    font-style: normal;
+    font-size: 36px;
+    line-height: 1;
+    filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.35));
+    transform: translate(-50%, 0);
+    transform-origin: 85% 85%;
+    animation: cat-tower-work-strike 0.9s ease-in-out infinite;
+    will-change: transform;
+  }
+}
+
+@keyframes cat-tower-work-strike {
+  0%,
+  40% {
+    transform: translate(-50%, 0) rotate(-24deg);
+  }
+
+  50%,
+  62% {
+    transform: translate(-50%, 0) rotate(22deg);
+  }
+
+  100% {
+    transform: translate(-50%, 0) rotate(-24deg);
+  }
+}
+
+@keyframes cat-tower-work-puff {
+  0% {
+    transform: translate(-50%, 2px) scale(0.4);
+    opacity: 0;
+  }
+
+  18% {
+    opacity: 0.85;
+  }
+
+  60% {
+    opacity: 0.55;
+  }
+
+  100% {
+    transform: translate(-50%, -52px) scale(1.8);
+    opacity: 0;
+  }
+}
+
+// ----- 캣 타워 위치 지정 구역 중앙 펄스 (DOM 마커 — WebGL 지물 없이 CSS만으로 재생) -----
+// 링 크기는 CatTower.tsx가 --pulse-r(구역 경계 100m의 화면 반경 px)로 넣어준다.
+// 주의: 맵 마커 래퍼 자체엔 transform 애니메이션을 걸지 않는다 (maplibre 배치 transform
+// 덮어써 좌측상단 고정 되는 함정 — 애니메이션은 반드시 내부 요소에).
+.cat-tower-zone-pulse {
+  position: relative;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  user-select: none;
+
+  .cat-tower-zone-pulse-ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: calc(var(--pulse-r, 70px) * 2);
+    height: calc(var(--pulse-r, 70px) * 2);
+    margin: calc(var(--pulse-r, 70px) * -1) 0 0 calc(var(--pulse-r, 70px) * -1);
+    border: 2px solid rgba(244, 114, 182, 0.55);
+    border-radius: 50%;
+    box-shadow: 0 0 14px rgba(244, 114, 182, 0.25) inset;
+    transform: scale(0.1);
+    opacity: 0;
+    animation: cat-tower-zone-pulse-expand 2s ease-out infinite;
+    will-change: transform, opacity;
+  }
+}
+
+@keyframes cat-tower-zone-pulse-expand {
+  0% {
+    transform: scale(0.1);
+    opacity: 0.85;
+  }
+  60% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+// ----- 캣 타워 팝업 정보창 (타워 옆에 뜨는 작은 정보 카드) -----
+// maplibre 마커 래퍼 — 위치/앵커는 Marker가 담당.
+// 주의: 래퍼에 transform 애니메이션을 걸면 maplibre의 배치용 인라인 transform을
+// 덮어써 좌측상단에 고정되므로, 등장 애니메이션은 반드시 내부 요소(.cat-tower-popup-body)에 둔다
+.cat-tower-popup {
+  pointer-events: auto;
+  user-select: none;
+}
+
+@keyframes cat-tower-popup-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.cat-tower-popup-body {
+  width: 176px;
+  padding: 11px 12px 12px;
+  animation: cat-tower-popup-in 0.22s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+  border-radius: 16px;
+  // 딥 바이올렛 틴트 (핑크 억제)
+  background: linear-gradient(
+    180deg,
+    rgba(59, 22, 100, 0.92) 0%,
+    rgba(76, 29, 149, 0.9) 55%,
+    rgba(91, 33, 182, 0.92) 100%
+  );
+  border: 1px solid rgba(196, 181, 253, 0.4);
+  box-shadow: 0 6px 18px rgba(49, 15, 92, 0.45);
+  color: #ffffff;
+  // 흰 하이라이트 1px (glass-card 질감)
+  outline: 1px solid rgba(255, 255, 255, 0.22);
+  outline-offset: -1px;
+
+  .cat-tower-popup-title-row {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+
+    .cat-tower-popup-icon {
+      font-size: 14px;
+      align-self: center;
+    }
+
+    .cat-tower-popup-title {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: -0.2px;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    .cat-tower-popup-height {
+      margin-left: auto;
+      font-size: 15px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      color: #ede9fe;
+
+      em {
+        font-style: normal;
+        font-size: 11px;
+        font-weight: 700;
+        opacity: 0.85;
+        margin-left: 1px;
+      }
+    }
+  }
+
+  .cat-tower-popup-info {
+    margin-top: 8px;
+    padding: 5px 9px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(17, 12, 34, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+
+    b {
+      color: #ddd6fe;
+      font-weight: 800;
+    }
+  }
+
+  .cat-tower-popup-actions {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    row-gap: 6px;
+  }
+
+  .cat-tower-popup-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 6px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: -0.2px;
+    color: #ffffff;
+    // 어두운 반투명 기본 버튼
+    background: rgba(17, 12, 34, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.26);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+      filter 0.15s ease, background-color 0.15s ease;
+
+    &:active {
+      transform: scale(0.93);
+      filter: brightness(1.12);
+    }
+
+    // 작업고양이 추가 — 딥 바이올렛 솔리드로 강조 (어두운 톤 유지)
+    &.add {
+      background: linear-gradient(135deg, rgba(109, 40, 217, 0.92) 0%, rgba(76, 29, 149, 0.95) 100%);
+      border-color: rgba(167, 139, 250, 0.45);
+      box-shadow: 0 3px 10px rgba(30, 10, 60, 0.4);
+    }
+  }
+}
 //----------------------------------------

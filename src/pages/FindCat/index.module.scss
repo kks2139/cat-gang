@@ -33,15 +33,14 @@
       $border: rgba(255, 255, 255, 0.35),
       $radius: 24px,
       $shadow: 0 10px 28px rgba(0, 0, 0, 0.35),
-      $grad-top: rgba(255, 255, 255, 0.2),
-      $grad-bottom: rgba(0, 0, 0, 0.103)
+      $grad-top: rgba(255, 255, 255, 0.1),
+      $grad-bottom: rgba(0, 0, 0, 0.1)
     );
 
     z-index: 1000;
     position: absolute;
     bottom: max(24px, env(safe-area-inset-bottom));
-    left: 50%;
-    transform: translateX(-50%);
+    left: 16px;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -49,15 +48,21 @@
     white-space: nowrap;
 
     .dock-btn {
-      height: 46px;
-      padding: 0 18px;
-      border-radius: 20px;
+      // 문구(위)+값(아래) 세로 컴팩트 버튼 — 가로 폭 절약 (모바일 잘림 대응)
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      height: auto;
+      min-width: 64px;
+      padding: 9px 14px 8px;
+      border-radius: 16px;
       font-size: 16px;
-      font-weight: 700;
       flex: none;
 
       .btn-label {
         letter-spacing: -0.2px;
+        line-height: 1;
         white-space: nowrap;
       }
 
@@ -79,20 +84,93 @@
         display: inline-flex;
         align-items: baseline;
         justify-content: center;
-        min-width: 20px;
-        padding: 0px 6px;
-        margin-left: 2px;
+        padding: 1px 8px;
         background: rgba(255, 255, 255, 0.28);
         color: #ffffff;
-        border-radius: 10px;
-        font-size: 16px;
-        font-weight: 800;
+        border-radius: 8px;
+        font-size: 13px;
 
         .unit {
-          font-size: 12px;
-          // font-weight: normal;
-          margin-left: 4px;
+          font-size: 10px;
+          margin-left: 2px;
         }
+      }
+    }
+
+    // 캣 타워 버튼 — 딥 바이올렛 톤 (타워 UI 전용, 핑크 억제)
+    .tower-btn {
+      --glass-tint: linear-gradient(
+        180deg,
+        rgba(109, 40, 217, 0.8) 0%,
+        rgba(88, 28, 135, 0.9) 55%,
+        rgba(76, 29, 149, 0.92) 100%
+      );
+      --glass-border: rgba(196, 181, 253, 0.38);
+      --glass-grad-top: rgba(255, 255, 255, 0.18);
+      --glass-grad-bottom: rgba(0, 0, 0, 0.2);
+      --glass-highlight: rgba(255, 255, 255, 0.3);
+      --glass-shadow: 0 6px 18px rgba(0, 0, 0, 0.35),
+        0 0 14px rgba(139, 92, 246, 0.22);
+    }
+  }
+
+  // 캣 타워 위치 지정 모드 배너 — 하단(플로팅 독 바로 위)에 안내 + 취소
+  .tower-place-bar {
+    @include glass-card(
+      $border: rgba(196, 181, 253, 0.35),
+      $radius: 999px,
+      $shadow: 0 8px 24px rgba(49, 15, 92, 0.45),
+      $grad-top: rgba(255, 255, 255, 0.16),
+      $grad-bottom: rgba(0, 0, 0, 0.12)
+    );
+
+    z-index: 1200;
+    position: absolute;
+    bottom: calc(max(24px, env(safe-area-inset-bottom)) + 122px);
+    left: 16px;
+    right: 16px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 10px 20px;
+    max-width: max-content;
+
+    // 딥 바이올렛 틴트 (핑크 억제)
+    --glass-tint: linear-gradient(
+      180deg,
+      rgba(76, 29, 149, 0.88) 0%,
+      rgba(91, 33, 182, 0.9) 100%
+    );
+
+    --glass-border: rgba(196, 181, 253, 0.35);
+
+    .place-text {
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      white-space: pre-line;
+    }
+
+    .place-cancel {
+      flex: none;
+      padding: 8px 18px;
+      border-radius: 99px;
+      // 어두운 반투명 버튼
+      background: rgba(17, 12, 34, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      color: rgba(255, 255, 255, 0.92);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.15s ease, transform 0.15s ease;
+
+      &:active {
+        background: rgba(17, 12, 34, 0.7);
+        transform: scale(0.94);
       }
     }
   }

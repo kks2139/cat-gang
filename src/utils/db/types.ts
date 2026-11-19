@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      cat_towers: {
+        Row: {
+          attached_keys: Json
+          created_at: string
+          height_at: number
+          position: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attached_keys?: Json
+          created_at?: string
+          height_at?: number
+          position: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attached_keys?: Json
+          created_at?: string
+          height_at?: number
+          position?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       items: {
         Row: {
           catnip: number

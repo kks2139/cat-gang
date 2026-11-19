@@ -52,15 +52,15 @@
     text-align: center;
     white-space: nowrap;
 
-    // 좌측 그린 액센트 바
+    // 좌측 흰색 고양이 발바닥 아이콘
     &::before {
       content: "";
       flex-shrink: 0;
-      width: 4px;
-      height: 18px;
-      border-radius: 2px;
-      background: linear-gradient(180deg, #4ade80 0%, #16a34a 100%);
-      box-shadow: 0 0 8px rgba(74, 222, 128, 0.55);
+      width: 16px;
+      height: 16px;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M12 11.5c-4 0-7 2.7-7 6 0 2.4 2 3.8 4.4 3.8 1.1 0 1.8-.5 2.6-.5s1.5.5 2.6.5c2.4 0 4.4-1.4 4.4-3.8 0-3.3-3-6-7-6z'/%3E%3Cellipse cx='5.5' cy='8.8' rx='2.1' ry='2.7' transform='rotate(-20 5.5 8.8)'/%3E%3Cellipse cx='12' cy='5.6' rx='2.2' ry='2.9'/%3E%3Cellipse cx='18.5' cy='8.8' rx='2.1' ry='2.7' transform='rotate(20 18.5 8.8)'/%3E%3C/svg%3E")
+        no-repeat center / contain;
+      filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.45));
     }
 
     // 뒤로 쌓인 토스트가 앞 토스트에 겹치게 하는 간격 (깊이감 밀집)

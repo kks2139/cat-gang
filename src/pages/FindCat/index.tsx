@@ -8,6 +8,7 @@ import { AdBanner, useFullScreenAd } from "@/components/Ads";
 import Button from "@/components/Button";
 import Dialog from "@/components/Dialog";
 import Map, { type OwnCat } from "@/components/Map";
+import { TOWER_ZONE_RADIUS } from "@/components/Map/CatTower";
 import Stage from "@/components/Stage";
 import type { ItemType } from "@/components/Stage/Inventory";
 import { useBrowserBackGuard } from "@/hooks/useBrowserBackGuard";
@@ -17,6 +18,7 @@ import { useItemMutation } from "@/queries/useItemMutation";
 import { useItemQuery } from "@/queries/useItemQuery";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
 import { useCatStore } from "@/store/cat";
+import { useCatTowerStore } from "@/store/catTower";
 import { useKkangStore } from "@/store/kkang";
 import { useViewStore } from "@/store/view";
 import { catCharacters, type CatInfo, getGangInfo, MyCat } from "@/utils/cats";
@@ -35,6 +37,7 @@ import {
 } from "@/utils/helper";
 
 import CatBook from "./CatBook";
+import CatTowerSheet from "./CatTowerSheet";
 import styles from "./index.module.scss";
 import MyCats from "./MyCats";
 import MyInfoDialog from "./MyInfoDialog";
@@ -63,6 +66,9 @@ export default function FindCat() {
   const [isShowCatchedCatPopup, setIsShowCatchedCatPopup] = useState(false);
   const [isShowMyInfoPopup, setIsShowMyInfoPopup] = useState(false);
   const [isShowCatBook, setIsShowCatBook] = useState(false);
+  const [isShowTowerSheet, setIsShowTowerSheet] = useState(false);
+  // 캣 타워 시트 모드 — full: 전체 관리 / cats: 작업고양이 추가(목록만)
+  const [towerSheetMode, setTowerSheetMode] = useState<"full" | "cats">("full");
   const [isShowExitConfirm, setIsShowExitConfirm] = useState(false);
   const [isShowKkangEmpty, setIsShowKkangEmpty] = useState(false);
   const [isShowKkangAd, setIsShowKkangAd] = useState(false);
@@ -81,6 +87,11 @@ export default function FindCat() {
 
   const { addToastMessage } = useViewStore((s) => s.actions);
   const kkangCount = useKkangStore((s) => s.count);
+
+  // 캣 타워 — 실시간 높이(버튼 badge) + 위치 지정 모드 여부
+  const towerHeight = useCatTowerStore((s) => s.height);
+  const isPlacingTower = useCatTowerStore((s) => s.isPlacingTower);
+  const isMoveTower = useCatTowerStore((s) => s.isMoveTower);
 
   // 깡 충전 보상형 광고 — 진입 시 미리 로드해 딜레이 없이 재생한다
   const {
@@ -170,6 +181,41 @@ export default function FindCat() {
   // 도감: 잡은 고양이 이름 집합
   const catchedNames = new Set(ownCats.map(({ name }) => name));
 
+  // 캣 타워 위치로 지도를 옮긴다 (자동 추적은 끈 상태로)
+  const focusTower = useCallback(() => {
+    const { tower } = useCatTowerStore.getState();
+
+    if (!tower) {
+      return;
+    }
+
+    setIsStopFocusMe(true);
+    useViewStore.getState().map?.flyTo({
+      center: [tower.lng, tower.lat],
+      duration: 800,
+    });
+  }, [setIsStopFocusMe]);
+
+  // 캣 타워 버튼 클릭 — 상태별 분기 (부하 없음 / 타워 있음 / 새로 세우기)
+  const onClickTowerButton = useCallback(() => {
+    const { tower, actions } = useCatTowerStore.getState();
+
+    // 부하가 없으면 아무 동작도 하지 않는다
+    if (ownCats.length === 0) {
+      return;
+    }
+
+    if (tower) {
+      focusTower();
+      setTowerSheetMode("full");
+      setIsShowTowerSheet(true);
+      return;
+    }
+
+    // 위치 지정 모드로 전환 — 지도에서 세울 자리를 고른다
+    actions.startPlacing();
+  }, [ownCats.length, focusTower]);
+
   // 도감 수집률 (%) — 도감 버튼 badge에 표기
   const collectionRate = Math.round(
     (catchedNames.size / catCharacters.length) * 100
@@ -178,6 +224,8 @@ export default function FindCat() {
   // 깡: 오늘 남은 개수를 storage에서 로드 (마운트 시 1회)
   useEffect(() => {
     void useKkangStore.getState().actions.init();
+    // 캣 타워: 기기 저장값 복원 + 앱을 끈 사이 성장분 반영
+    void useCatTowerStore.getState().actions.init();
   }, []);
 
   // 세력 성장: 부하 수에 따라 내 고양이 스탯 보너스 적용
@@ -215,6 +263,16 @@ export default function FindCat() {
       return;
     }
 
+    if (isPlacingTower) {
+      useCatTowerStore.getState().actions.cancelPlacing();
+      return;
+    }
+
+    if (isShowTowerSheet) {
+      setIsShowTowerSheet(false);
+      return;
+    }
+
     if (isShowCatchedCatPopup) {
       setIsShowCatchedCatPopup(false);
       return;
@@ -241,6 +299,7 @@ export default function FindCat() {
 
     setIsShowExitConfirm(true);
   }, [
+    isPlacingTower,
     isShowCatBook,
     isShowCatchedCatPopup,
     isShowExitConfirm,
@@ -248,6 +307,7 @@ export default function FindCat() {
     isShowKkangEmpty,
     isShowMyInfoPopup,
     isShowStage,
+    isShowTowerSheet,
     isShowVictoryDialog,
     itemAdType,
     ownCatInfo,
@@ -319,20 +379,34 @@ export default function FindCat() {
         onClickKkang={() => {
           setIsShowKkangAd(true);
         }}
+        onTowerAddCats={() => {
+          // 타워 팝업의 작업고양이 추가 — 고양이 목록만 노출되는 모드로 시트 오픈
+          setTowerSheetMode("cats");
+          setIsShowTowerSheet(true);
+        }}
+        onTowerPlaced={() => {
+          setIsStopFocusMe(true);
+          setTowerSheetMode("full");
+          setIsShowTowerSheet(true);
+          addToastMessage({
+            message: "캣 타워 기초를 세웠다옹! 부하를 붙여 키워보자옹!",
+            position: "center",
+          });
+        }}
       />
 
-      {/* 하단 플로팅 액션 독 */}
+      {/* 하단 플로팅 액션 독 — 문구(위)+값(아래) 컴팩트 버튼 */}
       <div className={cn("floating-dock")}>
         <Button
           className={cn("dock-btn", "my-cats-btn")}
           color="primary"
-          disabled={isMapLoading}
+          disabled={isMapLoading || isPlacingTower}
           onClick={() => {
             setIsStopFocusMe(true);
             setIsShowCatchedCatPopup(true);
           }}
         >
-          <span className={cn("btn-label")}>내 부하</span>
+          <span className={cn("btn-label")}>부하</span>
           {ownCats && ownCats.length > 0 && (
             <span className={cn("badge")}>{ownCats.length}</span>
           )}
@@ -340,7 +414,7 @@ export default function FindCat() {
         <Button
           className={cn("dock-btn", "book-btn")}
           color="primary"
-          disabled={isMapLoading}
+          disabled={isMapLoading || isPlacingTower}
           onClick={() => {
             setIsStopFocusMe(true);
             setIsShowCatBook(true);
@@ -354,7 +428,56 @@ export default function FindCat() {
             </span>
           )}
         </Button>
+        <Button
+          className={cn("dock-btn", "tower-btn")}
+          color="primary"
+          disabled={isMapLoading || isPlacingTower}
+          onClick={onClickTowerButton}
+        >
+          <span className={cn("btn-label")}>캣 타워</span>
+          <span className={cn("badge")}>
+            {towerHeight}
+            <span className={cn("unit")}>m</span>
+          </span>
+        </Button>
       </div>
+
+      {/* 캣 타워 위치 지정 모드 배너 (지정 중일 때만 노출) */}
+      <AnimatePresence>
+        {isPlacingTower && (
+          <motion.div
+            className={cn("tower-place-bar")}
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ duration: 0.2 }}
+          >
+            <span className={cn("place-text")}>
+              {isMoveTower
+                ? `주변 ${TOWER_ZONE_RADIUS}m 안에서\n캣 타워를 옮길 자리를 골라라옹!`
+                : `주변 ${TOWER_ZONE_RADIUS}m 안에서\n캣 타워를 세울 자리를 골라라옹!`}
+            </span>
+            <button
+              type="button"
+              className={cn("place-cancel")}
+              onClick={() => {
+                useCatTowerStore.getState().actions.cancelPlacing();
+              }}
+            >
+              취소
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 캣 타워 관리 바텀시트 (부하 붙이기/떼기, 작업고양이 추가 모드) */}
+      <CatTowerSheet
+        isShow={isShowTowerSheet}
+        mode={towerSheetMode}
+        onClose={() => {
+          setIsShowTowerSheet(false);
+        }}
+      />
 
       {/* 부하 목록 모던 바텀시트 */}
       <AnimatePresence>
@@ -587,8 +710,8 @@ export default function FindCat() {
           !isItemAdSupported
             ? "광고를 사용할 수 없어요"
             : isItemAdFailed
-              ? "다시 시도"
-              : "광고 보고 받기"
+            ? "다시 시도"
+            : "광고 보고 받기"
         }
         buttonColor="blue"
         buttonDisabled={
@@ -620,8 +743,8 @@ export default function FindCat() {
           !isKkangAdSupported
             ? "광고를 사용할 수 없어요"
             : isKkangAdFailed
-              ? "다시 시도"
-              : "광고 보고 받기"
+            ? "다시 시도"
+            : "광고 보고 받기"
         }
         buttonColor="blue"
         buttonDisabled={
@@ -653,8 +776,8 @@ export default function FindCat() {
           !isKkangAdSupported
             ? "광고를 사용할 수 없어요"
             : isKkangAdFailed
-              ? "다시 시도"
-              : "광고 보고 받기"
+            ? "다시 시도"
+            : "광고 보고 받기"
         }
         buttonColor="blue"
         buttonDisabled={

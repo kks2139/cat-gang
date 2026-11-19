@@ -41,13 +41,14 @@ description: cat-gang(냥만시대) 프로젝트 작업 시 참고. 앱인토스
 ## 3. Supabase DB (무료 티어) 구조 & 세팅
 
 - **요금제**: 무료 티어. 프로젝트가 일시정지(paused)되면 대시보드에서 리슴(Resume) 필요 — **리슴 중에는 REST API 호출이 5xx(512 등)로 실패**하니 에러 원인으로 의심할 것. 리슴은 즉시 반영되지 않고 시간이 걸린다.
-- **테이블** (3개, 전부 `public` 스키마. 구조의 원본은 `src/utils/db/types.ts` — 수동 수정 금지, `pnpm update-types`로 재생성):
+- **테이블** (4개, 전부 `public` 스키마. 구조의 원본은 `src/utils/db/types.ts` — 수동 수정 금지, `pnpm update-types`로 재생성):
 
   | 테이블 | 컬럼 | 용도 / 접근 패턴 |
   | :--- | :--- | :--- |
   | `users` | `user_id`(text), `name`, `crying`, `created_at` | 유저 프로필(고양이 이름/울음소리). `user_id`로 필터 + `maybeSingle()` |
   | `own_cats` | `user_id`(text), `cat_name`, `position`(json: `{lat, lng}`), `created_at` | 잡은 고양이 목록. 유저당 여러 행. `user_id`로 필터 (select는 `cat_name, position, created_at`) |
   | `items` | `user_id`(text), `gukbab`, `fish`, `catnip`, `created_at` | 유저 보유 아이템 수. `user_id`로 필터 + `maybeSingle()` |
+  | `cat_towers` | `user_id`(text PK), `position`(json), `height_at`(float), `attached_keys`(json: string[]), `updated_at`, `created_at` | 캣 타워 상태. 유저당 1행, upsert. 생성 SQL은 `supabase/sql/cat_towers.sql` (2026-11-19) |
 
   - `user_id`는 uuid가 아니라 **AIT 익명 키(`getAnonymousKey`) 텍스트 값**이다.
   - PK/외래키 제약은 REST(types.ts)에 노출되지 않음 — 제약·RLS 정책 확인은 Supabase 대시보드에서.
@@ -99,6 +100,7 @@ src/
 │   │                       #   getCurrentPosition/watchPosition (권한 흐름 + 개발용 mock 위치)
 │   ├─ constants.ts         # isDev, operEnv (AIT 운영 환경 여부 판단; isDev면 null → 브라우저 폴백)
 │   ├─ db/supabase.ts       # Supabase 클라이언트 (accessToken 자동 갱신 + Edge Function `auth`)
+│   ├─ db/catTower.ts       # 캣 타워 상태 조회/저장 (cat_towers 테이블 upsert)
 │   ├─ db/types.ts          # supabase gen types 생성물 (수동 수정 금지)
 │   ├─ fetch.ts             # fetchData (snakecase → camelcase 자동 변환)
 │   ├─ storage.ts           # localStorage 래퍼 (당일 산책 거리 + 궤적 TodayWalkData)
@@ -123,6 +125,7 @@ src/
 - **맵 첫 진입 리빌**: 별도 컴포넌트 `CloudReveal` 담당. 초기 로딩 중 안개 베이스(`.fog-base`, 불투명)가 지도를 완전히 가리고 크고작은 구름(`REVEAL_CLOUDS` 상수, 24뭉치)이 CSS 드리프트로 떠 있다. 로딩+내 위치 이동 완료(`isLoading=false`) 시 구름은 중앙에 가까운 것부터 framer exit(구름별 속도/거리/회전 개별)로 양쪽으로 흩어지고 안개는 페이드아웃된다. `REVEAL_HOLD`(0.5s)만큼 유지 후 걷혀 다크 테마 전환 깜빡임을 가린다. 낮/밤 톤은 `isNight` 클래스로 분기.
 - **깃발(잡은 부하) 등급 표시**: `flag-wrapper`에 rare/unique 클래스가 붙어 깃발 색(골드/파랑/보라)·물결 속도·반짝임 별 개수(4/6/8)가 달라진다. `createMarker`에 `catName`을 전달해야 등급 판별됨.
 - **깡(전투 티켓)**: 하루 5개 자정 리셋. **소모량은 상대 등급별로 다름** — `KKANG_COST_BY_RARITY` (common 1 / rare 2 / unique 3). 스토어 `consume(amount)`, 잔량 부족 시 팝업에 필요 개수 표시. `getTodayKkang()`은 "오늘 값 없음"을 `null`로 반환(0개와 구분 — 소진 상태 재진입 시 리셋 버그 방지).
+- **캣 타워 (2026-11-19 추가, 2026-11-20 개편·디자인 개선)**: 부하를 붙여 키우는 3D 지물. 유저당 1개(DB PK). `store/catTower.ts`(상태/성장 계산 — 부하 1마리당 30분에 1m 지속 성장(붙일 때 즉시 보너스는 2026-11-20 삭제), 앱 종료 중에도 소급) + `components/Map/CatTower.tsx`(지도 렌더링). **타워 본체는 fill-extrusion GeoJSON 레이어**(기초 지반 `cat-tower-foundation` / 기둥 `cat-tower-3d` / 중간 발판 `cat-tower-platform` / 꼭대기 발판 `cat-tower-perch`)라 기울기/회전/줌에 함께 변형되고, 높이 뱃지는 DOM 마커(`globals.scss`의 `.cat-tower-label`)로 **기초 지반 앞쪽(남측) 하단에 안내판처럼 표시**. **지물은 실제 높이의 1/5(`TOWER_VISUAL_HEIGHT_RATIO`)로 축소 렌더** — 점수(badge/라벨/팝업)는 실제 높이 그대로. 형태는 **캣트리 다단 구조**(기둥 + 중간 발판들 + 꼭대기 발판 — 실제 높이 10m부터 20m 간격(상한 8단)으로 중간 발판 추가, 꼭대기 발판은 항상 최상단). **기둥 색은 실제 10m마다 보라/핑크 교대 밴드** — fill-extrusion 색은 지물당 1회 평가라 지물 안에서 높이별 변화가 불가능하므로, 기둥을 밴드 단위(축소 2m) 지물로 쪼개고 `band`(0/1) 프로퍼티로 색 선택(`poleBandColor`). `step` 표현식 트릭은 안 됨(기둥 전체가 꼭대기 색 하나로 칠해짐). **건물 위 배치는 금지** — 타워가 건물에 묻히는 문제(MapLibre 특성: 모든 fill-extrusion이 하나의 3D 패스에서 실제 깊이 테스트, 레이어 순서 무관)를 게임 규칙으로 푼다. 위치 지정 클릭 시 **기초 지반(중심+네 모서리)이 건물에 걸치면 토스트로 거부**(`isOnBuilding` — `querySourceFeatures`(`openmaptiles`/`building`) + PIP 판정, 카메라 독립적. `queryRenderedFeatures`는 기울어진 카메라에서 앞 건물에 오판정됨). 옥상 얹기/건물 페이드 방식은 검토 후 폐기(2026-11-20). 위치 지정 모드(`isPlacingTower`, 새로 세우기/이동 공용 + `isMoveTower` 구분)에선 내 위치 100m 반경 원(`cat-tower-zone-*`) 내 탭으로 세우고, **중앙→가장자리로 퍼지는 파동 효과는 WebGL 지물 대신 DOM/CSS 펄스**(`.cat-tower-zone-pulse` — map.project로 구역 경계 화면 반경(px)을 계산해 `--pulse-r` CSS 변수로 링 크기 맞춤, `move` 이벤트로 갱신. 지물을 프레임마다 다시 그리는 rAF 방식은 웹뷰에서 렉이 걸려 폐기 — DOM/CSS 애니메이션은 합성 스레드라 맵 렌더 비용 0. 애니메이션은 내부 요소에 둘 것), **이때 캐릭터 이동(drawMe 얼림), 타 마커 클릭, 도크/상단/내위치 버튼까지 모두 잠김**. 타워 클릭은 바텀시트가 아닌 **타워 옆 팝업 정보창**(DOM 마커 + `createPortal`, `globals.scss`의 `.cat-tower-popup`; 기본정보/작업중 수/작업고양이 추가(시트 `cats` 모드)/위치 옮기기 — **제거 기능은 2026-11-20 삭제**)이 뜬다 — 팝업 내 클릭은 `.cat-tower-popup` closest 가드로 지도 클릭과 분리. **"위치 옮기기"는 팝오버를 닫고 클릭 이벤트 완료 후(`setTimeout(0)` + `suppressNextClickRef`로 같은 클릭 무시) `startMoving()`** — 같은 클릭이 지도 클릭으로도 전달돼 팝오버 자리로 곧바로 이동되는 버그 방지. **DOM 마커 래퍼에 transform 애니메이션을 걸면 maplibre의 배치용 인라인 transform을 덮어써 좌측상단에 고정되는 함정**이 있으니 애니메이션은 내부 요소에 둘 것. 이동 완료 시 0→목표높이 easeOutCubic 자라남 모션. **공사중 모션(2026-11-20)**: 부하가 1마리라도 붙어 일하는 동안(`attachedKeys.length > 0`) 기초 지반 바깥 테두리에 먼지 구름 8개가 균등배치(+지터)로 계속 피어오르고(`.cat-tower-work-dust` — radial-gradient 뭉게 구름, 2.6s 주기 상승), 망치 1개가 주변(반경 4~8m)을 3.6초마다 돌아다니며 망치질한다(`.cat-tower-work-hammer` — 자리 이동 시 `style.animation` 리셋으로 새 자리에서 처음부터 스윙). 전부 DOM 마커 + CSS 모션, 부하가 없으면 표시 안 함. **낮/밤 팔레트**: `useDayAndNight`로 `isNight` 시 타워 레이어 색을 밝은(발광 느낌) 팔레트로 `setPaintProperty` 교체 — 타워 레이어는 스타일 JSON 다크 오버라이드(`DARK_PAINT_OVERRIDES`) 대상이 아니므로 CatTower가 직접 관리. 타워/기초 지반/발판 클릭은 `queryRenderedFeatures` 히트 판정. 상태는 **Supabase `cat_towers` 테이블**(`utils/db/catTower.ts`의 fetch/upsert — place/attach/detach/moveTo 시점에만 저장). 관리 시트는 `pages/FindCat/CatTowerSheet` (`mode: "full" | "cats"`, 딥 바이올렛 + 어두운 반투명 카드/버튼 톤 — 2026-11-20 핑크 톤에서 다듬음). `@types/geojson`은 미설치라 지물 데이터 타입은 CatTower.tsx 내 로컬 정의 사용.
 - **웹뷰 백그라운드 복귀 대응**: `visibilitychange` visible 시 App의 `useImageRecovery`가 전체 img src를 재할당(재디코드 유도), Map이 `triggerRepaint()`로 캔버스 재렌더 — 화면 복귀 시 이미지/지도 깨짐 방지.
 - **immer 주의**: `useViewStore`의 `map`에 MapLibre 인스턴스 저장 시 `as never` 캐스팅으로 immer 프록시를 우회 (GL 내부 구조 보호). MapLibre 인스턴스/마커를 상태에 넣을 땐 항상 이 패턴.
 

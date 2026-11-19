@@ -1,0 +1,277 @@
+@use "@/styles/mixins" as *;
+
+// 캣 타워 관리 바텀시트 — 보라+핑크 톤 (타워 UI 공통 톤)
+.overlay {
+  z-index: 2000;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: flex-end;
+}
+
+.sheet-container {
+  @include glass-card(
+    $border: rgba(236, 180, 255, 0.28),
+    $radius: 28px 28px 0 0,
+    $shadow: 0 -10px 40px rgba(0, 0, 0, 0.4),
+    $grad-top: rgba(255, 255, 255, 0.1),
+    $grad-bottom: rgba(0, 0, 0, 0.15)
+  );
+
+  width: 100%;
+  max-height: 80vh;
+  border-bottom: none;
+  padding: 16px 20px max(24px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+
+  // 딥 바이올렛 틴트 — 타워 전용 톤 (핑크 억제)
+  --glass-tint: linear-gradient(
+    180deg,
+    rgba(59, 22, 100, 0.86) 0%,
+    rgba(76, 29, 149, 0.88) 55%,
+    rgba(91, 33, 182, 0.9) 100%
+  );
+  --glass-border: rgba(196, 181, 253, 0.3);
+  --glass-highlight: rgba(255, 255, 255, 0.22);
+
+  .sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+
+      .sheet-title {
+        font-size: 18px;
+        font-weight: 800;
+        color: #ffffff;
+        letter-spacing: -0.3px;
+      }
+
+      .tower-status {
+        display: inline-flex;
+        align-items: baseline;
+        padding: 3px 10px;
+        background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+        color: #ffffff;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        white-space: nowrap;
+        box-shadow: 0 2px 6px rgba(124, 58, 237, 0.35);
+      }
+    }
+
+    .close-btn {
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.15s ease, transform 0.15s ease;
+
+      &:active {
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(0.92);
+      }
+    }
+  }
+
+  .sheet-hint {
+    margin-top: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.65);
+    letter-spacing: -0.2px;
+  }
+
+  .sheet-body {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 56vh;
+    margin-top: 12px;
+    padding-right: 4px;
+
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, 0.25);
+      border-radius: 10px;
+    }
+  }
+
+  .cat-list {
+    display: flex;
+    flex-direction: column;
+    row-gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .cat-row {
+    // 등급별 톤 — MyCats와 같은 변수 체계
+    --rarity-border: rgba(255, 255, 255, 0.18);
+    --rarity-strong: rgba(255, 255, 255, 0.92);
+
+    display: flex;
+    align-items: center;
+    column-gap: 12px;
+    padding: 10px 12px 10px 14px;
+    border-radius: 18px;
+    // 어두운 반투명 카드 — 시트 배경 위에서 가라앉는 톤
+    background: rgba(17, 12, 34, 0.5);
+    border: 1px solid var(--rarity-border);
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+
+    &[data-rarity="rare"] {
+      --rarity-border: rgba(125, 175, 255, 0.45);
+      --rarity-strong: #8cbcff;
+    }
+
+    &[data-rarity="unique"] {
+      --rarity-border: rgba(195, 130, 255, 0.5);
+      --rarity-strong: #c382ff;
+    }
+
+    // 일하는 중 — 딥 바이올렛으로 부각 (어두운 톤 유지)
+    &[data-attached="true"] {
+      background: rgba(46, 20, 88, 0.55);
+      border-color: rgba(167, 139, 250, 0.45);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 0 10px rgba(76, 29, 149, 0.4);
+    }
+
+    img {
+      border-radius: 14px;
+      background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.16) 0%,
+        rgba(255, 255, 255, 0.06) 100%
+      );
+      width: 56px;
+      height: 56px;
+      object-fit: cover;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      flex-shrink: 0;
+    }
+
+    .info {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-width: 0;
+
+      .row {
+        display: flex;
+        align-items: center;
+        column-gap: 8px;
+        min-width: 0;
+
+        .name {
+          color: white;
+          font-weight: 500;
+          font-size: 16px;
+          letter-spacing: -0.2px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .rarity {
+          flex: none;
+          padding: 2px 8px;
+          border-radius: 99px;
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: -0.2px;
+          color: #0f172a;
+          background: var(--rarity-strong);
+          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+        }
+      }
+    }
+
+    .toggle-btn {
+      flex: none;
+      padding: 8px 16px;
+      border-radius: 99px;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: -0.2px;
+      color: #ffffff;
+      // 딥 바이올렛 솔리드 — 어두운 톤
+      background: linear-gradient(
+        135deg,
+        rgba(109, 40, 217, 0.9) 0%,
+        rgba(76, 29, 149, 0.95) 100%
+      );
+      border: 1px solid rgba(167, 139, 250, 0.4);
+      box-shadow: 0 3px 10px rgba(30, 10, 60, 0.4);
+      cursor: pointer;
+      transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+        filter 0.15s ease;
+
+      &:active {
+        transform: scale(0.92);
+        filter: brightness(1.1);
+      }
+
+      // 떼기 — 어두운 반투명 톤으로 대비
+      &.detached {
+        background: rgba(17, 12, 34, 0.55);
+        border-color: rgba(255, 255, 255, 0.22);
+        box-shadow: none;
+        color: rgba(255, 255, 255, 0.75);
+      }
+    }
+  }
+
+  .loading {
+    display: flex;
+    flex-direction: column;
+    row-gap: 10px;
+    padding: 10px;
+    margin: 0;
+    list-style: none;
+
+    li {
+      display: flex;
+      align-items: center;
+      column-gap: 12px;
+      padding: 10px 14px;
+      background: rgba(17, 12, 34, 0.5);
+      border-radius: 18px;
+    }
+  }
+
+  .empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.45);
+    text-align: center;
+  }
+}
