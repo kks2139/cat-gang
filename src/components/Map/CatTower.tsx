@@ -11,7 +11,7 @@ import { createPortal } from "react-dom";
 import { useDayAndNight } from "@/hooks/useDayAndNight";
 import { useCatTowerStore } from "@/store/catTower";
 import { useViewStore } from "@/store/view";
-import { NUMBER_FLOW_SPIN_TIMING } from "@/utils/constants";
+import { isDev, NUMBER_FLOW_SPIN_TIMING } from "@/utils/constants";
 import { distanceInMeters } from "@/utils/helper";
 
 // ----- 캣 타워 상수 -----
@@ -1042,7 +1042,13 @@ export default function CatTower({
     } else {
       map.dragPan.enable();
       map.dragRotate.disable();
-      map.scrollZoom.disable();
+      // 포커스 해제 후 휠은 원래 상태로 — 기기(off)는 비활성, 데스크톱
+      // 테스트(isDev)는 다시 활성해 휠 줌 확인이 이어지게 한다
+      if (isDev) {
+        map.scrollZoom.enable();
+      } else {
+        map.scrollZoom.disable();
+      }
       map.doubleClickZoom.enable();
     }
   }, [map, popupEl]);

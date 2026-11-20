@@ -59,6 +59,18 @@ export const getRandomLocationInCircle = (
 export const getRandomNumber = (maxNum: number) =>
   Math.floor(Math.random() * maxNum);
 
+// ----- 마커 줌 연동 스케일 -----
+// DOM 마커는 화면 픽셀 고정이라 줌을 줄여도 크기가 그대로 — 실제 미터 스케일로
+// 그려지는 캣 타워(fill-extrusion 지물)와의 이질감 원인. 줌에 따라 마커도
+// 줄어들게 해 세계에 고정된 느낌을 낸다.
+// 완전한 축척(2^(기본줌-줌))이면 줌 15에서 1/8이라 콘텐츠를 알아볼 수 없으므로
+// 소프트닝 계수로 그 절반(0.4)만 반응시킨다 — 값이 1에 가까울수록 축척에 충실.
+const MARKER_SCALE_BASE_ZOOM = 18; // 기본 줌 — 이 줌에서 스케일 1.0
+const MARKER_SCALE_SOFTNESS = 0.4;
+
+export const getMarkerZoomScale = (zoom: number) =>
+  Math.pow(2, (zoom - MARKER_SCALE_BASE_ZOOM) * MARKER_SCALE_SOFTNESS);
+
 export const getFireworkElement = () => {
   // 1. 폭죽 컨테이너 생성
   const explosion = document.createElement("div");
@@ -321,7 +333,16 @@ export const createMarker = ({
   // z-index가 없으면(DOM 순서) 발자국이 캐릭터를 덮어버린다
   // 내 위치 핀(me)은 캐릭터/아이템(10)보다도 위에 있어야 하므로 최상위로 둔다
   wrapperEl.style.zIndex = type === "me" ? "50" : "10";
-  wrapperEl.appendChild(container);
+
+  // 줌 연동 스케일 래퍼 — 줌 이벤트에서 전용 스케일을 여기에 먹인다.
+  // 래퍼(maplibre 배치 transform)에도, 컨테이너(cat-move 애니메이션 transform)에도
+  // 절대 걸면 안 되는 세 번째 층. 크기는 부모(래퍼)를 100% 따른다.
+  const scaleEl = document.createElement("div");
+  scaleEl.className = "marker-zoom-scale";
+  scaleEl.style.transform = `scale(${getMarkerZoomScale(map.getZoom())})`;
+
+  wrapperEl.appendChild(scaleEl);
+  scaleEl.appendChild(container);
 
   // 마커 생성 (MapLibre: setLngLat([lng, lat]) -> 엘리먼트 지정)
   // 앵커는 기본값(center) — Leaflet divIcon도 iconSize 중앙이 앵커였으므로 동일 유지

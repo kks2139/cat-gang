@@ -40,6 +40,7 @@ import {
   createMarker,
   distanceInMeters,
   getCatchedCatElement,
+  getMarkerZoomScale,
   getNightTime,
   getRandomLocationInCircle,
   getRandomNumber,
@@ -1422,6 +1423,45 @@ function MapContent({
     });
   }, [map]);
 
+  // --- 마커 줌 연동 스케일 — 줌에 따라 캐릭터/깃발/아이템도 세계처럼 작아진다 ---
+  // DOM 마커는 화면 픽셀 고정이라 줌을 줄여도 크기 그대로 — 실제 미터 스케일 지물인
+  // 캣 타워와의 이질감 원인. zoom 이벤트마다 마커의 전용 스케일 래퍼만 갱신한다.
+  // 스폰된 DOM 마커는 보통 몇 개 안 되고(발자국은 symbol layer로 GPU 렌더 중),
+  // 스케일이 바뀐 프레임에만 갱신해 줌 제스처 중에도 비용이 거의 없다.
+  // transform은 래퍼(maplibre 배치용)가 아닌 내부 스케일 래퍼에 걸어야 한다 —
+  // 래퍼 transform을 덮어쓰면 마커가 좌측상단에 고정되는 함정.
+  useEffect(() => {
+    if (!map) {
+      return;
+    }
+
+    let lastScale = -1;
+
+    const applyMarkerScale = () => {
+      const scale = getMarkerZoomScale(map.getZoom());
+
+      if (scale === lastScale) {
+        return;
+      }
+
+      lastScale = scale;
+
+      map
+        .getContainer()
+        .querySelectorAll<HTMLElement>(".marker-zoom-scale")
+        .forEach((el) => {
+          el.style.transform = `scale(${scale})`;
+        });
+    };
+
+    applyMarkerScale();
+    map.on("zoom", applyMarkerScale);
+
+    return () => {
+      map.off("zoom", applyMarkerScale);
+    };
+  }, [map]);
+
   useEffect(() => {
     // 지도 인스턴스(store의 map)가 준비된 뒤 1회만 초기화한다
     if (!map || isRendered.current) {
@@ -1736,7 +1776,9 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
         dragPan: true,
         touchZoomRotate: true,
         // 핀치 줌 + 두 손가락 회전 모두 활성
-        scrollZoom: false,
+        // 마우스 휠 줌은 데스크톱 테스트(pnpm dev)에서만 — 기기엔 휠이 없고,
+        // 타워 포커스의 scrollZoom 토글(CatTower)과도 이 상태를 기준으로 맞춘다
+        scrollZoom: isDev,
         // 더블탭/더블클릭 줌 활성 (마커 위 더블탭은 dblclick 핸들러에서 제외)
         doubleClickZoom: true,
         boxZoom: false,
