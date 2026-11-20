@@ -23,7 +23,11 @@ interface Props {
 }
 
 /** 캣 타워 관리 시트 — 부하 고양이를 타워에 붙여 일을 시키거나 뗀다 */
-export default function CatTowerSheet({ isShow, mode = "full", onClose }: Props) {
+export default function CatTowerSheet({
+  isShow,
+  mode = "full",
+  onClose,
+}: Props) {
   const tower = useCatTowerStore((s) => s.tower);
   const height = useCatTowerStore((s) => s.height);
   const { attach, detach } = useCatTowerStore((s) => s.actions);
@@ -82,7 +86,7 @@ export default function CatTowerSheet({ isShow, mode = "full", onClose }: Props)
                       }}
                       spinTiming={NUMBER_FLOW_SPIN_TIMING}
                     />
-                    m · 일하는 중 {attachedCount}마리
+                    m · {attachedCount}마리 일하는 중
                   </span>
                 )}
               </div>
@@ -117,9 +121,7 @@ export default function CatTowerSheet({ isShow, mode = "full", onClose }: Props)
                 <ul className={cn("cat-list")}>
                   {myCats?.length ? (
                     myCats.map((cat) => {
-                      const isAttached = tower?.attachedKeys.includes(
-                        cat.key
-                      );
+                      const isAttached = tower?.attachedKeys.includes(cat.key);
 
                       return (
                         <li key={cat.key}>
@@ -134,7 +136,9 @@ export default function CatTowerSheet({ isShow, mode = "full", onClose }: Props)
                                 <span className={cn("name")}>{cat.name}</span>
                                 {cat.rarity !== "common" && (
                                   <span className={cn("rarity")}>
-                                    {cat.rarity === "unique" ? "유니크" : "레어"}
+                                    {cat.rarity === "unique"
+                                      ? "유니크"
+                                      : "레어"}
                                   </span>
                                 )}
                               </div>
@@ -158,7 +162,7 @@ export default function CatTowerSheet({ isShow, mode = "full", onClose }: Props)
                                 }
                               }}
                             >
-                              {isAttached ? "떼기" : "붙이기"}
+                              {isAttached ? "휴식하기" : "일 시키기"}
                             </button>
                           </div>
                         </li>

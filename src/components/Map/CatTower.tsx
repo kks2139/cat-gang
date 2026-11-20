@@ -16,21 +16,43 @@ import { distanceInMeters } from "@/utils/helper";
 
 // ----- 캣 타워 상수 -----
 export const TOWER_ZONE_RADIUS = 100; // 위치 지정 가능 반경 (m, 내 위치 기준)
-// 캣트리(다단) 구조 치수 — 모두 실제 미터 기준 지름/높이
-const TOWER_FOOTPRINT_M = 4; // 기둥 두께 (m)
-const TOWER_PLATFORM_M = 8; // 중간 발판 한 변 (m)
-const TOWER_PLATFORM_T = 0.8; // 중간 발판 두께 (m)
-const TOWER_PERCH_M = 9.5; // 꼭대기 발판 한 변 (m)
+// 원목 가지 캣트리 치수 — 몸통/기초는 축소, 가지/둥지는 실제 미터 기준
+const TOWER_FOOTPRINT_M = 3; // 몸통(원목) 지름 (m)
+const TRUNK_SIDES = 16; // 몸통 원기둥 근사 다각형 변 수
 const TOWER_PERCH_T = 1.4; // 꼭대기 발판 두께 (m)
-const TOWER_FOUNDATION_M = 14; // 기초 지반 한 변 (m)
+const PERCH_RADIUS_M = 4.75; // 꼭대기 발판 반경 (m)
+const TOWER_FOUNDATION_M = 8.6; // 기초 지반(흙) 오각 반경 (m) — 옆면 폭 ≈ 반경×cos36°
 const TOWER_FOUNDATION_HEIGHT = 1.5; // 기초 지반 높이 (m) — 0m 상태에서 보이는 지물
-// 발판(단) 배치 — 실제 높이 기준. 첫 단 이후 일정 간격으로 단이 늘어난다
-const PLATFORM_START_M = 10; // 첫 중간 발판 높이 (실제 m)
-const PLATFORM_INTERVAL_M = 20; // 발판 간격 (실제 m)
-const PLATFORM_MAX_COUNT = 8; // 중간 발판 상한
-const PLATFORM_HEADROOM_M = 8; // 꼭대기 발판과 최소 이 간격(m)만큼 띄운다
-// 실제 높이의 1/5로만 렌더링 — 실제 높이(점수)가 아무리 자라도 지물이 화면을 벗어나지 않게 한다
+// 가지 배치 — 실제 높이 기준. 첫 가지 이후 일정 간격으로 한 개씩 발생한다
+const BRANCH_START_M = 10; // 첫 가지 높이 (실제 m)
+const BRANCH_INTERVAL_M = 20; // 가지 간격 (실제 m)
+const BRANCH_MAX_COUNT = 6; // 가지 상한
+const BRANCH_HEADROOM_M = 5; // 꼭대기 발판과 최소 이 간격(m)만큼 띄운다
+// 가지 형태 — fill-extrusion은 기울기 밀기를 못 하므로 세로 기둥 조각을
+// 바깥으로 계단식 오프셋해 뻗은 가지로 근사한다
+const BRANCH_SEG_COUNT = 3; // 가지 조각 수 (계단 단계)
+const BRANCH_SEG_DIAMETER_M = 1.2; // 가지 조각 지름 (m)
+const BRANCH_SEG_RISE_M = 0.35; // 조각마다 올라가는 높이 (축소 스케일 m)
+const BRANCH_SEG_H_M = 0.9; // 가지 조각 하나의 높이 (축소 스케일 m)
+const BRANCH_BASE_REACH_M = 8; // 첫(가장 아래) 가지의 뻗은 거리 (실제 m)
+const BRANCH_REACH_STEP_M = 0.8; // 위로 갈수록 줄어드는 뻗은 거리 (실제 m)
+const BRANCH_GOLDEN_ANGLE = 137.5; // 가지 방향 — 황금각으로 사방 골고루
+const BRANCH_ANGLE_OFFSET = 15; // 첫 가지 방향 (도)
+const NEST_RADIUS_M = 2.6; // 둥지 발판 반경 (실제 m)
+const NEST_T = 0.7; // 둥지 발판 두께 (실제 m)
+const NEST_RADIUS_STEP_M = 0.15; // 위 가지일수록 줄어드는 둥지 반경 (실제 m)
+const NEST_PAW_SCALE = 0.55; // 둥지 발바닥 문양 크기 — 꼭대기 마크 대비 배율
+// 실제 높이의 1/5로만 렌더링 — 실제 높이(점수)가 아무리 자라도 몸통이 화면을
+// 벗어나지 않게 한다. 가지·둥지·발바닥 마크는 예외로 실제 크기를 쓴다
 export const TOWER_VISUAL_HEIGHT_RATIO = 1 / 5;
+// 타워 전체 확대 배율 — 모든 지물 치수(수평/수직, 축소 렌더 포함)에 곱해진다.
+// 1 = 치수 그대로. 타워를 키우거나 줄일 땐 이 값 하나만 조정한다
+export const TOWER_SCALE = 1.25;
+// 확대 배율이 반영된 기초 지반 크기 — 라벨/건물 판정/공사 모션 등
+// 기초 지반 크기를 따라가는 로직은 전부 이 값을 쓴다
+const FOUNDATION_SIZE_M = TOWER_FOUNDATION_M * TOWER_SCALE;
+// 오각 옆면(flat)까지의 거리 — 라벨/공사 모션/팝업이 지반 가장자리에 맞춰야 하므로
+const FOUNDATION_INRADIUS_M = FOUNDATION_SIZE_M * Math.cos(Math.PI / 5);
 // 타워 이동/성장 모션 시간 (ms)
 const MOVE_ANIM_DURATION = 800;
 // 타워 클릭 시 카메라 연출 — 카메라를 지면 가까이(피치 최대치) 내려
@@ -60,7 +82,8 @@ const SOURCE_ID = "cat-tower-source";
 const ZONE_SOURCE_ID = "cat-tower-zone-source";
 const LAYER_TOWER = "cat-tower-3d";
 const LAYER_FOUNDATION = "cat-tower-foundation";
-const LAYER_PLATFORM = "cat-tower-platform";
+const LAYER_BRANCH = "cat-tower-branch";
+const LAYER_NEST = "cat-tower-nest";
 const LAYER_PERCH = "cat-tower-perch";
 const LAYER_PAW = "cat-tower-paw";
 const LAYER_ZONE_FILL = "cat-tower-zone-fill";
@@ -70,7 +93,8 @@ const LAYER_ZONE_LINE = "cat-tower-zone-line";
 export const TOWER_HIT_LAYERS = [
   LAYER_TOWER,
   LAYER_FOUNDATION,
-  LAYER_PLATFORM,
+  LAYER_BRANCH,
+  LAYER_NEST,
   LAYER_PERCH,
   LAYER_PAW,
 ];
@@ -102,51 +126,42 @@ type BuildingGeometry =
   | { type: "Polygon"; coordinates: number[][][] }
   | { type: "MultiPolygon"; coordinates: number[][][][] };
 
-// ----- 낮/밤 색 팔레트 -----
-// 기둥: 실제 10m마다 보라/핑크가 교대로 들어가는 밴드(줄무늬).
-// step 표현식으로 하드 밴드를 만들어 지물은 기둥 1개 그대로 (추가 비용 없음).
+// ----- 낮/밤 색 팔레트 (원목: 갈색 + 밝은 갈색) -----
+// 몸통: 실제 10m마다 어두운/밝은 갈색이 교대로 들어가는 밴드(나무 나이테 느낌).
+// step 표현식으로 하드 밴드를 만들어 지물은 몸통 1개 그대로 (추가 비용 없음).
 // 축소 렌더 기준 밴드 높이 = 10m × TOWER_VISUAL_HEIGHT_RATIO(1/5) = 2m
-const POLE_BAND_M = 2;
-const POLE_VIOLET_DAY = "#8b5cf6";
-const POLE_PINK_DAY = "#f9a8d4";
-const POLE_VIOLET_NIGHT = "#a78bfa";
-const POLE_PINK_NIGHT = "#fbcfe8";
-// 발판: 타워 기저에서의 상대 높이(hRel, 축소 렌더 기준 m) 보간
-const PLATFORM_STOPS_DAY: [number, string][] = [
-  [0, "#fbcfe8"],
-  [8, "#e9d5ff"],
-  [20, "#d8b4fe"],
-];
-const PLATFORM_STOPS_NIGHT: [number, string][] = [
-  [0, "#fda4af"],
-  [8, "#e9d5ff"],
-  [20, "#c4b5fd"],
-];
-const PERCH_COLOR_DAY = "#8b5cf6";
-const PERCH_COLOR_NIGHT = "#a78bfa";
-// 꼭대기 발판 중앙 흰색 발바닥 마크 — 패드 1개 + 발가락 3개 원형 지물
+const TRUNK_BAND_M = 2;
+const TRUNK_A_DAY = "#a06b42"; // 어두운 갈색
+const TRUNK_B_DAY = "#c99a68"; // 밝은 갈색
+const TRUNK_A_NIGHT = "#c08c5c";
+const TRUNK_B_NIGHT = "#e6c394";
+// 가지는 몸통보다 한 톤 어둡게 — 뻗은 방향이 읽히게
+const BRANCH_COLOR_DAY = "#8a5a34";
+const BRANCH_COLOR_NIGHT = "#b07a48";
+// 둥지 발판은 가장 밝은 갈색 — 고양이가 앉는 자리임을 강조
+const NEST_COLOR_DAY = "#d9b98a";
+const NEST_COLOR_NIGHT = "#eecfa0";
+const PERCH_COLOR_DAY = "#dfb887";
+const PERCH_COLOR_NIGHT = "#f0d0a2";
+// 흰색 발바닥 마크 — 패드 1개 + 발가락 3개 원형 지물.
+// 꼭대기 발판(정북)과 둥지 발판(가지 바깥 방향)에서 함께 사용한다
 const PAW_PAD_RADIUS_M = 1.3; // 패드 반경
-const PAW_PAD_OFFSET_M = 0.6; // 패드 중심을 남쪽으로 내리는 오프셋
+const PAW_PAD_OFFSET_M = 0.6; // 패드 중심을 뒤쪽(마크가 바라보는 방향 반대)으로
 const PAW_TOE_RADIUS_M = 0.55; // 발가락 반경
-const PAW_TOE_DISTANCE_M = 1.9; // 타워 중심 → 발가락 중심 거리
-const PAW_TOE_ANGLES = [50, 90, 130]; // 발가락 3개 방향(도) — 위쪽 부채꼴
+const PAW_TOE_DISTANCE_M = 1.9; // 마크 중심 → 발가락 중심 거리
+const PAW_TOE_ANGLES = [50, 90, 130]; // 발가락 3개 방향(도) — 앞쪽 부채꼴
 const PAW_THICKNESS_M = 0.2; // 발바닥 돌출 두께
-const FOUNDATION_COLOR_DAY = "#8b4bd0";
-const FOUNDATION_COLOR_NIGHT = "#a855f7";
+const FOUNDATION_COLOR_DAY = "#7a4f2c"; // 흙 기초
+const FOUNDATION_COLOR_NIGHT = "#a06b3f";
 
-// stops → maplibre interpolate 표현식
-// (스타일 표현식 타입이 까다로워 never 캐스팅으로 전달 — 프로젝트의 as never 관례)
-const heightColorExpression = (stops: [number, string][], key: string): never =>
-  ["interpolate", ["linear"], ["get", key], ...stops.flat()] as never;
-
-// 기둥 밴드 색 — band 프로퍼티(0=보라, 1=핑크)로 밴드 지물별 색 선택 (낮/밤 팔레트)
-const poleBandColor = (isNight: boolean): never =>
+// 몸통 밴드 색 — band 프로퍼티(0=어두운 갈색, 1=밝은 갈색)로 밴드 지물별 색 선택
+const trunkBandColor = (isNight: boolean): never =>
   [
     "match",
     ["get", "band"],
     0,
-    isNight ? POLE_VIOLET_NIGHT : POLE_VIOLET_DAY,
-    isNight ? POLE_PINK_NIGHT : POLE_PINK_DAY,
+    isNight ? TRUNK_A_NIGHT : TRUNK_A_DAY,
+    isNight ? TRUNK_B_NIGHT : TRUNK_B_DAY,
   ] as never;
 
 // 평면 근사 좌표 변환 (근접 거리라 충분) — 헬퍼의 getRandomLocationInCircle과 동일 방식
@@ -155,26 +170,14 @@ const metersToDegLng = (meters: number, lat: number) =>
 
 const metersToDegLat = (meters: number) => meters / METERS_PER_DEG_LAT;
 
-// 중심점 기준 정사각형 폴리곤 (타워 지물)
-const getSquarePolygon = (lat: number, lng: number, sizeM: number) => {
-  const dLat = metersToDegLat(sizeM / 2);
-  const dLng = metersToDegLng(sizeM / 2, lat);
-
-  return [
-    [
-      [lng - dLng, lat - dLat],
-      [lng + dLng, lat - dLat],
-      [lng + dLng, lat + dLat],
-      [lng - dLng, lat + dLat],
-      [lng - dLng, lat - dLat],
-    ],
-  ];
-};
-
-// 중심점 기준 원형 링 좌표 (구역 표시)
-const getCircleRing = (lat: number, lng: number, radiusM: number) => {
+// 중심점 기준 원형 링 좌표 — steps를 낮추면 다각형(근사 원)이 된다
+const getCircleRing = (
+  lat: number,
+  lng: number,
+  radiusM: number,
+  steps = 72
+) => {
   const coords: [number, number][] = [];
-  const steps = 72;
 
   for (let i = 0; i <= steps; i++) {
     const theta = (i / steps) * 2 * Math.PI;
@@ -192,19 +195,30 @@ const getCirclePolygon = (lat: number, lng: number, radiusM: number) => [
   getCircleRing(lat, lng, radiusM),
 ];
 
-// 중심을 동/북쪽으로 오프셋(m)한 원형 폴리곤 — 발바닥 패드/발가락 지물용
-const getPawBeanPolygon = (
+// N각 폴리곤 — 몸통/가지의 원기둥 근사에 사용
+const getNGonPolygon = (
+  lat: number,
+  lng: number,
+  radiusM: number,
+  sides: number
+) => [getCircleRing(lat, lng, radiusM, sides)];
+
+// 중심을 동/북쪽으로 오프셋(m)한 원형 폴리곤 — 가지 조각/발바닥 패드·발가락용
+const getOffsetCirclePolygon = (
   lat: number,
   lng: number,
   offsetX: number,
   offsetY: number,
-  radiusM: number
-) =>
-  getCirclePolygon(
+  radiusM: number,
+  sides = 24
+) => [
+  getCircleRing(
     lat + metersToDegLat(offsetY),
     lng + metersToDegLng(offsetX, lat),
-    radiusM
-  );
+    radiusM,
+    sides
+  ),
+];
 
 const setSourceData = (
   map: MaplibreMap,
@@ -256,23 +270,31 @@ const geomContains = (geom: BuildingGeometry, x: number, y: number) => {
   return geom.coordinates.some((poly) => pointInPolygonRings(poly, x, y));
 };
 
-// 건물 위 배치 금지 판정 — 기초 지반(중심 + 네 모서리)이 건물에 걸치면 못 세운다.
-// 카메라와 무관하게 판정해야 하므로 querySourceFeatures + 점-폴리곤 판정을 쓴다
-// (queryRenderedFeatures는 기울어진 카메라에서 앞 건물이 화면을 가리면 오판정한다)
+// 건물 위 배치 금지 판정 — 기초 지반(중심 + 오각 꼭짓점/옆면 중점)이 건물에
+// 걸치면 못 세운다. 카메라와 무관하게 판정해야 하므로 querySourceFeatures +
+// 점-폴리곤 판정을 쓴다 (queryRenderedFeatures는 기울어진 카메라에서
+// 앞 건물이 화면을 가리면 오판정한다)
 const isOnBuilding = (map: MaplibreMap, lat: number, lng: number): boolean => {
   if (!map.getLayer(BUILDING_LAYER_ID)) {
     return false;
   }
 
-  const dLat = metersToDegLat(TOWER_FOUNDATION_M / 2);
-  const dLng = metersToDegLng(TOWER_FOUNDATION_M / 2, lat);
-  const samples: [number, number][] = [
-    [lng, lat],
-    [lng - dLng, lat - dLat],
-    [lng + dLng, lat - dLat],
-    [lng + dLng, lat + dLat],
-    [lng - dLng, lat + dLat],
-  ];
+  // 오각 기초 지반의 꼭짓점 5개(72° 간격) + 옆면 중점 5개(36° 오프셋) + 중심
+  const samples: [number, number][] = [[lng, lat]];
+
+  for (let k = 0; k < 5; k += 1) {
+    const vertexRad = ((k * 72) * Math.PI) / 180;
+    const midRad = ((k * 72 + 36) * Math.PI) / 180;
+
+    samples.push([
+      lng + metersToDegLng(FOUNDATION_SIZE_M * Math.sin(vertexRad), lat),
+      lat + metersToDegLat(FOUNDATION_SIZE_M * Math.cos(vertexRad)),
+    ]);
+    samples.push([
+      lng + metersToDegLng(FOUNDATION_INRADIUS_M * Math.sin(midRad), lat),
+      lat + metersToDegLat(FOUNDATION_INRADIUS_M * Math.cos(midRad)),
+    ]);
+  }
   const feats = map.querySourceFeatures(BUILDING_SOURCE_ID, {
     sourceLayer: BUILDING_SOURCE_LAYER,
   });
@@ -290,33 +312,38 @@ const isOnBuilding = (map: MaplibreMap, lat: number, lng: number): boolean => {
   return false;
 };
 
-// 타워 지물 데이터: 캣트리 다단 구조
-// - 기초 지반(항상 노출) + 기둥 + 중간 발판들 + 꼭대기 발판
-// - 높이는 실제 값 × TOWER_VISUAL_HEIGHT_RATIO(1/5)로 축소해 그린다
-// - 건물과 겹치면 그 주변 건물이 feature-state 페이드로 반투명해져 타워가 비친다
+// 타워 지물 데이터: 원목 가지 캣트리
+// - 기초 지반(항상 노출) + 몸통(밴드) + 가지·둥지 발판 + 꼭대기 발판
+// - 몸통/기초는 실제 값 × TOWER_VISUAL_HEIGHT_RATIO(1/5)로 축소해 그린다
+// - 가지·둥지·발바닥 마크는 축소하면 몇 픽셀밖에 안 돼 실제 크기(미터)로 그린다 —
+//   가지의 부착 높이(attachH)만 축소 스케일로 몸통 위에 붙인다
+// - 가지는 fill-extrusion이 기울기 밀기를 못 하므로 세로 기둥 조각을
+//   바깥으로 계단식 오프셋해 뻗은 가지로 근사한다
 const getTowerData = (
   lat: number,
   lng: number,
   realHeight: number
 ): GeoJSONData => {
-  const visualHeight = realHeight * TOWER_VISUAL_HEIGHT_RATIO;
+  // 축소 비율 × 전체 확대 배율
+  const visualHeight = realHeight * TOWER_VISUAL_HEIGHT_RATIO * TOWER_SCALE;
   const features: GeoJSONFeature[] = [
     {
       type: "Feature",
       properties: { kind: "foundation", h: TOWER_FOUNDATION_HEIGHT },
       geometry: {
         type: "Polygon",
-        coordinates: getSquarePolygon(lat, lng, TOWER_FOUNDATION_M),
+        coordinates: getNGonPolygon(lat, lng, FOUNDATION_SIZE_M, 5),
       },
     },
   ];
 
   // 0m 상태에선 기초 지반만 보인다
   if (visualHeight > 0) {
-    // 기둥 — 실제 10m(축소 2m)마다 보라/핑크 밴드.
+    // 몸통 — 16각 원기둥. 실제 10m(축소 2m)마다 어두운/밝은 갈색 밴드.
     // fill-extrusion 색은 지물당 한 번 평가되므로(지물 안에서 높이별 변화 불가)
-    // 밴드마다 지물을 쪼개고 band 프로퍼티(0=보라, 1=핑크)로 색을 선택한다
-    const bandCount = Math.ceil(visualHeight / POLE_BAND_M);
+    // 밴드마다 지물을 쪼개고 band 프로퍼티(0=어두운 갈색, 1=밝은 갈색)로 선택한다
+    const bandM = TRUNK_BAND_M * TOWER_SCALE;
+    const bandCount = Math.ceil(visualHeight / bandM);
 
     for (let i = 0; i < bandCount; i += 1) {
       features.push({
@@ -325,90 +352,184 @@ const getTowerData = (
           kind: "tower",
           // 밴드 지물은 자기 구간만 그린다 — base를 0으로 두면 위 밴드가
           // 아래를 전부 덮어 꼭대기 밴드 색 하나만 보이게 된다
-          base: i * POLE_BAND_M,
-          h: Math.min((i + 1) * POLE_BAND_M, visualHeight),
+          base: i * bandM,
+          h: Math.min((i + 1) * bandM, visualHeight),
           band: i % 2,
         },
         geometry: {
           type: "Polygon",
-          coordinates: getSquarePolygon(lat, lng, TOWER_FOOTPRINT_M),
+          coordinates: getNGonPolygon(
+            lat,
+            lng,
+            (TOWER_FOOTPRINT_M / 2) * TOWER_SCALE,
+            TRUNK_SIDES
+          ),
         },
       });
     }
 
-    // 중간 발판 — 실제 높이가 간격을 넘을 때마다 단이 늘어난다
-    for (let i = 0; i < PLATFORM_MAX_COUNT; i += 1) {
-      const realAt = PLATFORM_START_M + i * PLATFORM_INTERVAL_M;
+    // 흰색 발바닥 마크 공용 — 패드 1 + 발가락 3.
+    // faceAngleDeg(동=0° 반시계, 북=90°) 방향을 바라보게 마크 전체를 회전하고
+    // scale로 크기를 맞춘다. 마크 중심은 (centerX, centerY) 오프셋 — 꼭대기
+    // 발판은 타워 중심, 둥지 발판은 가지 끝(둥지 중심)에 놓인다
+    const pushPawMark = (
+      base: number,
+      faceAngleDeg: number,
+      scale: number,
+      centerX = 0,
+      centerY = 0
+    ) => {
+      const faceRad = ((faceAngleDeg - 90) * Math.PI) / 180;
+      const rot = (x: number, y: number): [number, number] => [
+        x * Math.cos(faceRad) - y * Math.sin(faceRad),
+        x * Math.sin(faceRad) + y * Math.cos(faceRad),
+      ];
 
-      if (realAt >= realHeight - PLATFORM_HEADROOM_M) {
+      const pushBean = (x: number, y: number, radiusM: number) => {
+        const [rx, ry] = rot(x, y);
+
+        features.push({
+          type: "Feature",
+          properties: {
+            kind: "paw",
+            base,
+            h: base + PAW_THICKNESS_M * TOWER_SCALE,
+          },
+          geometry: {
+            type: "Polygon",
+            coordinates: getOffsetCirclePolygon(
+              lat,
+              lng,
+              centerX + rx * scale,
+              centerY + ry * scale,
+              radiusM * scale
+            ),
+          },
+        });
+      };
+
+      // 패드는 마크가 바라보는 방향의 뒤쪽에, 발가락은 앞쪽 부채꼴로
+      const [padX, padY] = rot(0, -PAW_PAD_OFFSET_M);
+
+      pushBean(padX, padY, PAW_PAD_RADIUS_M);
+
+      PAW_TOE_ANGLES.forEach((angleDeg) => {
+        const rad = (angleDeg * Math.PI) / 180;
+
+        pushBean(
+          PAW_TOE_DISTANCE_M * Math.cos(rad),
+          PAW_TOE_DISTANCE_M * Math.sin(rad),
+          PAW_TOE_RADIUS_M
+        );
+      });
+    };
+
+    // 가지 + 둥지 — 실제 높이 10m부터 20m 간격으로 한 개씩 발생(상한 6개).
+    // 방향은 황금각 배치로 사방 골고루, 위로 갈수록 짧게 뻗는다(실제 나무 형태)
+    for (let k = 0; k < BRANCH_MAX_COUNT; k += 1) {
+      const realAt = BRANCH_START_M + k * BRANCH_INTERVAL_M;
+
+      // 몸통이 가지 자리까지 자라야(꼭대기 여유 포함) 가지가 나온다
+      if (realAt >= realHeight - BRANCH_HEADROOM_M) {
         break;
       }
 
-      const v = realAt * TOWER_VISUAL_HEIGHT_RATIO;
+      // 부착 높이는 축소 스케일 — 몸통 위에 붙어 있어야 하므로
+      const attachH = realAt * TOWER_VISUAL_HEIGHT_RATIO * TOWER_SCALE;
+      const angleRad =
+        ((BRANCH_ANGLE_OFFSET + k * BRANCH_GOLDEN_ANGLE) * Math.PI) / 180;
+      const reach = (BRANCH_BASE_REACH_M - k * BRANCH_REACH_STEP_M) * TOWER_SCALE;
+      const trunkRadius = (TOWER_FOOTPRINT_M / 2) * TOWER_SCALE;
+      const stepReach = (reach - trunkRadius) / BRANCH_SEG_COUNT;
+      const nestRadius = (NEST_RADIUS_M - k * NEST_RADIUS_STEP_M) * TOWER_SCALE;
+
+      // 계단식 가지 조각 — 바깥으로 + 살짝 위로 번갈아 쌓는다
+      for (let s = 0; s < BRANCH_SEG_COUNT; s += 1) {
+        const off = trunkRadius + stepReach * (s + 0.5);
+        const base = attachH + s * BRANCH_SEG_RISE_M * TOWER_SCALE;
+
+        features.push({
+          type: "Feature",
+          properties: {
+            kind: "branch",
+            base,
+            h: base + BRANCH_SEG_H_M * TOWER_SCALE,
+          },
+          geometry: {
+            type: "Polygon",
+            coordinates: getOffsetCirclePolygon(
+              lat,
+              lng,
+              off * Math.cos(angleRad),
+              off * Math.sin(angleRad),
+              (BRANCH_SEG_DIAMETER_M / 2) * TOWER_SCALE,
+              TRUNK_SIDES
+            ),
+          },
+        });
+      }
+
+      // 둥지 발판 — 가지 끝(마지막 조각 위)에 얹는다. base를 둥지 높이로 두지
+      // 않으면 0부터 채운 판이 바닥까지 내려와 몸통을 덮어버린다
+      const nestBase =
+        attachH +
+        (BRANCH_SEG_COUNT - 1) * BRANCH_SEG_RISE_M * TOWER_SCALE +
+        BRANCH_SEG_H_M * TOWER_SCALE;
 
       features.push({
         type: "Feature",
         properties: {
-          kind: "platform",
-          // base를 발판 높이로 — 0으로 두면 바닥부터 꽉 찬 기둥이 돼
-          // 아래 단들과 기둥 밴드를 전부 가려버린다
-          base: v,
-          h: v + TOWER_PLATFORM_T,
-          hRel: v,
+          kind: "nest",
+          base: nestBase,
+          h: nestBase + NEST_T,
         },
         geometry: {
           type: "Polygon",
-          coordinates: getSquarePolygon(lat, lng, TOWER_PLATFORM_M),
+          coordinates: getOffsetCirclePolygon(
+            lat,
+            lng,
+            reach * Math.cos(angleRad),
+            reach * Math.sin(angleRad),
+            nestRadius,
+            24
+          ),
         },
       });
+
+      // 둥지 발판 위 발바닥 문양 — 둥지 중심에 놓고 발가락이 가지가
+      // 뻗은 바깥 방향을 향한다
+      pushPawMark(
+        nestBase + NEST_T,
+        BRANCH_ANGLE_OFFSET + k * BRANCH_GOLDEN_ANGLE,
+        NEST_PAW_SCALE * TOWER_SCALE,
+        reach * Math.cos(angleRad),
+        reach * Math.sin(angleRad)
+      );
     }
 
-    // 꼭대기 발판
+    // 꼭대기 발판 — 원형 슬래브
     features.push({
       type: "Feature",
       properties: {
         kind: "perch",
-        // 꼭대기 발판도 기둥 꼭대기에 얹은 슬래브 — 0부터 채우면
+        // 꼭대기 발판도 몸통 꼭대기에 얹은 슬래브 — 0부터 채우면
         // 타워 전체를 perch 색 기둥이 덮어 밴드가 안 보인다
         base: visualHeight,
-        h: visualHeight + TOWER_PERCH_T,
+        h: visualHeight + TOWER_PERCH_T * TOWER_SCALE,
         hRel: visualHeight,
       },
       geometry: {
         type: "Polygon",
-        coordinates: getSquarePolygon(lat, lng, TOWER_PERCH_M),
+        coordinates: getCirclePolygon(lat, lng, PERCH_RADIUS_M * TOWER_SCALE),
       },
     });
 
-    // 꼭대기 발판 중앙 흰색 발바닥 — 패드 1개 + 발가락 3개 원형 지물
-    const pawBase = visualHeight + TOWER_PERCH_T;
-
-    const pushPawBean = (offsetX: number, offsetY: number, radiusM: number) => {
-      features.push({
-        type: "Feature",
-        properties: {
-          kind: "paw",
-          base: pawBase,
-          h: pawBase + PAW_THICKNESS_M,
-        },
-        geometry: {
-          type: "Polygon",
-          coordinates: getPawBeanPolygon(lat, lng, offsetX, offsetY, radiusM),
-        },
-      });
-    };
-
-    pushPawBean(0, -PAW_PAD_OFFSET_M, PAW_PAD_RADIUS_M);
-
-    PAW_TOE_ANGLES.forEach((angleDeg) => {
-      const rad = (angleDeg * Math.PI) / 180;
-
-      pushPawBean(
-        PAW_TOE_DISTANCE_M * Math.cos(rad),
-        PAW_TOE_DISTANCE_M * Math.sin(rad),
-        PAW_TOE_RADIUS_M
-      );
-    });
+    // 꼭대기 발판 중앙 흰색 발바닥 — 정북 방향, 둥지 문양보다 크게
+    pushPawMark(
+      visualHeight + TOWER_PERCH_T * TOWER_SCALE,
+      90,
+      TOWER_SCALE
+    );
   }
 
   return {
@@ -495,7 +616,9 @@ interface Props {
 /**
  * 지도 위 캣 타워 — fill-extrusion 3D 레이어로 그려서
  * 지도 기울기/회전/줌에 함께 변형되는 진짜 3D 지물로 표현한다.
- * 형태는 캣트리(다단 발판) 구조. 건물과 겹치면 옥상 위에 얹힌다(기저를 건물 높이로).
+ * 형태는 원목 가지 캣트리 구조(몸통 + 사방 가지 + 가지 끝 둥지 발판 + 꼭대기 발판).
+ * 몸통/기초는 실제 높이의 1/5로 축소, 가지·둥지는 실제 크기로 그린다.
+ * 건물과 겹치면 옥상 위에 얹힌다(기저를 건물 높이로).
  * (높이 라벨은 DOM 마커 — 타워 발밑에 안내판처럼 붙인다)
  * 타워 클릭 시 바텀시트 대신 타워 옆 팝업 정보창이 뜬다.
  */
@@ -553,7 +676,7 @@ export default function CatTower({
   // 내용(아이콘/NumberFlow 숫자/m)은 render의 portal이 채운다
   const ensureHeightLabel = useCallback(
     (towerState: { lat: number; lng: number }) => {
-      const labelLat = towerState.lat - metersToDegLat(TOWER_FOUNDATION_M / 2);
+      const labelLat = towerState.lat - metersToDegLat(FOUNDATION_INRADIUS_M);
 
       if (!map || heightLabelMarkerRef.current) {
         // 이미 있으면 위치만 동기화 (타워 이동 대응)
@@ -587,8 +710,9 @@ export default function CatTower({
   }, []);
 
   // 지물 높이를 목표치까지 0에서 자라나는 모션 (타워 이동 직후)
+  // 실제 높이(realHeight) 기준으로 전달 — 축소/확대 배율은 getTowerData가 처리
   const playGrowMotion = useCallback(
-    (lat: number, lng: number, targetVisualHeight: number) => {
+    (lat: number, lng: number, targetRealHeight: number) => {
       if (!map) {
         return;
       }
@@ -600,13 +724,9 @@ export default function CatTower({
 
       const step = (now: number) => {
         const t = Math.min(1, (now - startAt) / MOVE_ANIM_DURATION);
-        const visualHeight = targetVisualHeight * easeOutCubic(t);
+        const realHeight = targetRealHeight * easeOutCubic(t);
 
-        setSourceData(
-          map,
-          SOURCE_ID,
-          getTowerData(lat, lng, visualHeight / TOWER_VISUAL_HEIGHT_RATIO)
-        );
+        setSourceData(map, SOURCE_ID, getTowerData(lat, lng, realHeight));
 
         if (t < 1) {
           moveAnimRafRef.current = requestAnimationFrame(step);
@@ -647,7 +767,7 @@ export default function CatTower({
       },
     });
 
-    // 기둥 — 실제 10m마다 보라/핑크 교대 밴드 (지물별 band 프로퍼티)
+    // 몸통 — 실제 10m마다 어두운/밝은 갈색 교대 밴드 (지물별 band 프로퍼티)
     map.addLayer({
       id: LAYER_TOWER,
       type: "fill-extrusion",
@@ -656,24 +776,34 @@ export default function CatTower({
       paint: {
         "fill-extrusion-height": ["get", "h"],
         "fill-extrusion-base": ["get", "base"],
-        "fill-extrusion-color": poleBandColor(false),
+        "fill-extrusion-color": trunkBandColor(false),
         "fill-extrusion-opacity": 0.95,
       },
     });
 
-    // 중간 발판 — 타워 기저에서의 상대 높이(hRel)에 따라 색 보간
+    // 가지 — 몸통에서 뻗어 나가는 원목 가지 (계단식 근사, 몸통보다 한 톤 어둡게)
     map.addLayer({
-      id: LAYER_PLATFORM,
+      id: LAYER_BRANCH,
       type: "fill-extrusion",
       source: SOURCE_ID,
-      filter: ["==", ["get", "kind"], "platform"],
+      filter: ["==", ["get", "kind"], "branch"],
       paint: {
         "fill-extrusion-height": ["get", "h"],
         "fill-extrusion-base": ["get", "base"],
-        "fill-extrusion-color": heightColorExpression(
-          PLATFORM_STOPS_DAY,
-          "hRel"
-        ),
+        "fill-extrusion-color": BRANCH_COLOR_DAY,
+      },
+    });
+
+    // 둥지 발판 — 가지 끝에 얹는 가장 밝은 갈색 원판
+    map.addLayer({
+      id: LAYER_NEST,
+      type: "fill-extrusion",
+      source: SOURCE_ID,
+      filter: ["==", ["get", "kind"], "nest"],
+      paint: {
+        "fill-extrusion-height": ["get", "h"],
+        "fill-extrusion-base": ["get", "base"],
+        "fill-extrusion-color": NEST_COLOR_DAY,
       },
     });
 
@@ -764,18 +894,23 @@ export default function CatTower({
       map.setPaintProperty(
         LAYER_TOWER,
         "fill-extrusion-color",
-        poleBandColor(isNight)
+        trunkBandColor(isNight)
       );
     }
 
-    if (map.getLayer(LAYER_PLATFORM)) {
+    if (map.getLayer(LAYER_BRANCH)) {
       map.setPaintProperty(
-        LAYER_PLATFORM,
+        LAYER_BRANCH,
         "fill-extrusion-color",
-        heightColorExpression(
-          isNight ? PLATFORM_STOPS_NIGHT : PLATFORM_STOPS_DAY,
-          "hRel"
-        )
+        isNight ? BRANCH_COLOR_NIGHT : BRANCH_COLOR_DAY
+      );
+    }
+
+    if (map.getLayer(LAYER_NEST)) {
+      map.setPaintProperty(
+        LAYER_NEST,
+        "fill-extrusion-color",
+        isNight ? NEST_COLOR_NIGHT : NEST_COLOR_DAY
       );
     }
 
@@ -809,11 +944,7 @@ export default function CatTower({
         !!prevPos && (prevPos.lat !== tower.lat || prevPos.lng !== tower.lng);
 
       if (isPosChanged && !isMoveAnimRef.current) {
-        playGrowMotion(
-          tower.lat,
-          tower.lng,
-          height * TOWER_VISUAL_HEIGHT_RATIO
-        );
+        playGrowMotion(tower.lat, tower.lng, height);
       }
 
       prevTowerPosRef.current = { lat: tower.lat, lng: tower.lng };
@@ -889,7 +1020,7 @@ export default function CatTower({
 
     for (let i = 0; i < WORK_DUST_COUNT; i += 1) {
       const angle = (i / WORK_DUST_COUNT) * 2 * Math.PI + Math.random() * 0.5;
-      const radius = TOWER_FOUNDATION_M / 2 + 1.5 + Math.random() * 2.5;
+      const radius = FOUNDATION_INRADIUS_M + 1.5 + Math.random() * 2.5;
       const el = document.createElement("div");
       el.className = "cat-tower-work-dust";
       el.innerHTML = "<i></i>";
@@ -918,11 +1049,11 @@ export default function CatTower({
     hammerEl.innerHTML = "<i>🔨</i>";
 
     const hammerMarker = new Marker({ element: hammerEl, anchor: "center" })
-      .setLngLat(spotAroundTower(4, TOWER_FOUNDATION_M / 2 + 1))
+      .setLngLat(spotAroundTower(FOUNDATION_INRADIUS_M - 3, FOUNDATION_INRADIUS_M + 1))
       .addTo(map);
 
     const moveHammer = () => {
-      hammerMarker.setLngLat(spotAroundTower(4, TOWER_FOUNDATION_M / 2 + 1));
+      hammerMarker.setLngLat(spotAroundTower(FOUNDATION_INRADIUS_M - 3, FOUNDATION_INRADIUS_M + 1));
 
       // 새 자리에서 망치질이 처음부터 시작되게 애니메이션을 리셋
       const strike = hammerEl.firstElementChild as HTMLElement | null;
@@ -1130,7 +1261,7 @@ export default function CatTower({
     // 타워 '옆'에 붙이기 — 기초 지반 오른쪽 모서리 좌표에 좌측 앵커로 놓아
     // 어떤 줌에서도 지물/높이 라벨과 겹치지 않게 한다 (모서리 = 중심 + 지반 절반)
     const foundationEdgeLng =
-      towerState.lng + metersToDegLng(TOWER_FOUNDATION_M / 2, towerState.lat);
+      towerState.lng + metersToDegLng(FOUNDATION_INRADIUS_M, towerState.lat);
 
     popupMarkerRef.current = new Marker({
       element: el,
@@ -1278,7 +1409,8 @@ export default function CatTower({
         [
           LAYER_TOWER,
           LAYER_FOUNDATION,
-          LAYER_PLATFORM,
+          LAYER_BRANCH,
+          LAYER_NEST,
           LAYER_PERCH,
           LAYER_PAW,
           LAYER_ZONE_FILL,
