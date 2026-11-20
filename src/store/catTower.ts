@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
 
+import { type CatInfo, getCat } from "@/utils/cats";
 import {
   type CatTowerRecord,
   fetchCatTower,
@@ -16,6 +17,15 @@ import {
 
 // 부하 1마리당 성장 속도: 30분에 1m (기존 10분에서 1/3로 완화 — 너무 빨라 화면을 벗어나는 문제 대응)
 export const TOWER_METER_PER_CAT_PER_MS = 1 / (30 * 60 * 1000);
+// 희귀도별 건설 기여도 배수 — 등급이 높은 부하일수록 타워를 빨리 세운다
+export const TOWER_CONTRIBUTION_BY_RARITY: Record<
+  CatInfo["rarity"],
+  number
+> = {
+  common: 1,
+  rare: 1.5,
+  unique: 2,
+};
 // 높이 상한 (m)
 export const TOWER_MAX_HEIGHT = 999;
 
@@ -57,11 +67,28 @@ interface CatTowerStore {
   };
 }
 
-// 성장 계산: heightAt + (붙은 부하 수 × 경과시간 × 속도), 상한 캡
+// 부하 키(`${name}_${createdAt}`)에서 이름 부분을 추출한다.
+// created_at(타임스탬프)에는 언더스코어가 없으므로 뒤에서부터 잘라야
+// 이름에 언더스코어가 섞여도 안전하다.
+const catNameOfKey = (key: string) => {
+  const idx = key.lastIndexOf("_");
+
+  return idx < 0 ? key : key.slice(0, idx);
+};
+
+// 부하 키의 고양이 희귀도 (모르는 이름이면 common으로 폴백)
+const rarityOfKey = (key: string): CatInfo["rarity"] =>
+  getCat(catNameOfKey(key))?.rarity ?? "common";
+
+// 성장 계산: heightAt + (붙은 부하의 기여도 합 × 경과시간 × 속도), 상한 캡
 const computeHeight = (tower: CatTowerState, now: number) => {
+  const contribution = tower.attachedKeys.reduce(
+    (sum, key) => sum + TOWER_CONTRIBUTION_BY_RARITY[rarityOfKey(key)],
+    0
+  );
   const grown =
     tower.heightAt +
-    tower.attachedKeys.length * TOWER_METER_PER_CAT_PER_MS * (now - tower.updatedAt);
+    contribution * TOWER_METER_PER_CAT_PER_MS * (now - tower.updatedAt);
 
   return Math.min(TOWER_MAX_HEIGHT, Math.max(0, Math.floor(grown * 10) / 10));
 };

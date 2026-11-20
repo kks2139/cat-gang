@@ -66,7 +66,7 @@ const BOUNDARY_METER_OF_ME = 50;
 const OWN_CAT_KEY_TOKEN = "_";
 const PAW_INTERVAL_METER = 7; // 한 걸음(발자국) 기본 간격 (m)
 const PAW_SPREAD_METER = 1.2; // 중심축에서 좌우로 벌어지는 오프셋 (m)
-const PAW_ICON_PX = 18; // 발자국 아이콘 픽셀 크기
+const PAW_ICON_PX = 22; // 발자국 아이콘 픽셀 크기 (symbol/오버레이 공용 — 살짝 크게)
 const PAW_MAX_COUNT = 200; // 발자국 최대 개수 (DOM 성능 보호)
 const WALK_DURATION = 1500; // 캐릭터 이동 애니메이션 시간 (ms)
 const MAX_PAWS_PER_MOVE = 50; // 한 번의 위치 업데이트당 찍히는 최대 발자국 수
@@ -74,6 +74,74 @@ const MAX_SAVED_PATH = 600; // 스토리지에 저장할 궤적 좌표 최대 �
 const STORE_DEBOUNCE_MS = 5000; // 궤적 저장 디바운스 (ms)
 const SYNC_MIN_INTERVAL_MS = 60_000; // 총 산책거리 서버 동기화 최소 간격 (ms)
 const PAW_SVG = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 11.5c-3.2 0-6 2.6-6 5.2 0 1.8 1.4 3 3.2 3 1 0 1.8-.4 2.8-.4s1.8.4 2.8.4c1.8 0 3.2-1.2 3.2-3 0-2.6-2.8-5.2-6-5.2z"/><ellipse cx="6" cy="8.4" rx="1.9" ry="2.4" transform="rotate(-25 6 8.4)"/><ellipse cx="12" cy="6.6" rx="1.9" ry="2.5"/><ellipse cx="18" cy="8.4" rx="1.9" ry="2.4" transform="rotate(25 18 8.4)"/></svg>`;
+
+// ----- 발자국 symbol layer (DOM 마커 → GPU symbol 렌더 전환) -----
+// 지속 렌더는 symbol layer가 담당한다 — 200개 발자국이 GPU 1배치로 그려져
+// 카메라 이동 프레임마다 200개 DOM transform을 갱신하던 비용이 사라진다.
+// 찍히는 순간의 스탬프 모션(paw-stamp 애니)만 DOM 오버레이로 잠깐 재생하고,
+// 오버레이 제거 시점에 feature를 소스에 플러시해 DOM→GPU가 자연스럽게 이어진다.
+const PAW_SOURCE_ID = "paw-source";
+const PAW_LAYER_ID = "paw-symbol";
+const PAW_IMAGE_ID = "paw-print-icon";
+const PAW_STAMP_MS = 600; // DOM 스탬프 오버레이 수명 (paw-stamp 애니 0.5s + 여유)
+const PAW_IMAGE_SCALE = 2; // 레티나 대응 — 2배 해상도로 래스터화
+const PAW_IMG_CORE = PAW_ICON_PX * PAW_IMAGE_SCALE; // 발바닥 코어 크기 (36px 비트맵)
+const PAW_IMG_MARGIN = 12; // 그림자(shadowBlur/Offset) 클리핑 방지 여백 (비트맵 px)
+const PAW_IMG_TOTAL = PAW_IMG_CORE + PAW_IMG_MARGIN * 2; // 60px 비트맵
+// icon-size 1 = 비트맵의 css 크기(60/2=30px) — 발바닥이 18px로 보이도록 환산
+const PAW_ICON_SIZE = PAW_ICON_PX / (PAW_IMG_TOTAL / PAW_IMAGE_SCALE);
+// symbol 지물용 최소 GeoJSON 타입 (@types/geojson 미설치 — CatTower와 동일 방식)
+type PawFeature = {
+  type: "Feature";
+  properties: { bearing: number; tilt: number };
+  geometry: { type: "Point"; coordinates: [number, number] };
+};
+
+// PAW_SVG를 발자국 색(#b0805a)을 주입해 캔버스로 래스터화한다.
+// CSS drop-shadow는 symbol layer에서 흉내 낼 수 없으니 캔버스 shadow로
+// 같이 구워 넣는다(레티나 2배 기준 blur 4 / offsetY 2 = css 2px / 1px).
+const rasterizePawImage = (): Promise<ImageData | null> => {
+  return new Promise((resolve) => {
+    const svg = PAW_SVG.replace("<svg ", '<svg fill="#b0805a" ');
+    const blob = new Blob([svg], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+
+      const canvas = document.createElement("canvas");
+
+      canvas.width = PAW_IMG_TOTAL;
+      canvas.height = PAW_IMG_TOTAL;
+
+      const ctx = canvas.getContext("2d");
+
+      if (!ctx) {
+        resolve(null);
+        return;
+      }
+
+      ctx.shadowColor = "rgba(0, 0, 0, 0.15)";
+      ctx.shadowBlur = 4;
+      ctx.shadowOffsetY = 2;
+      ctx.drawImage(
+        img,
+        PAW_IMG_MARGIN,
+        PAW_IMG_MARGIN,
+        PAW_IMG_CORE,
+        PAW_IMG_CORE
+      );
+
+      resolve(ctx.getImageData(0, 0, PAW_IMG_TOTAL, PAW_IMG_TOTAL));
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      resolve(null);
+    };
+    img.src = url;
+  });
+};
 
 // 3D 카메라/지형/하늘 설정
 const MAP_PITCH = 30; // 카메라 기본 기울기 (도) — 3D 효과의 핵심
@@ -424,7 +492,16 @@ function MapContent({
   const sessionDistanceRef = useRef<number>(0); // 이번 세션(캐릭터 첫 위치) 이동 거리 — 발자국 기준
   const startPointRef = useRef<Marker | null>(null);
   const nextPawDistanceRef = useRef<number>(PAW_INTERVAL_METER);
-  const pawMarkerRef = useRef<Marker[]>([]);
+  // 발자국 symbol 지물 — 최대 200개(Point feature), 소스에 플러시되면 GPU 렌더
+  const pawFeaturesRef = useRef<PawFeature[]>([]);
+  // 스탬프 모션 재생 중인 DOM 오버레이 (0.6s 뒤 제거)
+  const pawOverlaysRef = useRef<{ marker: Marker; timer: number }[]>([]);
+  // 아이콘 이미지 준비 전에 플러시 요청이 들어오면 대기 표시 (래스터화 완료 시 반영)
+  const pawFlushPendingRef = useRef(false);
+  const isPawLayersAddedRef = useRef(false);
+  // 플러시 스로틀 타이머 — 복원 시 최대 200개 발자국이 동시에 찍혀
+  // setData 버스트가 되지 않게 한 프레임으로 합친다
+  const pawFlushTimerRef = useRef<number>(0);
   const pawToggleRef = useRef<boolean>(false); // false: 왼쪽 발, true: 오른쪽 발
   const storeWalkTimerRef = useRef<number>(undefined); // 궤적 저장 디바운스 타이머
 
@@ -548,7 +625,30 @@ function MapContent({
     };
   }, [map]);
 
-  // 발자국 마커 1개를 찍는다 (트레일 기록 및 복원 공용)
+  // 대기 중인 발자국 feature를 symbol 소스에 반영 — 아이콘 이미지가 아직
+  // 준비 전이면 플래그만 두고, load 쪽 래스터화 완료 시점에 다시 반영한다
+  const flushPawFeatures = useCallback(() => {
+    if (!map) {
+      return;
+    }
+
+    if (!map.hasImage(PAW_IMAGE_ID)) {
+      pawFlushPendingRef.current = true;
+      return;
+    }
+
+    const source = map.getSource(PAW_SOURCE_ID) as
+      | { setData: (data: unknown) => void }
+      | undefined;
+
+    source?.setData({
+      type: "FeatureCollection",
+      features: pawFeaturesRef.current,
+    });
+  }, [map]);
+
+  // 발자국 1개를 찍는다 (트레일 기록 및 복원 공용) —
+  // 지속 렌더는 symbol layer, 스탬프 모션은 DOM 오버레이가 담당
   const createPawMarker = useCallback(
     (
       point: { lat: number; lng: number },
@@ -559,6 +659,19 @@ function MapContent({
         return;
       }
 
+      // symbol 지물 추가 — 오버레이가 끝나는 시점에 플러시돼 그린다
+      pawFeaturesRef.current.push({
+        type: "Feature",
+        properties: { bearing: bearingDeg, tilt: tiltDeg },
+        geometry: { type: "Point", coordinates: [point.lng, point.lat] },
+      });
+
+      // 발자국이 너무 많이 쌓이면 오래된 것부터 제거
+      if (pawFeaturesRef.current.length > PAW_MAX_COUNT) {
+        pawFeaturesRef.current.shift();
+      }
+
+      // 스탬프 모션 오버레이 — 기존 DOM 마커와 동일한 마크업/애니메이션
       const el = document.createElement("div");
       el.className = "paw-print";
       // 진행 방향(bearing)은 Marker rotation에 맡기고(rotationAlignment: "map"),
@@ -571,7 +684,7 @@ function MapContent({
       // z-index를 낮게 — 캐릭터/고양이 마커가 발자국 위에 표시되도록
       el.style.zIndex = "0";
 
-      const pawMarker = new Marker({
+      const overlay = new Marker({
         element: el,
         rotation: bearingDeg,
         rotationAlignment: "map",
@@ -579,15 +692,28 @@ function MapContent({
         .setLngLat([point.lng, point.lat])
         .addTo(map);
 
-      pawMarkerRef.current.push(pawMarker);
+      // 모션 종료 후 오버레이 제거 + 그 시점에 symbol feature를 그린다 —
+      // 오버레이 최종 프레임과 symbol 아이콘이 같은 모양이라 전환이 안 보인다
+      const timer = window.setTimeout(() => {
+        overlay.remove();
 
-      // 발자국이 너무 많이 쌓이면 오래된 것부터 제거
-      if (pawMarkerRef.current.length > PAW_MAX_COUNT) {
-        const oldest = pawMarkerRef.current.shift();
-        oldest?.remove();
-      }
+        pawOverlaysRef.current = pawOverlaysRef.current.filter(
+          (item) => item.marker !== overlay
+        );
+
+        // 플러시는 한 프레임으로 합친다 — 복원 시 수백 개가 같은 타이밍에
+        // 끝나도 setData는 1회만 발생한다
+        if (!pawFlushTimerRef.current) {
+          pawFlushTimerRef.current = window.setTimeout(() => {
+            pawFlushTimerRef.current = 0;
+            flushPawFeatures();
+          }, 16);
+        }
+      }, PAW_STAMP_MS);
+
+      pawOverlaysRef.current.push({ marker: overlay, timer });
     },
-    [map]
+    [map, flushPawFeatures]
   );
 
   // 시작점 마커를 찍는다
@@ -1234,6 +1360,68 @@ function MapContent({
     onDistanceChange,
   ]);
 
+  // --- 발자국 symbol layer 준비 (store의 map = 스타일 로드 완료 보장, 1회) ---
+  // 200개 발자국을 GPU 1배치로 그린다 — DOM 마커면 카메라가 움직이는 프레임마다
+  // 전부 transform을 갱신해야 해서 발자국이 가장 무거운 DOM 부하였음. symbol은
+  // 지도 좌표계에 고정이라 카메라 이동에 재배치 비용이 없다.
+  // 스타일 최상단에 추가 — 기존 DOM 발자국도 지도 지물 위에 그려졌으므로 동일 순서
+  useEffect(() => {
+    if (!map || isPawLayersAddedRef.current) {
+      return;
+    }
+
+    isPawLayersAddedRef.current = true;
+
+    map.addSource(PAW_SOURCE_ID, {
+      type: "geojson",
+      data: { type: "FeatureCollection", features: [] },
+    });
+
+    map.addLayer({
+      id: PAW_LAYER_ID,
+      type: "symbol",
+      source: PAW_SOURCE_ID,
+      layout: {
+        "icon-image": PAW_IMAGE_ID,
+        "icon-size": PAW_ICON_SIZE,
+        // bearing(북쪽 기준 진행 방향) + tilt(좌우 발 기울기)를 합산해 회전
+        "icon-rotate": ["+", ["get", "bearing"], ["get", "tilt"]] as never,
+        // 지도 북쪽 기준 회전 + 지면에 눕히기 — 기존 Marker와 동일한 정렬
+        "icon-rotation-alignment": "map",
+        "icon-pitch-alignment": "map",
+        // 배치 충돌 검사 없이 전부 표시 — DOM 마커 때와 동일
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
+      },
+      paint: {
+        "icon-opacity": 0.7, // 기존 .paw-print-inner opacity 유지
+      },
+    });
+
+    // SVG → 캔버스 래스터화 후 아이콘 등록. 완료 전에 플러시 요청이
+    // 대기 중이면 여기서 반영한다 (발자국이 이미지보다 먼저 찍히는 레이스 대비)
+    void rasterizePawImage().then((data) => {
+      if (!data) {
+        return;
+      }
+
+      map.addImage(PAW_IMAGE_ID, data, { pixelRatio: PAW_IMAGE_SCALE });
+
+      if (pawFlushPendingRef.current) {
+        pawFlushPendingRef.current = false;
+
+        const source = map.getSource(PAW_SOURCE_ID) as
+          | { setData: (data: unknown) => void }
+          | undefined;
+
+        source?.setData({
+          type: "FeatureCollection",
+          features: pawFeaturesRef.current,
+        });
+      }
+    });
+  }, [map]);
+
   useEffect(() => {
     // 지도 인스턴스(store의 map)가 준비된 뒤 1회만 초기화한다
     if (!map || isRendered.current) {
@@ -1408,6 +1596,15 @@ function MapContent({
   useEffect(() => {
     return () => {
       clearInterval(catSpawnTimerRef.current);
+
+      // 발자국 스탬프 오버레이 타이머/마커 정리 (지속 symbol 지물은 지도와 함께 정리됨)
+      pawOverlaysRef.current.forEach(({ marker, timer }) => {
+        clearTimeout(timer);
+        marker.remove();
+      });
+      pawOverlaysRef.current = [];
+      clearTimeout(pawFlushTimerRef.current);
+      pawFlushTimerRef.current = 0;
 
       // 진행 중인 부하 인사 연출 타이머 정리
       clearGreeting();

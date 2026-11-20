@@ -98,8 +98,8 @@ export default function CatTowerSheet({ isShow, mode = "full", onClose }: Props)
 
             {mode === "full" && (
               <p className={cn("sheet-hint")}>
-                부하를 붙이면 즉시 2.5m 오르고, 붙어있는 동안 부하 1마리당
-                30분에 1m씩 자라난다옹!
+                부하 1마리당 30분에 1m씩 자라난다옹! 레어는 1.5배, 유니크는
+                2배로 일한다옹!
               </p>
             )}
 

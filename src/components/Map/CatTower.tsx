@@ -33,6 +33,14 @@ const PLATFORM_HEADROOM_M = 8; // 꼭대기 발판과 최소 이 간격(m)만큼
 export const TOWER_VISUAL_HEIGHT_RATIO = 1 / 5;
 // 타워 이동/성장 모션 시간 (ms)
 const MOVE_ANIM_DURATION = 800;
+// 타워 클릭 시 카메라 연출 — 카메라를 지면 가까이(피치 최대치) 내려
+// 수평 시점으로 올려보게 하고 타워가 꽉 차게 보이도록 줌인한다.
+// TOWER_VIEW_ZOOM은 기본 줌 상한(Map의 MAX_ZOOM_LEVEL 18)보다 한 단계 높은 값이라
+// 포커스 동안에만 setMaxZoom으로 상한을 올리고, 해제 시 원래 상한으로 되돌린다
+const TOWER_VIEW_PITCH = 55;
+const TOWER_VIEW_ZOOM = 19;
+const DEFAULT_MAX_ZOOM = 18;
+const TOWER_VIEW_DURATION_MS = 1200;
 const METERS_PER_DEG_LAT = 111_320;
 
 // 위치 지정 파동 효과 — WebGL 지물 대신 DOM/CSS 펄스(GPU 합성)로 표현해 렉을 없앤다.
@@ -520,6 +528,16 @@ export default function CatTower({
   // --- 타워 팝업 정보창 (마커 엘리먼트를 상태로 들고 portal로 렌더) ---
   const [popupEl, setPopupEl] = useState<HTMLDivElement | null>(null);
   const popupMarkerRef = useRef<Marker | null>(null);
+  // 타워 포커스 직전의 카메라 상태 — 팝오버가 사라질 때 이 값으로 되돌린다
+  const cameraSnapshotRef = useRef<{
+    lat: number;
+    lng: number;
+    zoom: number;
+    pitch: number;
+    bearing: number;
+    /** 포커스 전 자동 위치 추적 여부 */
+    wasFollow: boolean;
+  } | null>(null);
 
   // 이동 모션 진행 중 플래그 — 모션 중엔 틱 effect가 지물 높이를 덮어쓰지 않게 한다
   const isMoveAnimRef = useRef(false);
@@ -1002,12 +1020,63 @@ export default function CatTower({
     };
   }, [map, isPlacingTower, getMyPosition]);
 
+  // --- 타워 포커스 동안 제스처 재배치 (타워 화면 중심 고정) ---
+  // 타워가 화면 중심에 고정된 상태로 줌/회전/피치는 모두 중심(타워) 기준으로
+  // 움직이게 한다. 카메라를 옮기는 팬(한 손가락 드래그)만 막고, 데스크톱 마우스
+  // 테스트를 위해 포커스 동안에만 마우스 전용 동작을 연다:
+  // - dragRotate(우클릭/ctrl+드래그): 중심 궤도 회전
+  // - scrollZoom(휠): around "center"라 타워 중심 줌
+  // 더블클릭 줌은 커서 기준이라 중심이 흘러가므로 잠근다.
+  // (지도 쪽 리빌 잠금 effect도 핸들러를 다루므로, 리빌 재생 중 포커스가
+  //  유지되는 드문 경우엔 리빌 쪽이 이기게 둔다 — 팝업을 다시 열면 복구됨)
+  useEffect(() => {
+    if (!map) {
+      return;
+    }
+
+    if (popupEl) {
+      map.dragPan.disable();
+      map.dragRotate.enable();
+      map.scrollZoom.enable({ around: "center" });
+      map.doubleClickZoom.disable();
+    } else {
+      map.dragPan.enable();
+      map.dragRotate.disable();
+      map.scrollZoom.disable();
+      map.doubleClickZoom.enable();
+    }
+  }, [map, popupEl]);
+
   // --- 타워 팝업 열기/닫기 (이벤트 핸들러에서만 상태를 바꾼다) ---
   const closePopup = useCallback(() => {
     popupMarkerRef.current?.remove();
     popupMarkerRef.current = null;
     setPopupEl(null);
-  }, []);
+
+    // 포커스 해제 — 클릭 직전의 카메라(연출/줌/기울기/회전)로 되돌린다
+    const snapshot = cameraSnapshotRef.current;
+
+    if (!map || !snapshot) {
+      return;
+    }
+
+    cameraSnapshotRef.current = null;
+
+    // 줌 상한 원복 — 되돌아갈 줌(≤ 기본 상한) 애니메이션이 상한에 걸리지 않게 먼저
+    map.setMaxZoom(DEFAULT_MAX_ZOOM);
+    map.easeTo({
+      center: [snapshot.lng, snapshot.lat],
+      zoom: snapshot.zoom,
+      pitch: snapshot.pitch,
+      bearing: snapshot.bearing,
+      duration: TOWER_VIEW_DURATION_MS,
+    });
+    // 복귀 애니메이션이 끝난 뒤 자동 위치 추적을 원래 상태로 되돌린다
+    // (애니메이션 중 추적이 재개되면 카메라 복귀가 위치 갱신에 끊긴다)
+    map.once("moveend", () => {
+      useViewStore.getState().actions.setIsStopFocusMe(!snapshot.wasFollow);
+    });
+  }, [map]);
 
   const togglePopup = useCallback(() => {
     if (!map) {
@@ -1025,6 +1094,29 @@ export default function CatTower({
     if (!towerState) {
       return;
     }
+
+    // 클릭 직전 카메라를 저장 — 팝오버가 사라질 때 되돌린다
+    const center = map.getCenter();
+    cameraSnapshotRef.current = {
+      lat: center.lat,
+      lng: center.lng,
+      zoom: map.getZoom(),
+      pitch: map.getPitch(),
+      bearing: map.getBearing(),
+      wasFollow: !useViewStore.getState().isStopFocusMe,
+    };
+
+    // 카메라를 타워로 — 지면 가까이(피치 최대) 내려오며 타워를 꽉 차게 줌인한다.
+    // 자동 위치 추적을 먼저 멈추지 않으면 다음 위치 갱신에 카메라가 도로 끌려온다
+    useViewStore.getState().actions.setIsStopFocusMe(true);
+    // 포커스 동안에만 줌 상한을 올린다 (기본 상한보다 한 단계 더 들어가기 위해)
+    map.setMaxZoom(TOWER_VIEW_ZOOM);
+    map.easeTo({
+      center: [towerState.lng, towerState.lat],
+      zoom: TOWER_VIEW_ZOOM,
+      pitch: TOWER_VIEW_PITCH,
+      duration: TOWER_VIEW_DURATION_MS,
+    });
 
     const el = document.createElement("div");
     el.className = "cat-tower-popup";
