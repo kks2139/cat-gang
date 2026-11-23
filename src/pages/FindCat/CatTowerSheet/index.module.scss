@@ -11,6 +11,12 @@
   background-color: rgba(15, 23, 42, 0.45);
   display: flex;
   align-items: flex-end;
+
+  // 꾸미기 모드 — 타워 포커스를 유지한 채 색을 고르므로 배경을 옅게 깔아
+  // 뒤의 타워가 계속 보이게 한다
+  &.decor-overlay {
+    background-color: rgba(15, 23, 42, 0.18);
+  }
 }
 
 .sheet-container {
@@ -129,6 +135,145 @@
     list-style: none;
   }
 
+  // ----- 목록 모드: 내 캣타워 목록 -----
+  .tower-list {
+    display: flex;
+    flex-direction: column;
+    row-gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tower-row {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    column-gap: 12px;
+    padding: 12px 14px;
+    border-radius: 18px;
+    // 어두운 반투명 카드 — 시트 배경 위에서 가라앉는 톤
+    background: rgba(17, 12, 34, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s ease, background-color 0.15s ease,
+      transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:active {
+      transform: scale(0.97);
+      background: rgba(46, 20, 88, 0.55);
+      border-color: rgba(167, 139, 250, 0.45);
+    }
+
+    &[data-completed="true"] {
+      border-color: rgba(250, 204, 21, 0.35);
+    }
+
+    .tower-icon {
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      font-size: 22px;
+      background: linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.16) 0%,
+        rgba(255, 255, 255, 0.06) 100%
+      );
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .info {
+      display: flex;
+      flex-direction: column;
+      row-gap: 3px;
+      flex: 1;
+      min-width: 0;
+
+      .height-row {
+        display: flex;
+        align-items: baseline;
+        column-gap: 4px;
+
+        .height {
+          font-size: 20px;
+          font-weight: 800;
+          color: #ffffff;
+          letter-spacing: -0.3px;
+          line-height: 1;
+        }
+
+        .unit {
+          font-size: 12px;
+          font-weight: 700;
+          color: rgba(255, 255, 255, 0.6);
+        }
+
+        .status {
+          margin-left: 8px;
+          padding: 2px 8px;
+          border-radius: 99px;
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: -0.2px;
+          // 건설중 — 딥 바이올렛 톤
+          color: #ffffff;
+          background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+          border: 1px solid rgba(255, 255, 255, 0.35);
+          box-shadow: 0 2px 6px rgba(124, 58, 237, 0.35);
+          white-space: nowrap;
+
+          // 완공 — 골드 톤
+          &[data-completed="true"] {
+            color: #452c00;
+            background: linear-gradient(135deg, #fde68a 0%, #f59e0b 100%);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);
+          }
+        }
+      }
+
+      .sub {
+        font-size: 12px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.55);
+        letter-spacing: -0.2px;
+      }
+    }
+  }
+
+  // 새 캣타워 건설 버튼 — 목록 하단 고정
+  .build-btn {
+    width: 100%;
+    margin-top: 12px;
+    padding: 14px;
+    border-radius: 16px;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: -0.2px;
+    color: #ffffff;
+    // 딥 바이올렛 솔리드 — 시트 톤과 통일
+    background: linear-gradient(
+      135deg,
+      rgba(109, 40, 217, 0.9) 0%,
+      rgba(76, 29, 149, 0.95) 100%
+    );
+    border: 1px solid rgba(167, 139, 250, 0.4);
+    box-shadow: 0 3px 10px rgba(30, 10, 60, 0.4);
+    cursor: pointer;
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+      filter 0.15s ease;
+
+    &:active {
+      transform: scale(0.96);
+      filter: brightness(1.1);
+    }
+  }
+
   .cat-row {
     // 등급별 톤 — MyCats와 같은 변수 체계
     --rarity-border: rgba(255, 255, 255, 0.18);
@@ -243,6 +388,70 @@
         border-color: rgba(255, 255, 255, 0.22);
         box-shadow: none;
         color: rgba(255, 255, 255, 0.75);
+      }
+    }
+  }
+
+  .color-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .color-swatch {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 9px;
+    padding: 14px 6px 11px;
+    border-radius: 16px;
+    background: rgba(17, 12, 34, 0.5);
+    border: 1.5px solid rgba(255, 255, 255, 0.18);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease,
+      transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:active {
+      transform: scale(0.93);
+    }
+
+    &[data-selected="true"] {
+      background: rgba(46, 20, 88, 0.55);
+      border-color: rgba(167, 139, 250, 0.8);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 0 10px rgba(76, 29, 149, 0.4);
+    }
+
+    .chips {
+      display: flex;
+      align-items: center;
+
+      i {
+        display: block;
+        width: 17px;
+        height: 17px;
+        border-radius: 50%;
+        border: 1.5px solid rgba(255, 255, 255, 0.55);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+
+        & + i {
+          margin-left: -5px;
+        }
+      }
+    }
+
+    .name {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      color: rgba(255, 255, 255, 0.75);
+
+      [data-selected="true"] & {
+        color: #ffffff;
       }
     }
   }

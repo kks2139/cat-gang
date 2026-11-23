@@ -17,24 +17,33 @@ export type Database = {
       cat_towers: {
         Row: {
           attached_keys: Json
+          color: string
+          completed_at: string | null
           created_at: string
           height_at: number
+          id: string
           position: Json
           updated_at: string
           user_id: string
         }
         Insert: {
           attached_keys?: Json
+          color?: string
+          completed_at?: string | null
           created_at?: string
           height_at?: number
+          id?: string
           position: Json
           updated_at?: string
           user_id: string
         }
         Update: {
           attached_keys?: Json
+          color?: string
+          completed_at?: string | null
           created_at?: string
           height_at?: number
+          id?: string
           position?: Json
           updated_at?: string
           user_id?: string

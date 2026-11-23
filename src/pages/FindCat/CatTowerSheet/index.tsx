@@ -4,10 +4,18 @@ import { AnimatePresence, motion } from "framer-motion";
 
 import Skeleton from "@/components/Skeleton";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
-import { useCatTowerStore } from "@/store/catTower";
+import {
+  getActiveTower,
+  useCatTowerStore,
+} from "@/store/catTower";
 import { useViewStore } from "@/store/view";
 import { catCharacters, type CatInfo, getCat } from "@/utils/cats";
+import {
+  resolveTowerColor,
+  TOWER_THEMES,
+} from "@/utils/catTowerThemes";
 import { NUMBER_FLOW_SPIN_TIMING } from "@/utils/constants";
+import { formatDuration } from "@/utils/helper";
 
 import styles from "./index.module.scss";
 
@@ -17,25 +25,42 @@ type SheetCat = CatInfo & { key: string };
 
 interface Props {
   isShow: boolean;
-  /** full: 타워 상태 + 고양이 목록 전체 관리 / cats: 작업고양이 추가용 목록만 노출 */
-  mode?: "full" | "cats";
+  /**
+   * list: 내 캣타워 목록 (높이/진행상태, 클릭 시 해당 타워로 포커싱)
+   * cats: 작업고양이 추가용 목록만 노출 / decor: 타워 색상(꾸미기) 선택만 노출
+   */
+  mode?: "list" | "cats" | "decor";
+  /** cats/decor 모드의 대상 타워 id (decor는 완공 타워에도 쓴다) */
+  targetTowerId?: string;
+  /** 목록에서 타워를 클릭 — 해당 타워로 지도 카메라를 옮긴다 */
+  onSelectTower?: (towerId: string) => void;
+  /** "새 캣타워 건설" 클릭 — 지도 위치 지정 모드로 진입한다 */
+  onBuildTower?: () => void;
   onClose: () => void;
 }
 
-/** 캣 타워 관리 시트 — 부하 고양이를 타워에 붙여 일을 시키거나 뗀다 */
+/** 캣 타워 바텀시트 — 내 캣타워 목록 / 작업고양이 추가 / 꾸미기 */
 export default function CatTowerSheet({
   isShow,
-  mode = "full",
+  mode = "list",
+  targetTowerId,
+  onSelectTower,
+  onBuildTower,
   onClose,
 }: Props) {
-  const tower = useCatTowerStore((s) => s.tower);
-  const height = useCatTowerStore((s) => s.height);
-  const { attach, detach } = useCatTowerStore((s) => s.actions);
+  const towers = useCatTowerStore((s) => s.towers);
+  const heights = useCatTowerStore((s) => s.heights);
+  const activeTower = useCatTowerStore((s) => getActiveTower(s.towers));
+  const { attach, detach, setColor } = useCatTowerStore((s) => s.actions);
   const { addToastMessage } = useViewStore((s) => s.actions);
 
   const { data, isLoading } = useMyCatsQuery();
 
-  const attachedCount = tower?.attachedKeys.length ?? 0;
+  // cats 모드의 대상은 항상 건설중 타워 — 부하는 거기에만 붙는다
+  const attachedKeys = activeTower?.attachedKeys ?? [];
+  const currentColor = resolveTowerColor(
+    towers.find((tower) => tower.id === targetTowerId)?.color
+  ).id;
 
   // 유효한 고양이만 매핑 (키: `${name}_${createdAt}`)
   const myCats = (data
@@ -49,7 +74,7 @@ export default function CatTowerSheet({
     <AnimatePresence>
       {isShow && (
         <motion.div
-          className={cn("overlay")}
+          className={cn("overlay", { "decor-overlay": mode === "decor" })}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -74,19 +99,15 @@ export default function CatTowerSheet({
             <div className={cn("sheet-header")}>
               <div className={cn("title-row")}>
                 <h3 className={cn("sheet-title")}>
-                  {mode === "cats" ? "작업고양이 추가" : "캣 타워"}
+                  {mode === "cats"
+                    ? "작업고양이 추가"
+                    : mode === "decor"
+                      ? "타워 꾸미기"
+                      : "캣 타워"}
                 </h3>
-                {mode === "full" && (
+                {mode === "list" && (
                   <span className={cn("tower-status")}>
-                    <NumberFlow
-                      value={height}
-                      format={{
-                        minimumFractionDigits: 1,
-                        maximumFractionDigits: 1,
-                      }}
-                      spinTiming={NUMBER_FLOW_SPIN_TIMING}
-                    />
-                    m · {attachedCount}마리 일하는 중
+                    {towers.length}동 보유 중
                   </span>
                 )}
               </div>
@@ -100,15 +121,127 @@ export default function CatTowerSheet({
               </button>
             </div>
 
-            {mode === "full" && (
+            {mode === "list" && (
+              <p className={cn("sheet-hint")}>
+                타워를 누르면 그 타워로 이동한다옹! 1000m를 채우면 완공되고
+                새 타워를 세울 수 있다옹!
+              </p>
+            )}
+
+            {mode === "cats" && (
               <p className={cn("sheet-hint")}>
                 부하 1마리당 30분에 1m씩 자라난다옹! 레어는 1.5배, 유니크는
                 2배로 일한다옹!
               </p>
             )}
 
+            {mode === "decor" && (
+              <p className={cn("sheet-hint")}>
+                색을 골라 타워를 꾸며본다옹! 언제든 다시 바꿀 수 있다옹!
+              </p>
+            )}
+
             <div className={cn("sheet-body")}>
-              {isLoading ? (
+              {mode === "list" ? (
+                <>
+                  <ul className={cn("tower-list")}>
+                    {towers.length > 0 ? (
+                      towers.map((tower) => {
+                        const height = heights[tower.id] ?? 0;
+                        const isCompleted = !!tower.completedAt;
+
+                        return (
+                          <li key={tower.id}>
+                            <button
+                              type="button"
+                              className={cn("tower-row")}
+                              data-completed={isCompleted}
+                              onClick={() => onSelectTower?.(tower.id)}
+                            >
+                              <span className={cn("tower-icon")}>🗼</span>
+                              <div className={cn("info")}>
+                                <div className={cn("height-row")}>
+                                  <NumberFlow
+                                    className={cn("height")}
+                                    value={height}
+                                    format={{
+                                      minimumFractionDigits: 1,
+                                      maximumFractionDigits: 1,
+                                    }}
+                                    spinTiming={NUMBER_FLOW_SPIN_TIMING}
+                                  />
+                                  <span className={cn("unit")}>m</span>
+                                  <span
+                                    className={cn("status")}
+                                    data-completed={isCompleted}
+                                  >
+                                    {isCompleted
+                                      ? `완공 (${formatDuration(
+                                          (tower.completedAt ?? 0) -
+                                            tower.createdAt
+                                        )})`
+                                      : "건설중"}
+                                  </span>
+                                </div>
+                                <div className={cn("sub")}>
+                                  {isCompleted
+                                    ? "부하들이 쉬고 있다옹"
+                                    : `${tower.attachedKeys.length}마리 일하는 중`}
+                                </div>
+                              </div>
+                            </button>
+                          </li>
+                        );
+                      })
+                    ) : (
+                      <li className={cn("empty")}>
+                        아직 캣 타워가 없다옹!
+                        <br />
+                        새 캣타워를 세워 부하들을 붙여보자옹!
+                      </li>
+                    )}
+                  </ul>
+
+                  {!activeTower && (
+                    <button
+                      type="button"
+                      className={cn("build-btn")}
+                      onClick={onBuildTower}
+                    >
+                      🏗️ 새 캣타워 건설
+                    </button>
+                  )}
+                </>
+              ) : mode === "decor" ? (
+                <ul className={cn("color-grid")}>
+                  {TOWER_THEMES.map((t) => (
+                    <li key={t.id}>
+                      <button
+                        type="button"
+                        className={cn("color-swatch")}
+                        data-selected={currentColor === t.id}
+                        onClick={() => {
+                          if (!targetTowerId) {
+                            return;
+                          }
+
+                          setColor(targetTowerId, t.id);
+                          addToastMessage({
+                            message: `타워 색을 ${t.name}으로 바꿨다옹!`,
+                          });
+                        }}
+                      >
+                        <span className={cn("chips")}>
+                          <i style={{ background: t.day.trunkA }} />
+                          <i style={{ background: t.day.trunkB }} />
+                          <i style={{ background: t.day.nest }} />
+                        </span>
+                        <span className={cn("name")}>{t.name}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : isLoading ? (
                 <ul className={cn("loading")}>
                   {Array.from({ length: 3 }).map((_, i) => (
                     <li key={i}>
@@ -121,7 +254,7 @@ export default function CatTowerSheet({
                 <ul className={cn("cat-list")}>
                   {myCats?.length ? (
                     myCats.map((cat) => {
-                      const isAttached = tower?.attachedKeys.includes(cat.key);
+                      const isAttached = attachedKeys.includes(cat.key);
 
                       return (
                         <li key={cat.key}>

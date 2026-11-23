@@ -1,0 +1,93 @@
+// 캣 타워 완공 축하 연출 — 컨페티 낙하 + 메시지 팝 (3.5초 노출, 종료는 호출부)
+.celebration {
+  z-index: 3000;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  // 지도 위에서 메시지/컨페티가 읽히게 은은한 어두운 비네트
+  background: radial-gradient(
+    ellipse at center,
+    rgba(76, 29, 149, 0.28) 0%,
+    rgba(15, 23, 42, 0.5) 100%
+  );
+  // 노출 말미 페이드아웃 — 3.5초 언마운트 전에 부드럽게 사라진다
+  animation: celebration-fade 0.4s ease 3.1s both;
+}
+
+.confetti {
+  position: absolute;
+  inset: 0;
+
+  i {
+    position: absolute;
+    top: -4%;
+    border-radius: 2px;
+    opacity: 0;
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.2);
+    animation: confetti-fall linear infinite;
+  }
+}
+
+.message {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  row-gap: 8px;
+  padding: 24px 32px;
+  border-radius: 24px;
+  background: rgba(17, 12, 34, 0.75);
+  border: 1.5px solid rgba(196, 181, 253, 0.5);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 28px rgba(139, 92, 246, 0.35);
+
+  .title-row {
+    display: flex;
+    align-items: center;
+    column-gap: 10px;
+
+    .emoji {
+      font-size: 26px;
+    }
+
+    .title {
+      color: #ffffff;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.4px;
+      text-shadow: 0 2px 8px rgba(139, 92, 246, 0.5);
+    }
+  }
+
+  .sub {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+  }
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translate3d(0, -6vh, 0) rotate(0deg);
+    opacity: 0;
+  }
+
+  8% {
+    opacity: 0.9;
+  }
+
+  100% {
+    transform: translate3d(var(--drift), 108vh, 0) rotate(var(--spin));
+    opacity: 0.9;
+  }
+}
+
+@keyframes celebration-fade {
+  to {
+    opacity: 0;
+  }
+}

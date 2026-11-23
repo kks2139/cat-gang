@@ -5,6 +5,7 @@ import { operEnv } from "./constants";
 
 const STORAGE_KEY = "TODAY_WALK";
 const KKANG_STORAGE_KEY = "TODAY_KKANG";
+const TOWER_CELEBRATED_KEY = "TOWER_CELEBRATED";
 
 /** 하루에 주어지는 깡 개수 (전투 1회당 1개 소모) */
 export const DAILY_KKANG_COUNT = 5;
@@ -143,4 +144,58 @@ export const storeTodayKkang = async (count: number) => {
   }
 
   localStorage.setItem(KKANG_STORAGE_KEY, value);
+};
+
+// ----- 캣 타워 완공 축하 연출 노출 여부 (타워별 1회) -----
+
+const parseCelebratedIds = (value: string | null): string[] => {
+  if (!value) {
+    return [];
+  }
+
+  try {
+    const data = JSON.parse(value) as { ids?: unknown };
+
+    return Array.isArray(data?.ids)
+      ? data.ids.filter((id): id is string => typeof id === "string")
+      : [];
+  } catch {
+    return [];
+  }
+};
+
+/** 완공 축하 연출을 이미 노출한 타워 id 목록을 읽어온다 */
+export const getCelebratedTowerIds = async (): Promise<string[]> => {
+  if (operEnv) {
+    try {
+      return parseCelebratedIds(await Storage.getItem(TOWER_CELEBRATED_KEY));
+    } catch (e) {
+      console.error("getCelebratedTowerIds 에러:", e);
+      return [];
+    }
+  }
+
+  return parseCelebratedIds(localStorage.getItem(TOWER_CELEBRATED_KEY));
+};
+
+/** 해당 타워의 완공 축하 연출을 노출한 것으로 기록한다 */
+export const markTowerCelebrated = async (towerId: string) => {
+  const ids = await getCelebratedTowerIds();
+
+  if (ids.includes(towerId)) {
+    return;
+  }
+
+  const value = JSON.stringify({ ids: [...ids, towerId] });
+
+  if (operEnv) {
+    try {
+      await Storage.setItem(TOWER_CELEBRATED_KEY, value);
+    } catch (e) {
+      console.error("markTowerCelebrated 에러:", e);
+    }
+    return;
+  }
+
+  localStorage.setItem(TOWER_CELEBRATED_KEY, value);
 };

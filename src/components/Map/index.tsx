@@ -432,6 +432,8 @@ interface Props {
   onClickKkang?: () => void;
   /** 캣 타워 팝업의 작업고양이 추가 클릭 — 고양이 목록 시트를 연다 */
   onTowerAddCats?: () => void;
+  /** 캣 타워 팝업의 꾸미기 클릭 — 해당 타워의 색상 선택 시트를 연다 */
+  onTowerDecor?: (towerId: string) => void;
   /** 캣 타워를 새로 세웠을 때 */
   onTowerPlaced?: () => void;
 }
@@ -447,6 +449,7 @@ function MapContent({
   onClickMe,
   onDistanceChange,
   onTowerAddCats,
+  onTowerDecor,
   onTowerPlaced,
 }: Omit<Props, "onClickKkang">) {
   const isStopFocusMe = useViewStore((s) => s.isStopFocusMe);
@@ -608,7 +611,7 @@ function MapContent({
       // 타워가 세워져 있을 땐 지면 클릭만 캐릭터 이동으로 처리한다 —
       // 타워 지물(기둥/기초 지반/발판) 클릭은 팝업 토글이 가야 한다
       if (
-        towerState.tower &&
+        towerState.towers.length > 0 &&
         map.queryRenderedFeatures(e.point, { layers: TOWER_HIT_LAYERS })
           .length > 0
       ) {
@@ -1681,6 +1684,7 @@ function MapContent({
       <CatTower
         getMyPosition={getMyPosition}
         onAddCats={onTowerAddCats}
+        onDecorTower={(towerId) => onTowerDecor?.(towerId)}
         onTowerPlaced={onTowerPlaced}
       />
     </div>
@@ -1784,7 +1788,10 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
         boxZoom: false,
         keyboard: false,
         pitchWithRotate: true,
-        dragRotate: false,
+        // 마우스 회전/기울기(우클릭·ctrl+좌클릭 드래그)도 데스크톱 테스트에서만 —
+        // 기기의 한 손가락 드래그(팬)와 무관하고 타워 포커스의 dragRotate
+        // 토글(CatTower)과도 이 상태를 기준으로 맞춘다
+        dragRotate: isDev,
         // 두 손가락 세로 드래그로 카메라 기울기 조절 활성화 (상한 MAX_PITCH로 렉 방지)
         touchPitch: true,
         maxPitch: MAX_PITCH,
@@ -1955,6 +1962,14 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
     };
   }, [isLoading, setIsMapLoading]);
 
+  // 리빌 진행 중 신호 — 구름/안개 연출이 다시 시작되면 리빌 완료 플래그를 되돌린다.
+  // 완료(onExitComplete) 시점은 아래 AnimatePresence에서 스토어에 반영한다
+  useEffect(() => {
+    if (isLoading || isReentering) {
+      useViewStore.getState().actions.setIsMapRevealDone(false);
+    }
+  }, [isLoading, isReentering]);
+
   // 재진입 리빌 — 첫 로딩이 끝난 뒤(/find-cat에서 나갔다) 다시 맵 화면에
   // 들어오면 구름 갈라짐을 다시 보여준다. 지도는 이미 준비돼 있으므로 로딩
   // 표시 없이, CloudReveal의 REVEAL_HOLD(1초) 유지 뒤 갈라짐만 재생한다.
@@ -2124,6 +2139,9 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
       <AnimatePresence
         onExitComplete={() => {
           setIsRevealLock(false);
+          // 리빌(구름 갈라짐) 연출이 완전히 끝났음을 스토어에 알린다 —
+          // 리빌 위에 띄우면 안 되는 연출(캣 타워 완공 축하 등)이 이 시점을 기다린다
+          useViewStore.getState().actions.setIsMapRevealDone(true);
         }}
       >
         {(isLoading || isReentering) && (

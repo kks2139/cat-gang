@@ -59,6 +59,19 @@ export const getRandomLocationInCircle = (
 export const getRandomNumber = (maxNum: number) =>
   Math.floor(Math.random() * maxNum);
 
+/** 소요 시간(ms)을 "1시간 5분" 형태로 — 캣 타워 완공 소요 시간 표시용 */
+export const formatDuration = (ms: number) => {
+  const minutes = Math.max(0, Math.round(ms / 60000));
+  const hours = Math.floor(minutes / 60);
+  const restMinutes = minutes % 60;
+
+  if (hours > 0) {
+    return restMinutes > 0 ? `${hours}시간 ${restMinutes}분` : `${hours}시간`;
+  }
+
+  return `${restMinutes}분`;
+};
+
 // ----- 마커 줌 연동 스케일 -----
 // DOM 마커는 화면 픽셀 고정이라 줌을 줄여도 크기가 그대로 — 실제 미터 스케일로
 // 그려지는 캣 타워(fill-extrusion 지물)와의 이질감 원인. 줌에 따라 마커도

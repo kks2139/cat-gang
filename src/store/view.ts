@@ -21,6 +21,9 @@ interface ViewStore {
   isBattleOn: boolean;
   // 맵 초기 로딩중 ("찾는중" UI 노출중) 여부
   isMapLoading: boolean;
+  // 맵 진입 리빌(CloudReveal 구름/안개)이 완전히 끝났는지 — 진입 연출 위에
+  // 뭔가를 띄우지 말아야 할 때(캣 타워 완공 축하 연출 등) 판단용
+  isMapRevealDone: boolean;
   // 맵(/find-cat) 첫 진입 여부 — keep-alive 유지 판단용 (진행 후 되돌릴 일 없음)
   isFindCatCached: boolean;
   actions: {
@@ -30,6 +33,7 @@ interface ViewStore {
     setIsStopFocusMe: (value: boolean) => void;
     setIsBattleOn: (value: boolean) => void;
     setIsMapLoading: (value: boolean) => void;
+    setIsMapRevealDone: (value: boolean) => void;
     setIsFindCatCached: (value: boolean) => void;
   };
 }
@@ -41,6 +45,7 @@ export const useViewStore = create<ViewStore>()(
     isStopFocusMe: false,
     isBattleOn: false,
     isMapLoading: false,
+    isMapRevealDone: false,
     isFindCatCached: false,
     actions: {
       addToastMessage({ message, duration = 2500, position }) {
@@ -80,6 +85,11 @@ export const useViewStore = create<ViewStore>()(
       setIsMapLoading(value) {
         set((state) => {
           state.isMapLoading = value;
+        });
+      },
+      setIsMapRevealDone(value) {
+        set((state) => {
+          state.isMapRevealDone = value;
         });
       },
       setIsFindCatCached(value) {
