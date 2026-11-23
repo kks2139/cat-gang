@@ -2,18 +2,17 @@ import NumberFlow from "@number-flow/react";
 import classNames from "classnames/bind";
 import { AnimatePresence, motion } from "framer-motion";
 
+import { AdBanner } from "@/components/Ads";
 import Skeleton from "@/components/Skeleton";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
 import {
   getActiveTower,
+  TOWER_WORK_MS_BY_RARITY,
   useCatTowerStore,
 } from "@/store/catTower";
 import { useViewStore } from "@/store/view";
 import { catCharacters, type CatInfo, getCat } from "@/utils/cats";
-import {
-  resolveTowerColor,
-  TOWER_THEMES,
-} from "@/utils/catTowerThemes";
+import { resolveTowerColor, TOWER_THEMES } from "@/utils/catTowerThemes";
 import { NUMBER_FLOW_SPIN_TIMING } from "@/utils/constants";
 import { formatDuration } from "@/utils/helper";
 
@@ -50,6 +49,8 @@ export default function CatTowerSheet({
 }: Props) {
   const towers = useCatTowerStore((s) => s.towers);
   const heights = useCatTowerStore((s) => s.heights);
+  // 부하별 오늘 남은 근무 ms — 일하는 중/퇴근 표시에 쓴다
+  const workLeft = useCatTowerStore((s) => s.workLeft);
   const activeTower = useCatTowerStore((s) => getActiveTower(s.towers));
   const { attach, detach, setColor } = useCatTowerStore((s) => s.actions);
   const { addToastMessage } = useViewStore((s) => s.actions);
@@ -102,12 +103,12 @@ export default function CatTowerSheet({
                   {mode === "cats"
                     ? "작업고양이 추가"
                     : mode === "decor"
-                      ? "타워 꾸미기"
-                      : "캣 타워"}
+                    ? "타워 꾸미기"
+                    : "캣 타워"}
                 </h3>
                 {mode === "list" && (
                   <span className={cn("tower-status")}>
-                    {towers.length}동 보유 중
+                    {towers.length}채 보유 중
                   </span>
                 )}
               </div>
@@ -122,23 +123,42 @@ export default function CatTowerSheet({
             </div>
 
             {mode === "list" && (
-              <p className={cn("sheet-hint")}>
-                타워를 누르면 그 타워로 이동한다옹! 1000m를 채우면 완공되고
-                새 타워를 세울 수 있다옹!
-              </p>
+              <ul className={cn("sheet-hint-list")}>
+                <li>
+                  <span aria-hidden>👆</span>타워를 누르면 그 타워로
+                  이동한다옹
+                </li>
+                <li>
+                  <span aria-hidden>🎉</span>1000m를 채우면 완공 — 새 타워를
+                  세울 수 있다옹
+                </li>
+              </ul>
             )}
 
             {mode === "cats" && (
-              <p className={cn("sheet-hint")}>
-                부하 1마리당 30분에 1m씩 자라난다옹! 레어는 1.5배, 유니크는
-                2배로 일한다옹!
-              </p>
+              <ul className={cn("sheet-hint-list")}>
+                <li>
+                  <span aria-hidden>🏗️</span>30분에 1m씩 성장한다옹
+                </li>
+                <li>
+                  <span aria-hidden>⏰</span>하루 근무 — 일반 1 · 레어 2 ·
+                  유니크 3시간
+                </li>
+                <li>
+                  <span aria-hidden>🌙</span>퇴근한 부하는 자정에 다시 출근한다옹
+                </li>
+              </ul>
             )}
 
             {mode === "decor" && (
-              <p className={cn("sheet-hint")}>
-                색을 골라 타워를 꾸며본다옹! 언제든 다시 바꿀 수 있다옹!
-              </p>
+              <ul className={cn("sheet-hint-list")}>
+                <li>
+                  <span aria-hidden>🎨</span>색을 골라 타워를 꾸며본다옹
+                </li>
+                <li>
+                  <span aria-hidden>🔄</span>언제든 다시 바꿀 수 있다옹
+                </li>
+              </ul>
             )}
 
             <div className={cn("sheet-body")}>
@@ -149,6 +169,10 @@ export default function CatTowerSheet({
                       towers.map((tower) => {
                         const height = heights[tower.id] ?? 0;
                         const isCompleted = !!tower.completedAt;
+                        // 근무 중(오늘 근무가 남은) 부하 수 — 전원 퇴근이면 표시가 바뀐다
+                        const workingCount = tower.attachedKeys.filter(
+                          (key) => (workLeft[key] ?? 1) > 0
+                        ).length;
 
                         return (
                           <li key={tower.id}>
@@ -186,7 +210,11 @@ export default function CatTowerSheet({
                                 <div className={cn("sub")}>
                                   {isCompleted
                                     ? "부하들이 쉬고 있다옹"
-                                    : `${tower.attachedKeys.length}마리 일하는 중`}
+                                    : tower.attachedKeys.length === 0
+                                    ? "일하는 부하가 없다옹"
+                                    : workingCount === 0
+                                    ? "부하가 모두 퇴근했다옹"
+                                    : `${workingCount}마리 일하는 중`}
                                 </div>
                               </div>
                             </button>
@@ -196,8 +224,7 @@ export default function CatTowerSheet({
                     ) : (
                       <li className={cn("empty")}>
                         아직 캣 타워가 없다옹!
-                        <br />
-                        새 캣타워를 세워 부하들을 붙여보자옹!
+                        <br />새 캣타워를 세워 부하들을 붙여보자옹!
                       </li>
                     )}
                   </ul>
@@ -255,13 +282,18 @@ export default function CatTowerSheet({
                   {myCats?.length ? (
                     myCats.map((cat) => {
                       const isAttached = attachedKeys.includes(cat.key);
+                      // 오늘 근무 기록이 있으면 남은 시간, 없으면 등급 예산 그대로
+                      const leftMs =
+                        workLeft[cat.key] ??
+                        TOWER_WORK_MS_BY_RARITY[cat.rarity];
+                      const isOffWork = leftMs <= 0;
 
                       return (
                         <li key={cat.key}>
                           <div
                             className={cn("cat-row")}
                             data-rarity={cat.rarity}
-                            data-attached={isAttached}
+                            data-attached={isAttached && !isOffWork}
                           >
                             <img src={cat.img} alt={cat.name} />
                             <div className={cn("info")}>
@@ -275,12 +307,29 @@ export default function CatTowerSheet({
                                   </span>
                                 )}
                               </div>
+                              {/* 남은 근무는 붙어있든 아니든 오늘 예산 기준으로 모두 표시 */}
+                              <span
+                                className={cn("work-status")}
+                                data-off={isOffWork}
+                              >
+                                {isOffWork ? (
+                                  "퇴근 (내일 출근)"
+                                ) : (
+                                  <>
+                                    남은 근무 ·{" "}
+                                    <em className={cn("time")}>
+                                      {formatDuration(leftMs)}
+                                    </em>
+                                  </>
+                                )}
+                              </span>
                             </div>
                             <button
                               type="button"
                               className={cn("toggle-btn", {
                                 detached: isAttached,
                               })}
+                              disabled={!isAttached && isOffWork}
                               onClick={() => {
                                 if (isAttached) {
                                   detach(cat.key);
@@ -295,7 +344,11 @@ export default function CatTowerSheet({
                                 }
                               }}
                             >
-                              {isAttached ? "휴식하기" : "일 시키기"}
+                              {isAttached
+                                ? "휴식하기"
+                                : isOffWork
+                                ? "내일 출근"
+                                : "일 시키기"}
                             </button>
                           </div>
                         </li>
@@ -307,6 +360,12 @@ export default function CatTowerSheet({
                 </ul>
               )}
             </div>
+
+            {/* 시트 하단 배너 광고 (시트 닫힘 시 언마운트 → 자동 destroy) */}
+            <AdBanner
+              className={cn("sheet-ad")}
+              adGroupId="ait-ad-test-banner-id"
+            />
           </motion.div>
         </motion.div>
       )}

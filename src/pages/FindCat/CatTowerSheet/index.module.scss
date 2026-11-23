@@ -102,12 +102,29 @@
     }
   }
 
-  .sheet-hint {
+  // 시트 하단 배너 광고 (너비/높이는 AdBanner 컴포넌트 기본값 사용)
+  .sheet-ad {
+    flex: none;
+    margin-top: 12px;
+  }
+
+  // 규칙 요약 불릿 — 한 줄에 규칙 하나씩 (모든 모드 공통)
+  .sheet-hint-list {
     margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
     font-size: 13px;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.65);
     letter-spacing: -0.2px;
+
+    li {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      white-space: nowrap;
+    }
   }
 
   .sheet-body {
@@ -355,6 +372,31 @@
           box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
         }
       }
+
+      // 근무 상태 표시 — 남은 근무 시간 / 퇴근 (한 줄 유지, 넘치면 말줄임)
+      .work-status {
+        margin-top: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: -0.2px;
+        color: #c4b5fd;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        // 남은 시간은 강조 — 라벨보다 밝고 굵게
+        .time {
+          font-style: normal;
+          font-weight: 800;
+          font-variant-numeric: tabular-nums;
+          color: #ffffff;
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+        }
+
+        &[data-off="true"] {
+          color: rgba(255, 255, 255, 0.45);
+        }
+      }
     }
 
     .toggle-btn {
@@ -388,6 +430,20 @@
         border-color: rgba(255, 255, 255, 0.22);
         box-shadow: none;
         color: rgba(255, 255, 255, 0.75);
+      }
+
+      // 오늘 근무 소진(퇴근) — 일 시키기 불가
+      &:disabled {
+        background: rgba(17, 12, 34, 0.4);
+        border-color: rgba(255, 255, 255, 0.12);
+        box-shadow: none;
+        color: rgba(255, 255, 255, 0.35);
+        cursor: default;
+
+        &:active {
+          transform: none;
+          filter: none;
+        }
       }
     }
   }

@@ -4,7 +4,7 @@ import { supabase } from "./supabase";
 
 /**
  * 캣 타워 상태 (DB 저장용) — 유저당 여러 행(완공된 타워는 남고, 건설중은 1개).
- * 높이 성장은 클라이언트가 `heightAt + attachedKeys × 경과시간`으로 계산하므로
+ * 높이 성장은 클라이언트가 계산한다(heightAt 기준 + 부하별 근무 적립) —
  * 붙이기/떼기 등 기준점이 바뀔 때만 저장하면 된다.
  */
 export interface CatTowerRecord {

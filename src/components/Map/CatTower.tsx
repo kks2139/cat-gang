@@ -9,7 +9,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { useDayAndNight } from "@/hooks/useDayAndNight";
-import { type CatTowerState,useCatTowerStore } from "@/store/catTower";
+import {
+  type CatTowerState,
+  getActiveTower,
+  useCatTowerStore,
+} from "@/store/catTower";
 import { useViewStore } from "@/store/view";
 import {
   type CatTowerTheme,
@@ -607,18 +611,24 @@ const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 function TowerPopupContent({
   height,
   attachedCount,
+  workingCount,
   isCompleted,
   onAddCats,
   onDecor,
   onMove,
 }: {
   height: number;
+  /** 붙어 있는 부하 수 */
   attachedCount: number;
+  /** 그중 오늘 근무가 남은(일하는 중) 부하 수 */
+  workingCount: number;
   isCompleted: boolean;
   onAddCats?: () => void;
   onDecor: () => void;
   onMove: () => void;
 }) {
+  const restingCount = attachedCount - workingCount;
+
   return (
     <div className="cat-tower-popup-body">
       <div className="cat-tower-popup-title-row">
@@ -631,9 +641,16 @@ function TowerPopupContent({
       </div>
       {isCompleted ? (
         <div className="cat-tower-popup-info">완공된 타워다옹!</div>
+      ) : attachedCount === 0 ? (
+        <div className="cat-tower-popup-info">일하는 부하가 없다옹</div>
+      ) : workingCount === 0 ? (
+        <div className="cat-tower-popup-info">
+          부하가 모두 퇴근했다옹 (내일 다시 출근)
+        </div>
       ) : (
         <div className="cat-tower-popup-info">
-          <b>{attachedCount}</b>마리 일하는 중
+          <b>{workingCount}</b>마리 일하는 중
+          {restingCount > 0 && ` · 퇴근 ${restingCount}마리`}
         </div>
       )}
       <div className="cat-tower-popup-actions">
@@ -697,6 +714,8 @@ export default function CatTower({
   // 실시간 높이 맵 — 성장 중 1초 틱으로 갱신되며 아래 effect들이 지도를 갱신한다
   const towers = useCatTowerStore((s) => s.towers);
   const heights = useCatTowerStore((s) => s.heights);
+  // 부하별 오늘 남은 근무 ms — 팝업의 일하는 중/퇴근 표시에 쓴다
+  const workLeft = useCatTowerStore((s) => s.workLeft);
   const isPlacingTower = useCatTowerStore((s) => s.isPlacingTower);
   // 이동 모드 여부 — 구역 중심(캐릭터 vs 타워)과 거리 판정에 쓰인다
   const isMoveTower = useCatTowerStore((s) => s.isMoveTower);
@@ -712,8 +731,19 @@ export default function CatTower({
   const [labelEls, setLabelEls] = useState<Record<string, HTMLDivElement>>({});
   // 위치 지정 구역 중앙 펄스 (DOM 마커 — CSS 애니메이션, WebGL 비용 없음)
   const zonePulseMarkerRef = useRef<Marker | null>(null);
-  // 공사중 모션 마커들(먼지 구름 여럿 + 망치 1개) — 작업중 부하가 있을 때만
+  // 공사중 모션 마커들(먼지 구름 여럿 + 망치 1개) — 근무 중 부하가 있을 때만
   const workMarkersRef = useRef<Marker[]>([]);
+  // 근무 중(오늘 근무가 남은) 부하가 있는 건설중 타워 id — 공사 모션 조건.
+  // 부하별 남은 시간은 분 단위로 반올림돼 틱마다 흔들리지 않고, 소진(퇴근) 시에만
+  // 값이 바뀌므로 모션이 의도 없이 재시작되지 않는다
+  const workingTowerId = useCatTowerStore((s) => {
+    const tower = getActiveTower(s.towers);
+
+    return tower &&
+      tower.attachedKeys.some((key) => (s.workLeft[key] ?? 1) > 0)
+      ? tower.id
+      : null;
+  });
   // 망치가 자리를 옮기는 주기 타이머
   const hammerTimerRef = useRef<number>(0);
 
@@ -1132,11 +1162,12 @@ export default function CatTower({
     playGrowMotion,
   ]);
 
-  // --- 공사중 모션 (작업중 부하가 있을 때만) ---
+  // --- 공사중 모션 (근무 중 부하가 있을 때만) ---
   // 기초 지반 주변에서 먼지 구름이 계속 피어오르고, 망치 1개가 주변을
   // 돌아다니며 망치질한다. WebGL 갱신 없는 DOM/CSS 애니메이션 (맵 렌더 비용 0).
-  // 부하가 없으면 아무 효과 없다. 부하를 붙일 수 있는 건 건설중 타워뿐이라
-  // 여러 타워가 있어도 동시에 공사중인 타워는 1개다.
+  // 근무 가능한 부하가 하나도 없으면(전원 퇴근/부하 없음) 아무 효과 없다.
+  // 부하를 붙일 수 있는 건 건설중 타워뿐이라 여러 타워가 있어도 동시에
+  // 공사중인 타워는 1개다.
   useEffect(() => {
     if (!map) {
       return;
@@ -1149,9 +1180,9 @@ export default function CatTower({
       workMarkersRef.current = [];
     };
 
-    const workingTower = towers.find(
-      (tower) => tower.attachedKeys.length > 0
-    );
+    const workingTower = workingTowerId
+      ? towers.find((tower) => tower.id === workingTowerId)
+      : undefined;
 
     if (!workingTower) {
       cleanup();
@@ -1230,7 +1261,7 @@ export default function CatTower({
     workMarkersRef.current = [...dustMarkers, hammerMarker];
 
     return cleanup;
-  }, [map, towers]);
+  }, [map, towers, workingTowerId]);
 
   // --- 위치 지정 모드 구역 토글 + 중앙 펄스 링 (DOM/CSS 애니메이션) ---
   // 파동을 WebGL 지물로 그리면 프레임마다 GeoJSON 재생성 + GPU 지물 렌더로 렉이 걸려
@@ -1557,17 +1588,17 @@ export default function CatTower({
       const el = document.createElement("div");
       el.className = "cat-tower-popup";
 
-      // 타워 '옆'에 붙이기 — 기초 지반 오른쪽 모서리 좌표에 좌측 앵커로 놓아
-      // 어떤 줌에서도 지물/높이 라벨과 겹치지 않게 한다 (모서리 = 중심 + 지반 절반)
-      const foundationEdgeLng =
-        towerState.lng + metersToDegLng(FOUNDATION_EDGE_M, towerState.lat);
+      // 높이 뱃지 '아래'에 붙이기 — 뱃지와 같은 앵커 좌표(기초 지반 남측)에서
+      // 세로로만 내려 놓아 좁은 화면에서도 좌우로 잘리지 않게 한다
+      // (뱃지 마커가 offset 46px 아래에 끝나므로 그 아래 6px 간격)
+      const badgeLat = towerState.lat - metersToDegLat(FOUNDATION_EDGE_M);
 
       popupMarkerRef.current = new Marker({
         element: el,
-        anchor: "left",
-        offset: [10, 8],
+        anchor: "top",
+        offset: [0, 52],
       })
-        .setLngLat([foundationEdgeLng, towerState.lat] as LngLatLike)
+        .setLngLat([towerState.lng, badgeLat] as LngLatLike)
         .addTo(map);
 
       popupTowerIdRef.current = towerId;
@@ -1757,6 +1788,10 @@ export default function CatTower({
 
   // 팝업이 열려 있는 타워의 실시간 값 — portal 내용에 쓴다
   const popupTower = towers.find((tower) => tower.id === popupTowerId);
+  // 팝업 타워의 부하 근무 상태 — 오늘 근무가 남은(일하는 중) 부하 수
+  const popupWorkingCount = (popupTower?.attachedKeys ?? []).filter(
+    (key) => (workLeft[key] ?? 1) > 0
+  ).length;
 
   return (
     <>
@@ -1785,6 +1820,7 @@ export default function CatTower({
           <TowerPopupContent
             height={heights[popupTower.id] ?? 0}
             attachedCount={popupTower.attachedKeys.length}
+            workingCount={popupWorkingCount}
             isCompleted={!!popupTower.completedAt}
             onAddCats={
               popupTower.completedAt

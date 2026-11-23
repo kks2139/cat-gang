@@ -16,6 +16,7 @@ const TABS = [
   { id: "book", label: "도감 수집률" },
   { id: "distance", label: "총 산책거리" },
   { id: "minions", label: "부하 수" },
+  { id: "tower", label: "캣 타워" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -39,6 +40,8 @@ const getRankedRows = (rows: RankingRow[], tab: TabId): RankedRow[] => {
       ? "book_count"
       : tab === "distance"
       ? "total_distance"
+      : tab === "tower"
+      ? "tower_height"
       : "minion_count";
 
   const sorted = [...rows]
@@ -77,6 +80,16 @@ const getTabValue = (row: RankingRow, tab: TabId) => {
       unit: "km",
       sub: undefined,
       subUnit: undefined,
+    };
+  }
+
+  if (tab === "tower") {
+    // RPC가 아직 타워 지표를 반환 전(마이그레이션 전) 환경 폴백
+    return {
+      number: `${Math.round(row.tower_height ?? 0)}`,
+      unit: "m",
+      sub: `${row.tower_count ?? 0}`,
+      subUnit: "동",
     };
   }
 

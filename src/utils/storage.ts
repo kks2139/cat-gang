@@ -6,6 +6,7 @@ import { operEnv } from "./constants";
 const STORAGE_KEY = "TODAY_WALK";
 const KKANG_STORAGE_KEY = "TODAY_KKANG";
 const TOWER_CELEBRATED_KEY = "TOWER_CELEBRATED";
+const TOWER_WORK_KEY = "TOWER_WORK";
 
 /** 하루에 주어지는 깡 개수 (전투 1회당 1개 소모) */
 export const DAILY_KKANG_COUNT = 5;
@@ -144,6 +145,79 @@ export const storeTodayKkang = async (count: number) => {
   }
 
   localStorage.setItem(KKANG_STORAGE_KEY, value);
+};
+
+// ----- 캣 타워 부하 근무 적립치 (오늘 누적) -----
+
+/** 캣 타워 부하별 근무 적립치 — 타워 updatedAt 시점 기준 스냅샷 */
+export interface TowerWorkData {
+  /** 적립 기준 시점의 로컬 날짜 키 ("yyyy-MM-dd") */
+  dateKey: string;
+  /** 부하 키(`${name}_${createdAt}`) → 오늘 적립 근무 ms */
+  work: Record<string, number>;
+}
+
+const parseTowerWork = (value: string | null): TowerWorkData | null => {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const data = JSON.parse(value) as {
+      dateKey?: unknown;
+      work?: unknown;
+    };
+
+    if (typeof data?.dateKey !== "string" || !data.dateKey) {
+      return null;
+    }
+
+    const work: Record<string, number> = {};
+
+    if (data.work && typeof data.work === "object") {
+      Object.entries(data.work as Record<string, unknown>).forEach(
+        ([key, ms]) => {
+          if (typeof key === "string" && typeof ms === "number" && ms >= 0) {
+            work[key] = ms;
+          }
+        }
+      );
+    }
+
+    return { dateKey: data.dateKey, work };
+  } catch {
+    return null;
+  }
+};
+
+/** 부하별 근무 적립치를 읽어온다. 저장된 값이 없으면 null */
+export const getTowerWork = async (): Promise<TowerWorkData | null> => {
+  if (operEnv) {
+    try {
+      return parseTowerWork(await Storage.getItem(TOWER_WORK_KEY));
+    } catch (e) {
+      console.error("getTowerWork 에러:", e);
+      return null;
+    }
+  }
+
+  return parseTowerWork(localStorage.getItem(TOWER_WORK_KEY));
+};
+
+/** 부하별 근무 적립치를 저장한다 */
+export const storeTowerWork = async (data: TowerWorkData) => {
+  const value = JSON.stringify(data);
+
+  if (operEnv) {
+    try {
+      await Storage.setItem(TOWER_WORK_KEY, value);
+    } catch (e) {
+      console.error("storeTowerWork 에러:", e);
+    }
+    return;
+  }
+
+  localStorage.setItem(TOWER_WORK_KEY, value);
 };
 
 // ----- 캣 타워 완공 축하 연출 노출 여부 (타워별 1회) -----

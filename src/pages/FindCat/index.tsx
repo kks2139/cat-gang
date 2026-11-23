@@ -18,7 +18,7 @@ import { useItemMutation } from "@/queries/useItemMutation";
 import { useItemQuery } from "@/queries/useItemQuery";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
 import { useCatStore } from "@/store/cat";
-import { useCatTowerStore } from "@/store/catTower";
+import { catNameOfKey, useCatTowerStore } from "@/store/catTower";
 import { useKkangStore } from "@/store/kkang";
 import { useViewStore } from "@/store/view";
 import { catCharacters, type CatInfo, getGangInfo, MyCat } from "@/utils/cats";
@@ -106,6 +106,26 @@ export default function FindCat() {
   const towers = useCatTowerStore((s) => s.towers);
   const isPlacingTower = useCatTowerStore((s) => s.isPlacingTower);
   const isMoveTower = useCatTowerStore((s) => s.isMoveTower);
+  // 부하별 오늘 남은 근무 ms — 퇴근 토스트 감지에 쓴다
+  const workLeft = useCatTowerStore((s) => s.workLeft);
+
+  // 부하 퇴근 토스트 — 남은 근무가 0으로 떨어지는 순간(틱 감지) 알린다.
+  // 앱을 켰을 때 이미 퇴근해 있는 부하는 직전 값이 없어 알리지 않는다
+  const prevWorkLeftRef = useRef<Record<string, number>>({});
+
+  useEffect(() => {
+    const prev = prevWorkLeftRef.current;
+
+    Object.entries(workLeft).forEach(([key, left]) => {
+      if (left <= 0 && prev[key] !== undefined && prev[key] > 0) {
+        addToastMessage({
+          message: `${catNameOfKey(key)}가 하루 근무를 마치고 퇴근했다옹!`,
+        });
+      }
+    });
+
+    prevWorkLeftRef.current = workLeft;
+  }, [workLeft, addToastMessage]);
 
   // 캣 타워 완공 축하 연출 — 노출 중인 타워 id (3.5초 뒤 자동 종료)
   const [celebrationTowerId, setCelebrationTowerId] = useState<string>();
@@ -207,11 +227,6 @@ export default function FindCat() {
     position: c.position,
     createdAt: c.created_at,
   })) || []) as OwnCat[];
-
-  // 바텀시트(내 부하/도감)가 열려있으면 지도 배경에 블러를 건다.
-  // 웹뷰(AIT)에서는 WebGL 캔버스 위의 backdrop-filter가 무시되므로
-  // 지도 컨테이너 자체에 filter: blur를 적용한다
-  const isAnySheetOpen = isShowCatchedCatPopup || isShowCatBook;
 
   // 도감: 잡은 고양이 이름 집합
   const catchedNames = new Set(ownCats.map(({ name }) => name));
@@ -443,7 +458,7 @@ export default function FindCat() {
   return (
     <main className={cn("FindCat")}>
       <Map
-        className={cn("map", { "is-blurred": isAnySheetOpen })}
+        className={cn("map")}
         ownCats={ownCats}
         onClickCat={() => {
           // 마커 클릭 핸들러는 마커 생성 시점의 onClickCat 클로저를 계속 사용한다.

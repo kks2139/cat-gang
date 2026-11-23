@@ -14,6 +14,10 @@ export interface RankingRow {
   minion_count: number;
   /** 총 누적 산책 거리 (m) */
   total_distance: number;
+  /** 보유 캣 타워 높이 합 (m, height_at 스냅샷 기준) */
+  tower_height: number;
+  /** 보유 캣 타워 수 */
+  tower_count: number;
 }
 
 export interface RankingsData {
