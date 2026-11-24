@@ -370,6 +370,9 @@ export const removeMarkerWithMotion = (marker: Marker, duration = 300) => {
   const el = marker.getElement();
 
   if (el) {
+    // 페이드아웃 표시 — 타워 가림 반투명 갱신(Map)이 이 마커의 opacity를
+    // 덮어쓰지 않게 한다
+    el.dataset.removing = "true";
     el.style.transition = `opacity ${duration}ms ease`;
     el.style.opacity = "0";
 

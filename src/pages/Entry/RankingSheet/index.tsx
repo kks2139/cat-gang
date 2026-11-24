@@ -89,7 +89,7 @@ const getTabValue = (row: RankingRow, tab: TabId) => {
       number: `${Math.round(row.tower_height ?? 0)}`,
       unit: "m",
       sub: `${row.tower_count ?? 0}`,
-      subUnit: "동",
+      subUnit: "채",
     };
   }
 

@@ -128,6 +128,14 @@ const rarityOfKey = (key: string): CatInfo["rarity"] =>
 // 로컬 날짜 키 ("yyyy-MM-dd") — 자정 리셋/날짜 구간 판정 기준
 const dayKeyOf = (ms: number) => format(new Date(ms), "yyyy-MM-dd");
 
+// ----- 랭킹(DB) 동기화 상태 -----
+// 성장은 클라이언트가 계산하므로 DB의 height_at 스냅샷은 붙이기/떼기 등
+// 기준점이 바뀔 때만 저장돼 늙는다 — 랭킹(get_rankings RPC)이 이 값을 읽으므로
+// 틱에서 높이가 마지막 저장 대비 변했으면 새 기준점을 찍어 저장한다
+let lastSyncedHeights: Record<string, number> = {};
+let lastSyncAt = 0;
+const RANKING_SYNC_MIN_MS = 60_000; // 동기화 최소 간격 (ms)
+
 // [from, to] 구간을 로컬 자정 기준으로 쪼갠 세그먼트 목록.
 // 구간이 자정을 넘으면 날짜별로 근무 예산을 따로 적용해야 하기 때문이다
 const splitByDay = (from: number, to: number): Array<[number, number]> => {
@@ -256,6 +264,8 @@ export const useCatTowerStore = create<CatTowerStore>()(
       });
 
       void saveCatTower(next);
+      // 저장 시점 기준 높이를 랭킹 동기화 판정에도 반영한다
+      lastSyncedHeights[next.id] = next.heightAt;
     };
 
     // 기준점 스냅샷 — 현재까지의 성장/근무 적립을 확정해 기준점으로 삼는다
@@ -339,6 +349,14 @@ export const useCatTowerStore = create<CatTowerStore>()(
           const activeGrowth = activeRecord
             ? computeGrowth(activeRecord, now, workData)
             : null;
+
+          // 랭킹 동기화 판정 기준을 DB 스냅샷 값으로 리셋 — 복원으로 성장이
+          // 확인되면 첫 틱에서 곧바로 저장한다
+          lastSyncedHeights = {};
+          records.forEach((record) => {
+            lastSyncedHeights[record.id] = record.heightAt;
+          });
+          lastSyncAt = 0;
 
           set((state) => {
             state.towers = records as never;
@@ -543,6 +561,30 @@ export const useCatTowerStore = create<CatTowerStore>()(
                 state.workLeft = nextWorkLeft as never;
               }
             });
+          }
+
+          // 랭킹용 DB 동기화 — 높이가 마지막 저장 대비 변한 건설중 타워를
+          // 새 기준점으로 저장한다 (최소 간격 이상일 때만, 완공 타워 제외).
+          // place/attach/detach/moveTo/완공 경유 저장은 replaceTower가 이미 반영
+          const { towers: freshTowers, heights: freshHeights } = get();
+
+          if (now - lastSyncAt >= RANKING_SYNC_MIN_MS) {
+            const dirty = freshTowers.filter(
+              (tower) =>
+                !tower.completedAt &&
+                (freshHeights[tower.id] ?? 0) !==
+                  (lastSyncedHeights[tower.id] ?? tower.heightAt)
+            );
+
+            if (dirty.length > 0) {
+              lastSyncAt = now;
+
+              dirty.forEach((tower) => {
+                const { tower: snapped, work } = snapshotTower(tower, now);
+
+                replaceTower(snapped, work);
+              });
+            }
           }
         },
       },

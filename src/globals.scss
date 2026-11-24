@@ -1260,6 +1260,9 @@ input {
   // 컨테이너의 애니메이션 이동(±12px)이 래퍼 밖으로 삐져나갈 수 있게 overflow 허용
   overflow: visible;
 
+  // 제거 페이드아웃(removeMarkerWithMotion)용
+  transition: opacity 0.15s linear;
+
   // 클릭은 내부 컨테이너가 받도록
   > * {
     pointer-events: auto;
@@ -1273,6 +1276,9 @@ input {
 // 줌 아웃 시 발밑이 앵커 쪽으로 모이며 세계에 고정된 느낌이 난다.
 .marker-zoom-scale {
   width: 100%;
+
+  // 부분 가림(타워) 전환 부드럽게 (Map의 updateMarkerOcclusion이 opacity 토글)
+  transition: opacity 0.15s linear;
 }
 
 // 마커 컨테이너 가운데정렬 (지도 앵커 보정)

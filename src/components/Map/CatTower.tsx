@@ -26,7 +26,8 @@ import { distanceInMeters } from "@/utils/helper";
 // ----- 캣 타워 상수 -----
 export const TOWER_ZONE_RADIUS = 100; // 위치 지정 가능 반경 (m, 내 위치 기준)
 // 원목 가지 캣트리 치수 — 몸통/기초는 축소, 가지/둥지는 실제 미터 기준
-const TOWER_FOOTPRINT_M = 3; // 몸통(원목) 지름 (m)
+// (몸통 실루엣은 Map 쪽 마커 가림 반투명 판정에서도 쓴다)
+export const TOWER_FOOTPRINT_M = 3; // 몸통(원목) 지름 (m)
 const TRUNK_SIDES = 16; // 몸통 원기둥 근사 다각형 변 수
 const TOWER_PERCH_T = 1.4; // 꼭대기 발판 두께 (m)
 const PERCH_RADIUS_M = 4.75; // 꼭대기 발판 반경 (m)
@@ -78,11 +79,11 @@ const FOUNDATION_EDGE_M = FOUNDATION_SIZE_M;
 const MOVE_ANIM_DURATION = 800;
 // 타워 클릭 시 카메라 연출 — 카메라를 지면 가까이(피치 최대치) 내려
 // 수평 시점으로 올려보게 하고 타워가 꽉 차게 보이도록 줌인한다.
-// TOWER_VIEW_ZOOM은 기본 줌 상한(Map의 MAX_ZOOM_LEVEL 18)보다 한 단계 높은 값이라
+// TOWER_VIEW_ZOOM은 기본 줌 상한(Map의 MAX_ZOOM_LEVEL 19)보다 한 단계 높은 값이라
 // 포커스 동안에만 setMaxZoom으로 상한을 올리고, 해제 시 원래 상한으로 되돌린다
 const TOWER_VIEW_PITCH = 55;
-const TOWER_VIEW_ZOOM = 19;
-const DEFAULT_MAX_ZOOM = 18;
+const TOWER_VIEW_ZOOM = 20;
+const DEFAULT_MAX_ZOOM = 19;
 const TOWER_VIEW_DURATION_MS = 1200;
 // 포커스 중 한 손가락 궤도 드래그 감도 — px당 각도(도)
 const FOCUS_ORBIT_BEARING_PER_PX = 0.3;
@@ -92,6 +93,9 @@ const FOCUS_ORBIT_MIN_PITCH = 0;
 // 타워 중심으로 되돌린다 (궤도 회전축 어긋남 방지)
 const FOCUS_RECENTER_EPS_M = 0.5;
 const FOCUS_RECENTER_DURATION_MS = 250;
+// moveend 뒤 재판단 지연 (ms) — 제스처 도중 moveend에서 바로 easeTo를 걸면
+// 제스처와 카메라 애니메이션이 서로를 interrupt해 입력이 먹통이 된다
+const FOCUS_RECENTER_DELAY_MS = 50;
 // "위치 옮기기" 진입 시 카메라 — 타워 현재 위치로 날아가 이동 구역(타워 주변
 // 100m)을 바로 보여준다
 const TOWER_MOVE_VIEW_ZOOM = 17;
@@ -115,7 +119,9 @@ const WORK_DUST_COUNT = 8;
 const SOURCE_ID = "cat-tower-source";
 const ZONE_SOURCE_ID = "cat-tower-zone-source";
 const LAYER_TOWER = "cat-tower-3d";
-const LAYER_FOUNDATION = "cat-tower-foundation";
+// 기초 지반 레이어 id — 발자국 symbol 레이어가 이 아래에 삽입된다(Map 쪽 참조:
+// 타워 뒤 발자국이 몸통/기초에 가려지게 하기 위함)
+export const LAYER_FOUNDATION = "cat-tower-foundation";
 const LAYER_BRANCH = "cat-tower-branch";
 const LAYER_NEST = "cat-tower-nest";
 const LAYER_PERCH = "cat-tower-perch";
@@ -1436,39 +1442,55 @@ export default function CatTower({
       // 어긋나면 타워 중심으로 되돌린다. 어긋난 채 궤도 회전하면 회전축이
       // 타워와 어긋나기 때문. setBearing/setPitch는 중심을 바꾸지 않으므로
       // 궤도 회전/피치 조절과 충돌하지 않는다.
+      //
+      // 판단은 다음 틱으로 미룬다 — moveend는 제스처 도중(camera.stop)에도
+      // 발생할 수 있고, 그 타이밍에 easeTo를 바로 걸면 진행 중인 제스처와
+      // 카메라 애니메이션이 서로를 계속 interrupt해 입력이 먹통이 된다.
+      // (줌아웃 제스처에서 특히 재현 — 지연 재판단 + isMoving 가드로 차단)
+      let recenterTimer = 0;
+
       const onMoveEnd = () => {
-        // 포커스 해제(복귀 애니메이션) 중엔 카메라를 되돌리지 않는다
-        if (!popupMarkerRef.current || !popupTowerIdRef.current) {
-          return;
-        }
+        window.clearTimeout(recenterTimer);
+        recenterTimer = window.setTimeout(() => {
+          // 포커스 해제(복귀 애니메이션) 중엔 카메라를 되돌리지 않는다
+          if (!popupMarkerRef.current || !popupTowerIdRef.current) {
+            return;
+          }
 
-        const towerState = useCatTowerStore
-          .getState()
-          .towers.find((tower) => tower.id === popupTowerIdRef.current);
+          // 핀치 등 제스처가 아직 진행 중이면(중간 moveend) 이번 틱은 건너뛴다 —
+          // 제스처가 끝난 뒤 다시 발생하는 moveend에서 되돌린다
+          if (map.isMoving()) {
+            return;
+          }
 
-        if (!towerState) {
-          return;
-        }
+          const towerState = useCatTowerStore
+            .getState()
+            .towers.find((tower) => tower.id === popupTowerIdRef.current);
 
-        const center = map.getCenter();
+          if (!towerState) {
+            return;
+          }
 
-        if (
-          distanceInMeters(towerState, {
-            lat: center.lat,
-            lng: center.lng,
-          }) < FOCUS_RECENTER_EPS_M
-        ) {
-          return;
-        }
+          const center = map.getCenter();
 
-        // 현재 줌/피치/회전을 유지한 채 중심만 타워로 당겨온다
-        map.easeTo({
-          center: [towerState.lng, towerState.lat],
-          zoom: map.getZoom(),
-          pitch: map.getPitch(),
-          bearing: map.getBearing(),
-          duration: FOCUS_RECENTER_DURATION_MS,
-        });
+          if (
+            distanceInMeters(towerState, {
+              lat: center.lat,
+              lng: center.lng,
+            }) < FOCUS_RECENTER_EPS_M
+          ) {
+            return;
+          }
+
+          // 현재 줌/피치/회전을 유지한 채 중심만 타워로 당겨온다
+          map.easeTo({
+            center: [towerState.lng, towerState.lat],
+            zoom: map.getZoom(),
+            pitch: map.getPitch(),
+            bearing: map.getBearing(),
+            duration: FOCUS_RECENTER_DURATION_MS,
+          });
+        }, FOCUS_RECENTER_DELAY_MS);
       };
 
       map.on("moveend", onMoveEnd);
@@ -1477,6 +1499,7 @@ export default function CatTower({
       canvas.addEventListener("touchmove", onTouchMove, { passive: false });
 
       removeFocusHandlers = () => {
+        window.clearTimeout(recenterTimer);
         map.off("moveend", onMoveEnd);
         canvas.removeEventListener("touchstart", onTouchStart);
         canvas.removeEventListener("touchmove", onTouchMove);

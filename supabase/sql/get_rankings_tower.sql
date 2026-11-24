@@ -3,7 +3,7 @@
 -- Supabase 대시보드 SQL 에디터에서 실행 후 `pnpm update-types`로 types.ts 재생성.
 --
 -- 주의: 기존 함수와 반환 타입이 달라지므로 drop 후 재생성한다.
--- 타워 높이는 height_at 스냅샷 기준(붙이기/떼기/이동/완공 시점 저장)이라
+-- 타워 높이는 height_at 스냅샷 기준(붙이기/떼기/이동/완공/주기 동기화 시점 저장)이라
 -- 스냅샷 사이의 성장은 랭킹에 늦게 반영된다.
 
 drop function if exists public.get_rankings();

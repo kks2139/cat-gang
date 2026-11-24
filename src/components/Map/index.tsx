@@ -21,7 +21,13 @@ import ImgFish from "@/assets/img/item/fish.png";
 import ImgGukbab from "@/assets/img/item/gukbab.png";
 import noLabelsStyle from "@/assets/no-labels-style.json";
 import CloudReveal from "@/components/CloudReveal";
-import CatTower, { TOWER_HIT_LAYERS } from "@/components/Map/CatTower";
+import CatTower, {
+  LAYER_FOUNDATION,
+  TOWER_FOOTPRINT_M,
+  TOWER_HIT_LAYERS,
+  TOWER_SCALE,
+  TOWER_VISUAL_HEIGHT_RATIO,
+} from "@/components/Map/CatTower";
 import PawIcon from "@/components/PawIcon";
 import { useDayAndNight } from "@/hooks/useDayAndNight";
 import { useItemMutation } from "@/queries/useItemMutation";
@@ -58,17 +64,18 @@ import styles from "./index.module.scss";
 
 const cn = classNames.bind(styles);
 
-// MapLibre는 Leaflet과 같은 줌 레벨에서 축척이 2배(512px 타일 기준)이므로
-// Leaflet 줌 19 축척과 동일하게 맞추려면 -1한 값을 사용한다
-export const MAX_ZOOM_LEVEL = 18;
-export const MIN_ZOOM_LEVEL = 15; // 핀치 줌 아웃 하한 (기본 18 → 15까지 축소 가능)
+// 기본 줌 — Leaflet 줌 19 축척과 동일(MapLibre는 512px 타일이라 같은 줌에서 축척 2배)
 export const INIT_ZOOM_LEVEL = 18;
+// 줌인 상한 — 소스 타일 최대 줌을 넘어도 MapLibre가 오버줌로 확대 표시한다
+// (2026-11-24 한 단계 확대 18→19. 타워 포커스는 이보다 한 단계 더 들어간다)
+export const MAX_ZOOM_LEVEL = 19;
+export const MIN_ZOOM_LEVEL = 15; // 핀치 줌 아웃 하한 (기본 18 → 15까지 축소 가능)
 const BOUNDARY_METER_OF_ME = 50;
 const OWN_CAT_KEY_TOKEN = "_";
 const PAW_INTERVAL_METER = 7; // 한 걸음(발자국) 기본 간격 (m)
 const PAW_SPREAD_METER = 1.2; // 중심축에서 좌우로 벌어지는 오프셋 (m)
 const PAW_ICON_PX = 22; // 발자국 아이콘 픽셀 크기 (symbol/오버레이 공용 — 살짝 크게)
-const PAW_MAX_COUNT = 200; // 발자국 최대 개수 (DOM 성능 보호)
+const PAW_MAX_COUNT = 50; // 발자국 최대 개수 (성능 보호 — 오래된 것부터 잘라낸다)
 const WALK_DURATION = 1500; // 캐릭터 이동 애니메이션 시간 (ms)
 const MAX_PAWS_PER_MOVE = 50; // 한 번의 위치 업데이트당 찍히는 최대 발자국 수
 const MAX_SAVED_PATH = 600; // 스토리지에 저장할 궤적 좌표 최대 개수
@@ -77,8 +84,8 @@ const SYNC_MIN_INTERVAL_MS = 60_000; // 총 산책거리 서버 동기화 최소
 const PAW_SVG = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 11.5c-3.2 0-6 2.6-6 5.2 0 1.8 1.4 3 3.2 3 1 0 1.8-.4 2.8-.4s1.8.4 2.8.4c1.8 0 3.2-1.2 3.2-3 0-2.6-2.8-5.2-6-5.2z"/><ellipse cx="6" cy="8.4" rx="1.9" ry="2.4" transform="rotate(-25 6 8.4)"/><ellipse cx="12" cy="6.6" rx="1.9" ry="2.5"/><ellipse cx="18" cy="8.4" rx="1.9" ry="2.4" transform="rotate(25 18 8.4)"/></svg>`;
 
 // ----- 발자국 symbol layer (DOM 마커 → GPU symbol 렌더 전환) -----
-// 지속 렌더는 symbol layer가 담당한다 — 200개 발자국이 GPU 1배치로 그려져
-// 카메라 이동 프레임마다 200개 DOM transform을 갱신하던 비용이 사라진다.
+// 지속 렌더는 symbol layer가 담당한다 — 발자국(최대 50개)이 GPU 1배치로 그려져
+// 카메라 이동 프레임마다 전부 DOM transform을 갱신하던 비용이 사라진다.
 // 찍히는 순간의 스탬프 모션(paw-stamp 애니)만 DOM 오버레이로 잠깐 재생하고,
 // 오버레이 제거 시점에 feature를 소스에 플러시해 DOM→GPU가 자연스럽게 이어진다.
 const PAW_SOURCE_ID = "paw-source";
@@ -97,6 +104,16 @@ type PawFeature = {
   properties: { bearing: number; tilt: number };
   geometry: { type: "Point"; coordinates: [number, number] };
 };
+
+// ----- 가려진 마커 고스트 처리 -----
+// 타워 뒤로 완전히 숨은 마커는 본체를 거의 투명하게 숨기고 주황 테두리만 남겨
+// "타워 뒤에 뭐가 있다"를 알린다. 처리는 본체(.marker-zoom-scale)에 SVG 필터
+// (#ghost-marker, Map JSX 정의)를 직접 적용하는 방식 — 필터 안에서 본체 알파를
+// 0.1로 죽이고 알파 윤곽의 주황 링(0.9)을 얹어 출력한다. 같은 요소에 필터를
+// 쓰므로 애니메이션/줌 스케일/이동이 본체와 항상 동기화되고, 클론/별도 레이어가
+// 없어 선택자 충돌도 없다 (요소 opacity를 쓰면 링까지 묻히므로 필터로만 페이드)
+const GHOST_FILTER = "url(#ghost-marker)";
+const PARTIAL_OPACITY = "0.65";
 
 // PAW_SVG를 발자국 색(#b0805a)을 주입해 캔버스로 래스터화한다.
 // CSS drop-shadow는 symbol layer에서 흉내 낼 수 없으니 캔버스 shadow로
@@ -481,6 +498,7 @@ function MapContent({
   // 마커
   const catMarkersRef = useRef<Marker[]>([]);
   const ownCatMarkersRef = useRef<Record<string, Marker>>({});
+  const itemMarkersRef = useRef<Marker[]>([]);
   const myCatRef = useRef<Marker>(null);
 
   // 타이머
@@ -509,10 +527,14 @@ function MapContent({
   const pawToggleRef = useRef<boolean>(false); // false: 왼쪽 발, true: 오른쪽 발
   const storeWalkTimerRef = useRef<number>(undefined); // 궤적 저장 디바운스 타이머
 
-  // 부하 인사 연출 상태 — 재클릭 시 진행 중인 연출을 정리하고 새로 재생하기 위한 ref
+  // 부하 인사 연출 상태 — 재클릭 시 진행 중인 연출을 정리하고 새로 재생하기 위한 ref.
+  // 연출 중엔 마커 래퍼의 z-index를 최상위로 올려 다른 마커에 겹쳐 가려지지 않게 하고,
+  // 종료/정리 시 원래 값으로 되돌린다 (markerEl/zIndex는 원복용)
   const greetingRef = useRef<{
     element: HTMLDivElement;
     timers: number[];
+    markerEl: HTMLElement;
+    zIndex: string;
   } | null>(null);
 
   // 아이템
@@ -751,13 +773,14 @@ function MapContent({
 
   // 줌 아웃할수록 발자국 간격을 넓혀 아이콘이 겹치지 않게 보정.
   // 기본 줌(18, 화면상 7m 간격이 적당) 기준으로 줌 레벨이 1 내려갈 때마다
-  // 실제 지상 길이는 2배가 되므로 간격도 2배로 키운다
+  // 실제 지상 길이는 2배가 되므로 간격도 2배로 키운다 — 줌인 상한 확장(19)과
+  // 무관하게 기본 줌을 기준으로 삼는다
   const getZoomAwareInterval = useCallback(() => {
     if (!map) {
       return PAW_INTERVAL_METER;
     }
 
-    const zoomOut = MAX_ZOOM_LEVEL - map.getZoom();
+    const zoomOut = INIT_ZOOM_LEVEL - map.getZoom();
 
     if (zoomOut <= 0) {
       return PAW_INTERVAL_METER;
@@ -1202,7 +1225,8 @@ function MapContent({
     drawOwnCats();
   }, [drawOwnCats]);
 
-  // 진행 중인 부하 인사 연출을 정리한다 (대기 중 타이머 취소 + 노출 중 요소 제거)
+  // 진행 중인 부하 인사 연출을 정리한다 (대기 중 타이머 취소 + 노출 중 요소 제거
+  // + 마커 z-index 원복)
   const clearGreeting = useCallback(() => {
     const greeting = greetingRef.current;
 
@@ -1212,6 +1236,7 @@ function MapContent({
 
     greeting.timers.forEach((timer) => clearTimeout(timer));
     greeting.element.remove();
+    greeting.markerEl.style.zIndex = greeting.zIndex;
     greetingRef.current = null;
   }, []);
 
@@ -1259,7 +1284,15 @@ function MapContent({
     );
 
     const timers: number[] = [];
-    greetingRef.current = { element: catElement, timers };
+    // 인사 연출 동안엔 이 마커를 최상위로 — maplibre 마커끼리는 생성 순서/z-index로
+    // 겹치는데, 다른 마커에 덮이면 연출이 안 보인다 (종료 시 clearGreeting이 원복)
+    greetingRef.current = {
+      element: catElement,
+      timers,
+      markerEl: markerElement,
+      zIndex: markerElement.style.zIndex,
+    };
+    markerElement.style.zIndex = "999";
 
     // flyTo 완료 후 등장
     timers.push(
@@ -1268,14 +1301,245 @@ function MapContent({
       }, FOCUS_DURATION)
     );
 
-    // 노출 종료 후 제거 — removeChild 대신 remove()로 안전하게 (마커가 먼저 제거돼도 에러 없음)
+    // 노출 종료 후 제거 — z-index 원복 포함 정리 (마커가 먼저 제거돼도 안전)
     timers.push(
       window.setTimeout(() => {
-        catElement.remove();
-        greetingRef.current = null;
+        clearGreeting();
       }, FOCUS_DURATION + GREETING_DURATION)
     );
   }, [clearGreeting, clickedOwnCat, map]);
+
+  // --- 캣 타워 뒤로 가려지는 마커 반투명 처리 ---
+  // DOM 마커는 캔버스 위에 항상 그려져 3D 타워 앞으로 떠 보인다. "화면에서
+  // 겹쳐 보이면" 근사는 몸통 옆을 스치기만 한 마커까지 어둡게 만들므로,
+  // maplibre 내부 transform이 실측 노출하는 카메라 위치(경위도/고도)를 가져와
+  // 카메라→마커 광선이 타워 몸통(수직 원기둥)을 실제로 통과하는지 3D 판정한다.
+  // 두 단계로 나눈다: 앵커가 몸통 뒤에 숨으면 고스트(본체 0.1 + 주황 테두리),
+  // 스프라이트가 몸통에 걸치는 정도(여유 반경)면 0.65 — 정확히 겹쳐야만
+  // 반응하는 타이트함을 줄인다.
+  const updateMarkerOcclusion = useCallback(() => {
+    if (!map) {
+      return;
+    }
+
+    const markers = [
+      myCatRef.current,
+      ...catMarkersRef.current,
+      ...Object.values(ownCatMarkersRef.current),
+      ...itemMarkersRef.current,
+    ].filter((marker): marker is Marker => !!marker);
+
+    const resetOpacity = () => {
+      markers.forEach((marker) => {
+        const el = marker.getElement();
+
+        // 제거 연출 중이거나 DOM에서 뗀 마커는 건드리지 않는다 (페이드아웃 보호)
+        if (!el || el.dataset.removing === "true" || !el.isConnected) {
+          return;
+        }
+
+        const content = el.querySelector<HTMLElement>(
+          ":scope > .marker-zoom-scale"
+        );
+
+        if (content?.style.opacity) {
+          content.style.opacity = "";
+        }
+
+        if (content?.style.filter) {
+          content.style.filter = "";
+        }
+      });
+    };
+
+    const state = useCatTowerStore.getState();
+    const occluders = state.towers
+      .map((tower) => ({
+        lat: tower.lat,
+        lng: tower.lng,
+        height: state.heights[tower.id] ?? 0,
+      }))
+      // 실제 5m(시각 1m) 미만은 몸통이 안 보인다 — 판정 대상에서 제외
+      .filter((tower) => tower.height >= 5);
+
+    // maplibre v6는 카메라를 map._camera로 들고 있다 — 그 transform이 카메라
+    // 실측값(경위도/고도)을 노출한다 (map.transform은 v6에 존재하지 않음)
+    const cameraTransform = map._camera?.transform;
+
+    if (
+      occluders.length === 0 ||
+      map.getPitch() < 10 || // 수직 부감에선 몸통이 화면에 없다 — 판정 생략
+      !cameraTransform
+    ) {
+      resetOpacity();
+      return;
+    }
+
+    const camLngLat = cameraTransform.getCameraLngLat();
+    // 카메라 높이(지면 기준 m) = 해발 고도 − 시점 지면 고도 (같은 렌더 공간 값)
+    const camZ =
+      cameraTransform.getCameraAltitude() - map.getCameraTargetElevation();
+
+    if (camZ <= 0) {
+      resetOpacity();
+      return;
+    }
+
+    const radiusM = (TOWER_FOOTPRINT_M / 2) * TOWER_SCALE;
+    // 부분 가림 여유 — 마커 스프라이트는 몸통보다 넓어 앵커가 몸통 옆이어도
+    // 스프라이트가 몸통에 걸친다. 스프라이트 반폭(화면 px)을 타워 위치의 지상
+    // 거리로 환산해 판정 반경에 더한다 (줌이 낮을수록 마커가 세계 기준으로
+    // 커지므로 상한 4m — 과도한 여유로 광범위 판정되는 걸 막는다)
+    const PROBE_M = 5;
+
+    // 타워별 판정 재료 — 카메라/마커를 타워 기준 동/북/상 미터 좌표로 변환한다
+    const geometries = occluders.map((tower) => {
+      const latRad = (tower.lat * Math.PI) / 180;
+      const mPerDegLng = 111_320 * Math.cos(latRad);
+      const center = map.project([tower.lng, tower.lat]);
+      const probe = map.project([tower.lng + PROBE_M / mPerDegLng, tower.lat]);
+      const metersPerPixel =
+        PROBE_M / Math.hypot(probe.x - center.x, probe.y - center.y);
+      const spriteAllowanceM = Math.min(
+        50 * getMarkerZoomScale(map.getZoom()) * metersPerPixel,
+        4
+      );
+
+      return {
+        lat: tower.lat,
+        lng: tower.lng,
+        mPerDegLng,
+        cx: (camLngLat.lng - tower.lng) * mPerDegLng,
+        cy: (camLngLat.lat - tower.lat) * 111_320,
+        cz: camZ,
+        topM: tower.height * TOWER_VISUAL_HEIGHT_RATIO * TOWER_SCALE,
+        rPartialM: radiusM + spriteAllowanceM,
+      };
+    });
+
+    // 카메라→마커 선분이 반경 rM의 수직 원기둥(높이 topM)과 교차하는지
+    const rayHitsCylinder = (
+      geometry: (typeof geometries)[number],
+      mx: number,
+      my: number,
+      rM: number
+    ) => {
+      const dx = mx - geometry.cx;
+      const dy = my - geometry.cy;
+      const a = dx * dx + dy * dy;
+
+      if (a === 0) {
+        return false;
+      }
+
+      const b = 2 * (geometry.cx * dx + geometry.cy * dy);
+      const c0 =
+        geometry.cx * geometry.cx + geometry.cy * geometry.cy - rM * rM;
+      const disc = b * b - 4 * a * c0;
+
+      if (disc <= 0) {
+        return false;
+      }
+
+      const sq = Math.sqrt(disc);
+
+      return (
+        // 교차점이 선분 중간(카메라와 마커 사이)에 있고, 그 높이가 몸통
+        // 꼭대기 이하면 몸통에 가려진다 — 꼭대기 위로 보이는 마커는 제외
+        [(-b - sq) / (2 * a), (-b + sq) / (2 * a)].some(
+          (t) => t > 0 && t < 1 && geometry.cz * (1 - t) <= geometry.topM
+        )
+      );
+    };
+
+    markers.forEach((marker) => {
+      const el = marker.getElement();
+
+      if (!el || el.dataset.removing === "true" || !el.isConnected) {
+        return;
+      }
+
+      // opacity/필터는 본체(.marker-zoom-scale)에 적용한다 — :scope > 로 직계
+      // 자식만 찾아 다른 요소와 겹치지 않게 한다
+      const content = el.querySelector<HTMLElement>(
+        ":scope > .marker-zoom-scale"
+      );
+
+      if (!content) {
+        return;
+      }
+
+      const pos = marker.getLngLat();
+      let nextOpacity = "";
+      let nextFilter = "";
+
+      for (const geometry of geometries) {
+        const mx = (pos.lng - geometry.lng) * geometry.mPerDegLng;
+        const my = (pos.lat - geometry.lat) * 111_320;
+
+        // 몸통 안쪽(기초 발밑)에 심긴 마커는 가려지지 않은 것으로 본다
+        if (mx * mx + my * my <= radiusM * radiusM) {
+          continue;
+        }
+
+        if (rayHitsCylinder(geometry, mx, my, radiusM)) {
+          // 앵커가 몸통 뒤에 완전히 숨은 경우 — 고스트 필터 (본체 0.1 + 링 0.9).
+          // 본체 페이드를 opacity가 아니라 필터 안에서 처리하므로 opacity는 그대로
+          nextFilter = GHOST_FILTER;
+          break;
+        }
+
+        if (rayHitsCylinder(geometry, mx, my, geometry.rPartialM)) {
+          // 스프라이트가 몸통에 걸치는 정도 — 살짝만 가린다
+          nextOpacity = PARTIAL_OPACITY;
+        }
+      }
+
+      if (content.style.opacity !== nextOpacity) {
+        content.style.opacity = nextOpacity;
+      }
+
+      if (content.style.filter !== nextFilter) {
+        content.style.filter = nextFilter;
+      }
+    });
+  }, [map]);
+
+  // 가림 판정 갱신 — 카메라가 움직이면 매 프레임(rAF 병합), 마커 자체 이동
+  // (캐릭터 걷기 등)은 짧은 주기 인터벌로 따라잡는다
+  useEffect(() => {
+    if (!map) {
+      return;
+    }
+
+    let raf = 0;
+
+    const onMove = () => {
+      if (raf) {
+        return;
+      }
+
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        updateMarkerOcclusion();
+      });
+    };
+
+    map.on("move", onMove);
+
+    const timer = window.setInterval(updateMarkerOcclusion, 300);
+
+    updateMarkerOcclusion();
+
+    return () => {
+      map.off("move", onMove);
+      window.clearInterval(timer);
+
+      if (raf) {
+        cancelAnimationFrame(raf);
+      }
+    };
+  }, [map, updateMarkerOcclusion]);
 
   // 스토리지에 저장된 오늘 산책 데이터(거리 + 궤적)를 읽어 발자국 트레일을 복원한다
   const restoreTodayWalk = useCallback(async () => {
@@ -1381,26 +1645,37 @@ function MapContent({
       data: { type: "FeatureCollection", features: [] },
     });
 
-    map.addLayer({
-      id: PAW_LAYER_ID,
-      type: "symbol",
-      source: PAW_SOURCE_ID,
-      layout: {
-        "icon-image": PAW_IMAGE_ID,
-        "icon-size": PAW_ICON_SIZE,
-        // bearing(북쪽 기준 진행 방향) + tilt(좌우 발 기울기)를 합산해 회전
-        "icon-rotate": ["+", ["get", "bearing"], ["get", "tilt"]] as never,
-        // 지도 북쪽 기준 회전 + 지면에 눕히기 — 기존 Marker와 동일한 정렬
-        "icon-rotation-alignment": "map",
-        "icon-pitch-alignment": "map",
-        // 배치 충돌 검사 없이 전부 표시 — DOM 마커 때와 동일
-        "icon-allow-overlap": true,
-        "icon-ignore-placement": true,
+    // 캣 타워 지물 레이어가 먼저 추가돼 있으면 그 아래에 삽입한다 —
+    // (React effect는 자식(CatTower)이 부모(MapContent)보다 먼저 실행되므로
+    //  타워 레이어가 이미 존재한다) 발자국이 타워 레이어 위에 있으면 타워 뒤
+    // 발자국이 몸통 화면 위로 떠 보이는 원인이 된다
+    const towerFoundationBeforeId = map.getLayer(LAYER_FOUNDATION)
+      ? LAYER_FOUNDATION
+      : undefined;
+
+    map.addLayer(
+      {
+        id: PAW_LAYER_ID,
+        type: "symbol",
+        source: PAW_SOURCE_ID,
+        layout: {
+          "icon-image": PAW_IMAGE_ID,
+          "icon-size": PAW_ICON_SIZE,
+          // bearing(북쪽 기준 진행 방향) + tilt(좌우 발 기울기)를 합산해 회전
+          "icon-rotate": ["+", ["get", "bearing"], ["get", "tilt"]] as never,
+          // 지도 북쪽 기준 회전 + 지면에 눕히기 — 기존 Marker와 동일한 정렬
+          "icon-rotation-alignment": "map",
+          "icon-pitch-alignment": "map",
+          // 배치 충돌 검사 없이 전부 표시 — DOM 마커 때와 동일
+          "icon-allow-overlap": true,
+          "icon-ignore-placement": true,
+        },
+        paint: {
+          "icon-opacity": 0.7, // 기존 .paw-print-inner opacity 유지
+        },
       },
-      paint: {
-        "icon-opacity": 0.7, // 기존 .paw-print-inner opacity 유지
-      },
-    });
+      towerFoundationBeforeId
+    );
 
     // SVG → 캔버스 래스터화 후 아이콘 등록. 완료 전에 플러시 요청이
     // 대기 중이면 여기서 반영한다 (발자국이 이미지보다 먼저 찍히는 레이스 대비)
@@ -1580,6 +1855,8 @@ function MapContent({
         map,
       });
 
+      itemMarkersRef.current.push(marker);
+
       marker.on("click", async (e) => {
         // 캣 타워 위치 지정 중에는 아이템 줍기도 막는다
         if (useCatTowerStore.getState().isPlacingTower) {
@@ -1617,6 +1894,9 @@ function MapContent({
           ]);
 
           if (updateResult.status === "fulfilled" && updateResult.value) {
+            itemMarkersRef.current = itemMarkersRef.current.filter(
+              (item) => item !== marker
+            );
             marker.remove();
           }
         }
@@ -1771,7 +2051,9 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
       const map = new MaplibreMap({
         container,
         style: noLabelsStyle as unknown as StyleSpecification,
-        center: coords ? [coords.longitude, coords.latitude] : [126.978, 37.5665],
+        center: coords
+          ? [coords.longitude, coords.latitude]
+          : [126.978, 37.5665],
         zoom: INIT_ZOOM_LEVEL,
         maxZoom: MAX_ZOOM_LEVEL,
         minZoom: MIN_ZOOM_LEVEL,
@@ -2036,6 +2318,49 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
 
   return (
     <div className={cn("map-wrapper")}>
+      {/* 가려진 마커 고스트용 SVG 필터 — 한 요소에서 본체 알파를 0.1로 죽인
+          사본 위에 "알파 dilate − 원본 알파 = 주황 링(0.9)"을 얹어 출력한다.
+          본체와 별도 레이어/클론을 쓰지 않으므로 애니메이션·줌 스케일·이동이
+          본체와 항상 동기화되고, 링 알파도 본체 투명도 영향을 받지 않는다 */}
+      <svg width="0" height="0" aria-hidden style={{ position: "absolute" }}>
+        <defs>
+          <filter
+            id="ghost-marker"
+            x="-20%"
+            y="-20%"
+            width="140%"
+            height="140%"
+          >
+            <feComponentTransfer in="SourceGraphic" result="fadedBody">
+              <feFuncA type="linear" slope="0.1" />
+            </feComponentTransfer>
+            <feMorphology
+              in="SourceAlpha"
+              operator="dilate"
+              radius="3"
+              result="dilated"
+            />
+            <feFlood floodColor="#ff5c46" floodOpacity="1" result="glow" />
+            <feComposite
+              in="glow"
+              in2="dilated"
+              operator="in"
+              result="ringOuter"
+            />
+            <feComposite
+              in="ringOuter"
+              in2="SourceAlpha"
+              operator="out"
+              result="ring"
+            />
+            <feMerge>
+              <feMergeNode in="fadedBody" />
+              <feMergeNode in="ring" />
+            </feMerge>
+          </filter>
+        </defs>
+      </svg>
+
       {/* 상단 플로팅 캡슐 행 — 왼쪽 산책 거리 / 오른쪽 깡 */}
       <div className={cn("top-bar")}>
         <button

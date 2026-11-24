@@ -138,14 +138,34 @@ export default function CatTowerSheet({
             {mode === "cats" && (
               <ul className={cn("sheet-hint-list")}>
                 <li>
-                  <span aria-hidden>🏗️</span>30분에 1m씩 성장한다옹
+                  <span className={cn("hint-icon")} aria-hidden>
+                    🏗️
+                  </span>
+                  <span className={cn("hint-text")}>
+                    부하 1마리가 <b>30분에 1m</b>씩 타워를 키운다옹
+                  </span>
                 </li>
                 <li>
-                  <span aria-hidden>⏰</span>하루 근무 — 일반 1 · 레어 2 ·
-                  유니크 3시간
+                  <span className={cn("hint-icon")} aria-hidden>
+                    ⏰
+                  </span>
+                  <span className={cn("hint-text")}>
+                    하루 근무 시간 — 일반 <b>1시간</b> · 레어 <b>2시간</b> ·
+                    유니크 <b>3시간</b>
+                    <em>
+                      (하루에 최대 +2m · +4m · +6m — 등급이 높을수록 오래
+                      일한다옹)
+                    </em>
+                  </span>
                 </li>
                 <li>
-                  <span aria-hidden>🌙</span>퇴근한 부하는 자정에 다시 출근한다옹
+                  <span className={cn("hint-icon")} aria-hidden>
+                    🌙
+                  </span>
+                  <span className={cn("hint-text")}>
+                    근무가 끝난 부하는 퇴근 — <b>자정이 지나면</b> 다시
+                    출근한다옹
+                  </span>
                 </li>
               </ul>
             )}
