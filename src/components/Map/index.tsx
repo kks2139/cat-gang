@@ -38,7 +38,7 @@ import { useCatStore } from "@/store/cat";
 import { useCatTowerStore } from "@/store/catTower";
 import { useKkangStore } from "@/store/kkang";
 import { useViewStore } from "@/store/view";
-import { catCharacters } from "@/utils/cats";
+import { catCharacters, SPAWN_RATE_BY_RARITY } from "@/utils/cats";
 import { isDev, NUMBER_FLOW_SPIN_TIMING } from "@/utils/constants";
 import {
   animateMarker,
@@ -46,9 +46,9 @@ import {
   createMarker,
   distanceInMeters,
   getCatchedCatElement,
+  getFreeSpawnLocation,
   getMarkerZoomScale,
   getNightTime,
-  getRandomLocationInCircle,
   getRandomNumber,
   removeMarkerWithMotion,
   wait,
@@ -75,7 +75,7 @@ const OWN_CAT_KEY_TOKEN = "_";
 const PAW_INTERVAL_METER = 7; // 한 걸음(발자국) 기본 간격 (m)
 const PAW_SPREAD_METER = 1.2; // 중심축에서 좌우로 벌어지는 오프셋 (m)
 const PAW_ICON_PX = 22; // 발자국 아이콘 픽셀 크기 (symbol/오버레이 공용 — 살짝 크게)
-const PAW_MAX_COUNT = 50; // 발자국 최대 개수 (성능 보호 — 오래된 것부터 잘라낸다)
+const PAW_MAX_COUNT = 30; // 발자국 최대 개수 (성능 보호 — 오래된 것부터 잘라낸다)
 const WALK_DURATION = 1500; // 캐릭터 이동 애니메이션 시간 (ms)
 const MAX_PAWS_PER_MOVE = 50; // 한 번의 위치 업데이트당 찍히는 최대 발자국 수
 const MAX_SAVED_PATH = 600; // 스토리지에 저장할 궤적 좌표 최대 개수
@@ -1051,6 +1051,21 @@ function MapContent({
     ]
   );
 
+  // 스폰 겹침 방지용 — 현재 화면의 모든 마커 위치(내 캐릭터/적/깃발/아이템/타워)
+  const getSpawnBlockers = useCallback(() => {
+    const towers = useCatTowerStore.getState().towers;
+
+    return [
+      myCatRef.current?.getLngLat(),
+      ...catMarkersRef.current.map((marker) => marker.getLngLat()),
+      ...Object.values(ownCatMarkersRef.current).map((marker) =>
+        marker.getLngLat(),
+      ),
+      ...itemMarkersRef.current.map((marker) => marker.getLngLat()),
+      ...towers.map((tower) => ({ lat: tower.lat, lng: tower.lng })),
+    ].filter((pos): pos is { lat: number; lng: number } => !!pos);
+  }, []);
+
   const drawCats = useCallback(
     (forceDraw?: boolean) => {
       if (!myCatRef.current || !map || isShowStage) {
@@ -1090,23 +1105,14 @@ function MapContent({
           return false;
         }
 
-        const num = getRandomNumber(1000);
-
-        switch (rarity) {
-          case "rare":
-            return num < 20; // 그릴 확률
-          case "unique":
-            return num < 10;
-          default:
-            return num < 50;
-        }
+        return Math.random() * 1000 < SPAWN_RATE_BY_RARITY[rarity];
       });
 
       filteredCats.forEach((cat) => {
-        const [lng, lat] = getRandomLocationInCircle(
-          myPosition.lat,
-          myPosition.lng,
-          BOUNDARY_METER_OF_ME
+        const [lng, lat] = getFreeSpawnLocation(
+          myPosition,
+          BOUNDARY_METER_OF_ME,
+          getSpawnBlockers(),
         );
 
         const marker = createMarker({
@@ -1143,7 +1149,7 @@ function MapContent({
         catMarkersRef.current.push(marker);
       });
     },
-    [isShowStage, map, onClickCat, setSelectedCat]
+    [isShowStage, map, getSpawnBlockers, onClickCat, setSelectedCat]
   );
 
   const drawOwnCats = useCallback(() => {
@@ -1821,11 +1827,7 @@ function MapContent({
 
       if (!myPosition || !map) return;
 
-      const [lng, lat] = getRandomLocationInCircle(
-        myPosition.lat,
-        myPosition.lng,
-        70
-      );
+      const [lng, lat] = getFreeSpawnLocation(myPosition, 70, getSpawnBlockers());
       // 광고 보상(+2)과의 균형을 위해 스폰 확률을 10%(아이템당 약 3.3%)로 낮춘다
       // — 30번 시도 중 3번만 스폰되며, 각 아이템은 시도당 1/30 확률로 나온다
       const randomNum = getRandomNumber(30);
@@ -1914,7 +1916,7 @@ function MapContent({
       itemSpawnTimerRef.current = undefined;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, myCatRef.current]);
+  }, [map, myCatRef.current, getSpawnBlockers]);
 
   useEffect(() => {
     return () => {

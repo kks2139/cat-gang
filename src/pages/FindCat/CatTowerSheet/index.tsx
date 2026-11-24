@@ -101,7 +101,7 @@ export default function CatTowerSheet({
               <div className={cn("title-row")}>
                 <h3 className={cn("sheet-title")}>
                   {mode === "cats"
-                    ? "작업고양이 추가"
+                    ? "작업 고양이 추가"
                     : mode === "decor"
                     ? "타워 꾸미기"
                     : "캣 타워"}
@@ -125,8 +125,7 @@ export default function CatTowerSheet({
             {mode === "list" && (
               <ul className={cn("sheet-hint-list")}>
                 <li>
-                  <span aria-hidden>👆</span>타워를 누르면 그 타워로
-                  이동한다옹
+                  <span aria-hidden>👆</span>타워를 누르면 그 타워로 이동한다옹
                 </li>
                 <li>
                   <span aria-hidden>🎉</span>1000m를 채우면 완공 — 새 타워를
@@ -152,6 +151,7 @@ export default function CatTowerSheet({
                   <span className={cn("hint-text")}>
                     하루 근무 시간 — 일반 <b>1시간</b> · 레어 <b>2시간</b> ·
                     유니크 <b>3시간</b>
+                    <br />
                     <em>
                       (하루에 최대 +2m · +4m · +6m — 등급이 높을수록 오래
                       일한다옹)
@@ -163,8 +163,7 @@ export default function CatTowerSheet({
                     🌙
                   </span>
                   <span className={cn("hint-text")}>
-                    근무가 끝난 부하는 퇴근 — <b>자정이 지나면</b> 다시
-                    출근한다옹
+                    작업 가능 시간은 <b>다음 날이 되면</b> 다시 채워진다옹
                   </span>
                 </li>
               </ul>
@@ -290,10 +289,11 @@ export default function CatTowerSheet({
                 </ul>
               ) : isLoading ? (
                 <ul className={cn("loading")}>
-                  {Array.from({ length: 3 }).map((_, i) => (
+                  {Array.from({ length: 4 }).map((_, i) => (
                     <li key={i}>
-                      <Skeleton w={56} h={56} />
-                      <Skeleton w={140} h={20} />
+                      <Skeleton w={64} h={64} />
+                      <Skeleton w={"100%"} h={8} />
+                      <Skeleton w={"70%"} h={20} />
                     </li>
                   ))}
                 </ul>
@@ -303,21 +303,25 @@ export default function CatTowerSheet({
                     myCats.map((cat) => {
                       const isAttached = attachedKeys.includes(cat.key);
                       // 오늘 근무 기록이 있으면 남은 시간, 없으면 등급 예산 그대로
-                      const leftMs =
-                        workLeft[cat.key] ??
-                        TOWER_WORK_MS_BY_RARITY[cat.rarity];
+                      const totalMs = TOWER_WORK_MS_BY_RARITY[cat.rarity];
+                      const leftMs = workLeft[cat.key] ?? totalMs;
                       const isOffWork = leftMs <= 0;
+                      const isWorking = isAttached && !isOffWork;
+                      const progress = Math.max(
+                        0,
+                        Math.min(1, leftMs / totalMs)
+                      );
 
                       return (
                         <li key={cat.key}>
                           <div
                             className={cn("cat-row")}
                             data-rarity={cat.rarity}
-                            data-attached={isAttached && !isOffWork}
+                            data-attached={isWorking}
                           >
                             <img src={cat.img} alt={cat.name} />
-                            <div className={cn("info")}>
-                              <div className={cn("row")}>
+                            <div className={cn("who")}>
+                              <div className={cn("name-col")}>
                                 <span className={cn("name")}>{cat.name}</span>
                                 {cat.rarity !== "common" && (
                                   <span className={cn("rarity")}>
@@ -327,23 +331,39 @@ export default function CatTowerSheet({
                                   </span>
                                 )}
                               </div>
-                              {/* 남은 근무는 붙어있든 아니든 오늘 예산 기준으로 모두 표시 */}
-                              <span
-                                className={cn("work-status")}
-                                data-off={isOffWork}
-                              >
-                                {isOffWork ? (
-                                  "퇴근 (내일 출근)"
-                                ) : (
-                                  <>
-                                    남은 근무 ·{" "}
-                                    <em className={cn("time")}>
-                                      {formatDuration(leftMs)}
-                                    </em>
-                                  </>
-                                )}
-                              </span>
+                              {/* 일하는 중 — 망치질 모션 */}
+                              {isWorking && (
+                                <span className={cn("hammer")} aria-hidden>
+                                  🔨
+                                </span>
+                              )}
                             </div>
+                            {/* 남은 근무는 붙어있든 아니든 오늘 예산 기준으로 모두 표시 */}
+                            {isOffWork ? (
+                              <span className={cn("off-label")}>
+                                퇴근 (내일 출근)
+                              </span>
+                            ) : (
+                              <div className={cn("work-row")}>
+                                <div
+                                  className={cn("work-bar")}
+                                  role="progressbar"
+                                  aria-label={`${cat.name} 남은 근무 시간`}
+                                  aria-valuemin={0}
+                                  aria-valuemax={100}
+                                  aria-valuenow={Math.round(progress * 100)}
+                                >
+                                  <span
+                                    className={cn("fill")}
+                                    style={{ width: `${progress * 100}%` }}
+                                  />
+                                </div>
+                                {/* 남은 시간은 분 단위로만 표기 */}
+                                <em className={cn("time")}>
+                                  {Math.max(1, Math.ceil(leftMs / 60000))}분
+                                </em>
+                              </div>
+                            )}
                             <button
                               type="button"
                               className={cn("toggle-btn", {

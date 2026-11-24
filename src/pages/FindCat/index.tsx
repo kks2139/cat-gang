@@ -49,6 +49,9 @@ const cn = classNames.bind(styles);
 
 // 캣 타워 완공 축하 연출 노출 시간 (ms)
 const CELEBRATION_DURATION_MS = 3500;
+// 전투 시작 인트로 연출 시간 (ms) — 깡 소모 등 전투 진입 처리와 무관하게
+// 병렬로 재생하고, 종료 후에 Stage를 띄운다
+const BATTLE_INTRO_MS = 1900;
 // 맵 진입 리빌(CloudReveal)이 끝난 뒤 축하 연출을 띄우기까지의 대기 시간 (ms)
 const CELEBRATION_REVEAL_DELAY_MS = 1500;
 // 축하 대상 타워로 카메라를 옮기는 시간 (ms) — 이동이 끝난 뒤 메시지가 나온다
@@ -86,6 +89,8 @@ export default function FindCat() {
   const [isShowExitConfirm, setIsShowExitConfirm] = useState(false);
   const [isShowKkangEmpty, setIsShowKkangEmpty] = useState(false);
   const [isShowKkangAd, setIsShowKkangAd] = useState(false);
+  // 전투 시작 인트로 연출 노출 여부 — 끝나면 Stage를 띄운다
+  const [isBattleIntro, setIsBattleIntro] = useState(false);
   // 깡 부족 팝업에 표시할 필요 깡 개수 (상대 등급별 소모량)
   const [kkangNeed, setKkangNeed] = useState(KKANG_COST_BY_RARITY.common);
   // 광고로 충전할 아이템 (값이 있으면 아이템 충전 다이얼로그 노출 중)
@@ -367,9 +372,25 @@ export default function FindCat() {
     MyCat.getInstance().applyGangBonus(gangInfo);
   }, [gangInfo]);
 
+  // 전투 인트로 종료 → Stage 진입 (연출 시간 동안 깡 소모 등 처리는 이미 완료)
+  useEffect(() => {
+    if (!isBattleIntro) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setIsShowStage(true);
+      setIsBattleIntro(false);
+    }, BATTLE_INTRO_MS);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [isBattleIntro, setIsShowStage]);
+
   // 뒤로가기: 열려있는 레이어부터 닫고, 없으면 나가기 컨펌을 띄운다
   const closeTopLayer = useCallback(() => {
-    if (isShowStage) {
+    if (isShowStage || isBattleIntro) {
       return;
     }
 
@@ -422,6 +443,7 @@ export default function FindCat() {
 
     setIsShowExitConfirm(true);
   }, [
+    isBattleIntro,
     isPlacingTower,
     isShowCatBook,
     isShowCatchedCatPopup,
@@ -471,6 +493,11 @@ export default function FindCat() {
             return;
           }
 
+          // 인트로 연출 중 재클릭으로 깡이 이중 소모되지 않게 막는다
+          if (useViewStore.getState().isBattleOn) {
+            return;
+          }
+
           // 상대 등급에 따라 깡 소모량이 다르다 (common 1 / rare 2 / unique 3)
           const selectedRarity =
             useCatStore.getState().selectedCat?.rarity ?? "common";
@@ -484,10 +511,11 @@ export default function FindCat() {
             return;
           }
 
-          // 전투 시작 — 등급별 소모량만큼 깡 소모 (도망/패배해도 환불 없음)
+          // 전투 시작 — 등급별 소모량만큼 깡 소모 (도망/패배해도 환불 없음).
+          // 소모/DB 저장은 즉시 처리하고, 인트로 연출은 이후 Stage 진입만 지연시킨다
           actions.consume(cost);
 
-          setIsShowStage(true);
+          setIsBattleIntro(true);
           setIsStopFocusMe(true);
           setIsBattleOn(true);
 
@@ -739,6 +767,69 @@ export default function FindCat() {
                 className={cn("sheet-ad")}
                 adGroupId="ait-ad-test-banner-id"
               />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 전투 시작 인트로 — 클릭 즉시 깡 소모 후 BATTLE_INTRO_MS 동안 재생 */}
+      <AnimatePresence>
+        {isBattleIntro && (
+          <motion.div
+            className={cn("battle-intro")}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, transition: { duration: 0.15 } }}
+            transition={{ duration: 0.2 }}
+          >
+            {/* 흔들림은 딤 배경이 아닌 내용물만 — 배경이 움직이면 맵 테두리가 샌다 */}
+            <motion.div
+              className={cn("battle-intro-shake")}
+              animate={{
+                x: [0, 0, -10, 9, -6, 5, -2, 0],
+                y: [0, 0, 5, -5, 3, -2, 1, 0],
+              }}
+              transition={{
+                duration: 1.15,
+                times: [0, 0.28, 0.34, 0.4, 0.46, 0.52, 0.6, 1],
+              }}
+            >
+            <div className={cn("battle-intro-sparks")} aria-hidden>
+              {Array.from({ length: 10 }, (_, i) => (
+                <span
+                  key={i}
+                  style={{ "--angle": `${i * 36}deg` } as React.CSSProperties}
+                />
+              ))}
+            </div>
+
+            <motion.div
+              className={cn("battle-intro-vs")}
+              initial={{ opacity: 0 }}
+              animate={{
+                opacity: [0, 1, 1, 1, 1, 1, 1],
+                // 타격감: 후세기로 화면 안까지 박치기 → 크게 과부하 착지 → 강한 스쿼시 → 좌우 흔들림
+                scale: [0, 0.3, 3.2, 0.85, 1.08, 1, 1],
+                rotate: [-28, -28, 12, -5, 2, 0, 0],
+                x: [0, 0, -16, 12, -8, 5, 0],
+              }}
+              transition={{
+                delay: 0.1,
+                duration: 1.15,
+                times: [0, 0.1, 0.28, 0.36, 0.44, 0.55, 1],
+                ease: "easeOut",
+              }}
+            >
+              VS
+            </motion.div>
+            <motion.div
+              className={cn("battle-intro-label")}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.25 }}
+            >
+              {useCatStore.getState().selectedCat?.name ?? "상대"}
+              </motion.div>
             </motion.div>
           </motion.div>
         )}

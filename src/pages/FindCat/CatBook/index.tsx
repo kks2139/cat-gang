@@ -12,6 +12,7 @@ const RARITY_LABEL: Record<Rarity, string> = {
   common: "일반",
   rare: "레어",
   unique: "유니크",
+  legend: "레전드",
 };
 
 interface Props {

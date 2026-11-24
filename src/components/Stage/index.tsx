@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useCustomBack } from "@/hooks/useCustomBack";
 import { useItemMutation } from "@/queries/useItemMutation";
 import { useCatStore } from "@/store/cat";
-import { type CatInfo, MyCat } from "@/utils/cats";
+import { type CatInfo, getBattleCat, MyCat } from "@/utils/cats";
 import { getPostposition, getRandomNumber, wait } from "@/utils/helper";
 
 import { AdBanner } from "../Ads";
@@ -43,6 +43,8 @@ interface Props {
 export default function Stage({ onWin, onLose, onRun }: Props) {
   const selectedCat = useCatStore((s) => s.selectedCat);
   const myCat = MyCat.getInstance().getMyCat();
+  // 전투 스탯은 등급 배율이 적용된 값 — 도감/깃발 등 다른 UI는 원본을 쓴다
+  const battleCat = selectedCat ? getBattleCat(selectedCat) : undefined;
 
   const [dialogInfo, setDialogInfo] = useState<DialogInfo | undefined>({
     side: "enemy",
@@ -59,11 +61,11 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
   // 전투진행관련 상태들
   const [hpInfo, setHpInfo] = useState({
     myHp: myCat.hp,
-    enemyHp: selectedCat?.hp || 0,
+    enemyHp: battleCat?.hp || 0,
   });
   const [defenseInfo, setDefenseInfo] = useState({
     myDefense: myCat.defense,
-    enemyDefense: selectedCat?.defense || 0,
+    enemyDefense: battleCat?.defense || 0,
   });
   const [punchedBy, setPunchedBy] = useState<Side>();
   const [seducedBy, setSeducedBy] = useState<Side>();
@@ -133,7 +135,7 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
 
     const damage = isByMe
       ? myCat.punchPower + plusDamage - (defenseInfo.enemyDefense || 0)
-      : selectedCat!.punchPower - (defenseInfo.myDefense || 0);
+      : battleCat!.punchPower - (defenseInfo.myDefense || 0);
 
     if (isByMe) {
       const enemyHp = Math.max(hpInfo.enemyHp - damage, 0);
@@ -247,8 +249,15 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
     const side = "enemy";
     const hasFish = checkHasStatusEffect("fish");
 
-    // 생선효과: 상대액션 건너뜀
+    // 생선마비: 이번 턴만 상대액션을 건너뛴다 — 스킵과 동시에 효과를 소모한다
+    // (턴 수가 늘지 않는 스킵이라 endTurn 만으론 만료되지 않음)
     if (hasFish.enemy) {
+      setStatusEffects(
+        produce((draft) => {
+          draft.enemy = draft.enemy.filter((e) => e.effect !== "fish");
+        }),
+      );
+
       setDialogInfo({
         side: "enemy",
         type: "system",
@@ -386,7 +395,7 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
                   });
                   break;
                 case "fish":
-                  // 물고기 효과 상대에게 2턴 지속
+                  // 물고기 효과: 상대를 1턴 마비 — 남은 턴을 하나 가져온다
                   setStatusEffects(
                     produce((draft) => {
                       draft.enemy = draft.enemy.filter(
@@ -394,7 +403,7 @@ export default function Stage({ onWin, onLose, onRun }: Props) {
                       );
                       draft.enemy.push({
                         effect: "fish",
-                        endTurn: turnCountRef.current.enemy + 2,
+                        endTurn: turnCountRef.current.enemy + 1,
                       });
                     }),
                   );

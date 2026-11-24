@@ -1,5 +1,24 @@
 @use "@/styles/mixins" as *;
 
+// 망치질 모션 — 위로 들어올렸다 쾅 내려치기
+@keyframes hammer-swing {
+  0% {
+    transform: rotate(35deg);
+  }
+  40% {
+    transform: rotate(-28deg);
+  }
+  50% {
+    transform: rotate(-18deg);
+  }
+  60% {
+    transform: rotate(35deg);
+  }
+  100% {
+    transform: rotate(35deg);
+  }
+}
+
 // 캣 타워 관리 바텀시트 — 보라+핑크 톤 (타워 UI 공통 톤)
 .overlay {
   z-index: 2000;
@@ -171,10 +190,11 @@
     }
   }
 
+  // 작업고양이 목록 — 2열 그리드
   .cat-list {
-    display: flex;
-    flex-direction: column;
-    row-gap: 10px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -319,15 +339,20 @@
     }
   }
 
+  // ----- cats 모드: 작업고양이 카드 (2열) — 이미지 좌측 세로 통합, 우측에 정보 스택 -----
   .cat-row {
     // 등급별 톤 — MyCats와 같은 변수 체계
     --rarity-border: rgba(255, 255, 255, 0.18);
     --rarity-strong: rgba(255, 255, 255, 0.92);
 
-    display: flex;
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    column-gap: 10px;
+    row-gap: 8px;
     align-items: center;
-    column-gap: 12px;
-    padding: 10px 12px 10px 14px;
+    height: 100%;
+    padding: 12px;
     border-radius: 18px;
     // 어두운 반투명 카드 — 시트 배경 위에서 가라앉는 톤
     background: rgba(17, 12, 34, 0.5);
@@ -352,88 +377,130 @@
         0 0 10px rgba(76, 29, 149, 0.4);
     }
 
+    // 이미지 — 좌측에서 이름/바 행을 세로로 관통
     img {
+      grid-column: 1;
+      grid-row: 1 / 3;
       border-radius: 14px;
       background: linear-gradient(
         180deg,
         rgba(255, 255, 255, 0.16) 0%,
         rgba(255, 255, 255, 0.06) 100%
       );
-      width: 56px;
-      height: 56px;
+      width: 64px;
+      height: 64px;
       object-fit: cover;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-      flex-shrink: 0;
     }
 
-    .info {
+    // 우측 상단 — 이름(아래 등급) + 망치
+    .who {
+      grid-column: 2;
       display: flex;
-      flex-direction: column;
-      flex: 1;
+      align-items: center;
+      column-gap: 6px;
       min-width: 0;
 
-      .row {
-        display: flex;
-        align-items: center;
-        column-gap: 8px;
+      .name-col {
+        flex: 1;
         min-width: 0;
-
-        .name {
-          color: white;
-          font-weight: 500;
-          font-size: 16px;
-          letter-spacing: -0.2px;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .rarity {
-          flex: none;
-          padding: 2px 8px;
-          border-radius: 99px;
-          font-size: 11px;
-          font-weight: 800;
-          letter-spacing: -0.2px;
-          color: #0f172a;
-          background: var(--rarity-strong);
-          box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-        }
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        row-gap: 3px;
       }
 
-      // 근무 상태 표시 — 남은 근무 시간 / 퇴근 (한 줄 유지, 넘치면 말줄임)
-      .work-status {
-        margin-top: 4px;
-        font-size: 12px;
-        font-weight: 600;
+      .name {
+        color: white;
+        font-weight: 500;
+        font-size: 15px;
         letter-spacing: -0.2px;
-        color: #c4b5fd;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        max-width: 100%;
+      }
 
-        // 남은 시간은 강조 — 라벨보다 밝고 굵게
-        .time {
-          font-style: normal;
-          font-weight: 800;
-          font-variant-numeric: tabular-nums;
-          color: #ffffff;
-          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-        }
-
-        &[data-off="true"] {
-          color: rgba(255, 255, 255, 0.45);
-        }
+      .rarity {
+        flex: none;
+        padding: 2px 7px;
+        border-radius: 99px;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: -0.2px;
+        color: #0f172a;
+        background: var(--rarity-strong);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
       }
     }
 
-    .toggle-btn {
+    // 일하는 중 망치질 모션 — 이름/등급 우측에서 들어올렸다 쾅 내려치기
+    .hammer {
       flex: none;
-      padding: 8px 16px;
+      font-size: 22px;
+      line-height: 1;
+      pointer-events: none;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+      transform-origin: 70% 80%;
+      animation: hammer-swing 0.8s ease-in-out infinite;
+    }
+
+    // 남은 근무 바 — 트랙 위에 남은 비율만큼 채우고 옆에 시간 표시
+    .work-row {
+      grid-column: 2;
+      display: flex;
+      align-items: center;
+      column-gap: 6px;
+      min-width: 0;
+
+      .work-bar {
+        flex: 1;
+        min-width: 0;
+        height: 6px;
+        border-radius: 99px;
+        background: rgba(255, 255, 255, 0.14);
+        overflow: hidden;
+
+        .fill {
+          display: block;
+          height: 100%;
+          border-radius: 99px;
+          background: linear-gradient(90deg, #a78bfa 0%, #c4b5fd 100%);
+          box-shadow: 0 0 6px rgba(167, 139, 250, 0.5);
+          transition: width 0.3s ease;
+        }
+      }
+
+      // 남은 시간 — 바 옆에 강조 표시
+      .time {
+        flex: none;
+        font-style: normal;
+        font-size: 11px;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        color: #ffffff;
+      }
+    }
+
+    // 퇴근 — 바 대신 상태 문구
+    .off-label {
+      grid-column: 2;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: left;
+      color: rgba(255, 255, 255, 0.45);
+    }
+
+    .toggle-btn {
+      // 이미지 아래 카드 전체 폭 — 우측 빈 공간 없이 채운다
+      grid-column: 1 / -1;
+      width: 100%;
+      padding: 9px 0;
       border-radius: 99px;
       font-size: 14px;
       font-weight: 800;
       letter-spacing: -0.2px;
+      text-align: center;
       color: #ffffff;
       // 딥 바이올렛 솔리드 — 어두운 톤
       background: linear-gradient(
@@ -448,16 +515,16 @@
         filter 0.15s ease;
 
       &:active {
-        transform: scale(0.92);
+        transform: scale(0.94);
         filter: brightness(1.1);
       }
 
-      // 떼기 — 어두운 반투명 톤으로 대비
+      // 휴식하기 — 활성 액션이라 채워진 밝은 바이올렛 톤 (비활성처럼 안 보이게)
       &.detached {
-        background: rgba(17, 12, 34, 0.55);
-        border-color: rgba(255, 255, 255, 0.22);
-        box-shadow: none;
-        color: rgba(255, 255, 255, 0.75);
+        background: linear-gradient(135deg, #c084fc 0%, #a855f7 100%);
+        border-color: rgba(255, 255, 255, 0.4);
+        box-shadow: 0 3px 10px rgba(30, 10, 60, 0.4);
+        color: #ffffff;
       }
 
       // 오늘 근무 소진(퇴근) — 일 시키기 불가
@@ -541,18 +608,18 @@
   }
 
   .loading {
-    display: flex;
-    flex-direction: column;
-    row-gap: 10px;
-    padding: 10px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
     margin: 0;
     list-style: none;
 
     li {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      column-gap: 12px;
-      padding: 10px 14px;
+      row-gap: 10px;
+      padding: 14px 10px;
       background: rgba(17, 12, 34, 0.5);
       border-radius: 18px;
     }
@@ -566,5 +633,7 @@
     font-size: 15px;
     color: rgba(255, 255, 255, 0.45);
     text-align: center;
+    // 2열 그리드(cats 모드)에서 전체 폭 차지
+    grid-column: 1 / -1;
   }
 }

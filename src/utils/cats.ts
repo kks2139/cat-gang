@@ -35,7 +35,7 @@ import ImgCat31 from "@/assets/img/character/cat-31.png";
 import ImgCatMe from "@/assets/img/character/cat-me.png";
 
 export interface CatInfo {
-  rarity: "common" | "rare" | "unique"; // 희귀함 정도
+  rarity: "common" | "rare" | "unique" | "legend"; // 희귀함 정도
   // 출몰 시간대 — 미지정이면 하루 종일 등장
   activeTime?: "night" | "day";
   name: string;
@@ -184,6 +184,39 @@ export const getGangInfo = (
     hpBonus,
     punchBonus,
     defBonus,
+  };
+};
+
+// 등급별 스폰 확률 (1000분율) — 캐릭터마다 개별 추첨
+// (레어/유니크는 캣타워에 유리해 의도적으로 희소하게)
+export const SPAWN_RATE_BY_RARITY: Record<CatInfo["rarity"], number> = {
+  common: 50,
+  rare: 8,
+  unique: 3,
+  legend: 1, // 추후 추가 예정
+};
+
+// 등급별 전투 스탯 배율 — 캐릭터 개성 스탯은 유지하고 등급 난이도만 조정
+// (일반은 잡기 쉽게, 레어/유니크는 강하게 — 아이템 사용 유도)
+export const RARITY_STAT_SCALE: Record<
+  CatInfo["rarity"],
+  { hp: number; punchPower: number; defense: number }
+> = {
+  common: { hp: 0.8, punchPower: 0.9, defense: 0.5 },
+  rare: { hp: 1.3, punchPower: 1.3, defense: 1 },
+  unique: { hp: 1.6, punchPower: 1.5, defense: 1.5 },
+  legend: { hp: 2, punchPower: 1.8, defense: 2 },
+};
+
+// 전투용 스탯이 반영된 사본 반환 (원본 CatInfo는 그대로 — 도감/깃발 등에 사용)
+export const getBattleCat = (cat: CatInfo): CatInfo => {
+  const scale = RARITY_STAT_SCALE[cat.rarity];
+
+  return {
+    ...cat,
+    hp: Math.round(cat.hp * scale.hp),
+    punchPower: Math.round(cat.punchPower * scale.punchPower),
+    defense: Math.round(cat.defense * scale.defense),
   };
 };
 

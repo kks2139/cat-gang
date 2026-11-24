@@ -179,16 +179,6 @@ input {
     img {
       animation: none;
     }
-    &::after {
-      transform: translateX(-50%);
-      animation: none;
-    }
-  }
-
-  &.no-shadow {
-    &::after {
-      display: none;
-    }
   }
 
   // 내 고양이(type: me)는 평소 no-animation이지만, 걷는 동안(is-walking)엔
@@ -199,19 +189,7 @@ input {
       // 750ms 주기에 bounce 2번 = 프레임 교체 1회당 step bounce 1회
       animation: me-step-bob 0.75s ease-in-out infinite;
     }
-
-    &::after {
-      // 정적 그림자 대신 걸음 리듬에 맞춰 숨쉬는 그림자
-      animation: shadow-pulse 0.75s ease-in-out infinite alternate;
-    }
-  }
-
-  &.small-shadow {
-    &::after {
-      width: 40px;
-      height: 3px;
-      transform: translate(-15px, 7px);
-    }
+    // 그림자는 정적 유지 — 농도 변화로 이동/정지가 티 나지 않게 한다
   }
 
   // 지도 위 고양이 말풍선 (글래스 팝 스타일 + 둥둥 떠있는 효과)
@@ -698,10 +676,6 @@ input {
         width: 100%;
         height: 100%;
       }
-
-      &::after {
-        display: none;
-      }
     }
   }
 
@@ -726,20 +700,25 @@ input {
     }
   }
 
-  // 고양이 바닥 그림자
-  &::after {
-    content: "";
+  // 발밑 그림자 — 캐릭터 이미지의 실루엣 복제(img.marker-shadow).
+  // 크기/위치는 helper.ts에서 이미지 높이에 맞춰 주입하고, 여기선 질감만 정한다.
+  // 애니 없이 정적 유지 — 걷기/멈춤 상태에 따라 농도가 변하지 않게 한다
+  img.marker-shadow {
+    z-index: 0;
     position: absolute;
-    top: calc(100% - 19px);
-    left: 50%;
-    width: 40px;
-    height: 8px;
-    filter: blur(2px) !important;
-    background-color: rgba(0, 0, 0, 0.4);
-    border-radius: 50%;
-    animation: shadow-pulse $walk-duration ease-in-out infinite alternate,
-      shadow-jump $swim-duration linear infinite;
-    animation-delay: 0s, var(--jump-delay, 0s); // 점프 시 작아지고 흐려짐
+    left: 0;
+    object-fit: fill; // 세로로 납작하게 눌린 실루엣이 바닥에 깔린다
+    filter: blur(2px) brightness(0);
+    opacity: 0.5;
+    pointer-events: none;
+    animation: none;
+  }
+
+  // 점프 중 그림자만 옅어지는 연출 (cat-jump와 같은 주기/딜레이)
+  &[data-type="enemy"] img.marker-shadow {
+    animation: shadow-jump-soft var(--swim-duration, #{$swim-duration}) linear
+      infinite;
+    animation-delay: var(--jump-delay, 0s);
   }
 
   @keyframes cat-move {
@@ -844,33 +823,21 @@ input {
     } // 작은 점프 (높이 하향)
   }
 
-  // 점프에 따른 그림자 변화 (1초 주기에 맞춰 싱크)
-  @keyframes shadow-jump {
+  // 점프 중 그림자가 바닥에서 멀어지는 느낌 — 밝기만 조절 (이미지 실루엣 그림자용)
+  @keyframes shadow-jump-soft {
     0%,
     29%,
     36%,
     64%,
     71%,
     100% {
-      transform: translateX(-50%) scale(1);
-      filter: blur(0px);
-      opacity: 1;
-    }
-    30%,
-    35%,
-    65%,
-    70% {
-      transform: translateX(-50%) scale(1.1);
-      filter: blur(0px);
-      opacity: 1;
+      opacity: 0.5;
     }
     32.5% {
-      transform: translateX(-50%) scale(0.5);
-      opacity: 0.45;
-    } // 공중에 뜬 동안 그림자가 바닥에 멀어짐
+      opacity: 0.18;
+    } // 공중에 뜬 동안 그림자가 옅어짐
     67.5% {
-      transform: translateX(-50%) scale(0.7);
-      opacity: 0.65;
+      opacity: 0.3;
     }
   }
 
@@ -903,16 +870,6 @@ input {
     }
   }
 
-  @keyframes shadow-pulse {
-    from {
-      filter: blur(2px);
-      transform: translateX(-50%) scale(1);
-    }
-    to {
-      filter: blur(2px);
-      transform: translateX(-50%) scale(0.95);
-    }
-  }
 
   @keyframes marker-appear {
     0% {
@@ -1126,7 +1083,7 @@ input {
 }
 
 // 희귀함 정도에 따른 부수 효과
-// — 어두운 바닥 그림자 + 등급 색 오라 + 떠오르는 별
+// — 등급 색 오라 + 떠오르는 별
 // (unique는 오라/별이 모두 더 강하고 빠르다)
 // 주의: 루트에 transform을 쓰면 스태킹 컨텍스트가 생겨 통째로 캐릭터 뒤에 가려지므로
 // margin으로 중앙정렬한다 (자식들이 캐릭터 이미지와 직접 z-index 비교가 가능해짐)
@@ -1139,27 +1096,8 @@ input {
   margin-left: -30px;
   pointer-events: none;
 
-  // ─── 바닥 그림자: 어두운 톤 (등급 구분은 별빛 색으로) ─────────────
-  .shadow-floor {
-    z-index: 0; // 캐릭터 이미지(z-index 1)보다 뒤 — 발밑 그림자 역할
-    position: absolute;
-    bottom: 2px;
-    left: 50%;
-    width: 52px;
-    height: 14px;
-    transform: translateX(-50%);
-    border-radius: 50%;
-    background: radial-gradient(
-      ellipse at center,
-      rgba(0, 0, 0, 0.45) 0%,
-      rgba(0, 0, 0, 0.24) 50%,
-      transparent 75%
-    );
-    filter: blur(2.5px);
-    animation: glow-breathe 3s ease-in-out infinite;
-  }
-
   // ─── 떠오르는 별 ──────────────────────────────
+  // (발밑 그림자는 img.marker-shadow 실루엣 복제가 담당 — 마커 공통)
   // 캐릭터 이미지(z-index 1)보다 앞 — 등급 효과가 가려지지 않도록.
   // 별마다 위치/크기/속도/흔들림을 CSS 변수로 받아(helper.ts에서 주입)
   // 각기 다르게 움직여 다이나믹한 군집 효과를 만든다
@@ -1205,19 +1143,6 @@ input {
   }
 
   // ─── 애니메이션 ──────────────────────────────
-
-  // 바닥 광원: 숨쉬듯 확장/수축
-  @keyframes glow-breathe {
-    0%,
-    100% {
-      opacity: 0.7;
-      transform: translateX(-50%) scale(1);
-    }
-    50% {
-      opacity: 1;
-      transform: translateX(-50%) scale(1.15);
-    }
-  }
 
   // 별: 아래에서 위로 떠오르며 크게 반짝임 — 좌우 드리프트(--star-drift)로
   // 흔들리는 궤적과 중간 트윙클(크기/투명도 진동)을 넣어 다이나믹하게

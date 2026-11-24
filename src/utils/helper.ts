@@ -1,9 +1,5 @@
 import { getHours } from "date-fns";
-import {
-  type LngLatLike,
-  type Map as MaplibreMap,
-  Marker,
-} from "maplibre-gl";
+import { type LngLatLike, type Map as MaplibreMap, Marker } from "maplibre-gl";
 
 import { pawShapeMarkup } from "@/components/PawIcon";
 import type { ItemType } from "@/components/Stage/Inventory";
@@ -15,7 +11,7 @@ export const wait = (delay: number) =>
 
 export const getPostposition = (
   word = "",
-  type: "obj" | "sub" | "topic" | "with",
+  type: "obj" | "sub" | "topic" | "with"
 ) => {
   // 마지막 글자의 유니코드 확인
   const lastChar = word.charCodeAt(word.length - 1);
@@ -39,7 +35,7 @@ export type Coords = Pick<GeolocationCoordinates, "latitude" | "longitude">;
 export const getRandomLocationInCircle = (
   lat: number,
   lng: number,
-  radiusInMeters: number,
+  radiusInMeters: number
 ): [number, number] => {
   // 1. 0 ~ radiusInMeters 사이의 랜덤한 거리 생성
   // (중심에 몰리지 않게 하기 위해 Math.sqrt 사용)
@@ -159,6 +155,39 @@ const UNIQUE_STAR_STYLES = [
 
 type MarkerType = "me" | "owned" | "enemy" | "item";
 
+// 발밑 그림자 납작 비율 — 캐릭터 이미지 높이의 30%로 눌러 바닥에 깔린다
+const MARKER_SHADOW_SQUASH = 0.3;
+
+// 기존 마커들과 최소 이 거리(m) 이상 떨어진 스폰 위치를 찾는다 (터치 겹침 방지)
+export const getFreeSpawnLocation = (
+  center: { lat: number; lng: number },
+  radiusInMeters: number,
+  blockers: { lat: number; lng: number }[],
+  minDistanceM = 12,
+  attempts = 15
+): [number, number] => {
+  let last: [number, number] = [center.lng, center.lat];
+
+  for (let i = 0; i < attempts; i++) {
+    const [lng, lat] = getRandomLocationInCircle(
+      center.lat,
+      center.lng,
+      radiusInMeters
+    );
+    last = [lng, lat];
+
+    const isFree = blockers.every(
+      (blocker) => distanceInMeters({ lat, lng }, blocker) >= minDistanceM
+    );
+
+    if (isFree) {
+      break;
+    }
+  }
+
+  return last;
+};
+
 interface CreateOverlayOptions {
   map: MaplibreMap;
   position: [number, number]; // [lng, lat]
@@ -176,8 +205,10 @@ export const createMarker = ({
   catName = "",
 }: CreateOverlayOptions) => {
   const cat = getCat(catName);
-  const isRare = cat?.rarity === "rare";
-  const isUnique = cat?.rarity === "unique";
+  const rarity = cat?.rarity;
+  // 등급 이펙트 — legend는 unique 톤을 임시로 공유 (레전드 전용 스타일 추가 전까지)
+  const isRare = rarity === "rare";
+  const isUnique = rarity === "unique" || rarity === "legend";
 
   // 최상위 컨테이너
   const container = document.createElement("div");
@@ -205,6 +236,37 @@ export const createMarker = ({
       container.appendChild(itemWrapper);
       itemWrapper.appendChild(catImg);
     } else {
+      // 발밑 그림자 — 캐릭터 이미지 실루엣을 그대로 눌러 편편하게 한 복제.
+      // 고정 크기 타원이 아니라 이미지 폭/밑변을 따르므로 마커마다 크기가 달라도 맞는다
+      const shadowImg = document.createElement("img");
+      shadowImg.className = "marker-shadow";
+      shadowImg.setAttribute("aria-hidden", "true");
+      shadowImg.src = imgUrl;
+
+      const syncShadow = () => {
+        const h = catImg.clientHeight;
+
+        if (!h) {
+          return;
+        }
+
+        // 이미지 하단(땅)에 납작하게 깔리도록 높이와 밑변 위치를 맞춘다
+        shadowImg.style.height = `${h * MARKER_SHADOW_SQUASH}px`;
+        shadowImg.style.bottom = `${(container.clientHeight - h) / 2}px`;
+      };
+
+      // 레이아웃 확정 후(마커가 DOM에 붙은 다음 프레임) 측정해야 치수가 잡힌다
+      const scheduleSync = () => {
+        requestAnimationFrame(syncShadow);
+      };
+
+      if (catImg.complete) {
+        scheduleSync();
+      } else {
+        catImg.addEventListener("load", scheduleSync, { once: true });
+      }
+
+      container.appendChild(shadowImg);
       container.appendChild(catImg);
     }
   }
@@ -229,8 +291,7 @@ export const createMarker = ({
 
   // 잡은 고양이일때(깃발) — 그림자 + 떠오르는 반짝임 이펙트
   if (type === "owned") {
-    // 일반 바닥 그림자 대신 어두운 톤 그림자(flag-shadow-floor)만 사용
-    container.classList.add("no-animation", "no-shadow");
+    container.classList.add("no-animation");
 
     const wrapper = document.createElement("div");
     wrapper.className = "flag-wrapper";
@@ -281,14 +342,8 @@ export const createMarker = ({
 
     // 희귀함 효과 적용
     if (isRare || isUnique) {
-      container.classList.add("no-shadow");
-
       const effect = document.createElement("div");
       effect.classList.add("rarity-effect", isRare ? "rare" : "unique");
-
-      // 발밑 어두운 그림자
-      const shadowFloor = document.createElement("div");
-      shadowFloor.className = "shadow-floor";
 
       // 떠오르는 별 — unique는 더 많고 크고 빠르게 (레어 5개 / 유니크 8개)
       const sparkles = document.createElement("div");
@@ -307,7 +362,6 @@ export const createMarker = ({
         }
       );
 
-      effect.appendChild(shadowFloor);
       effect.appendChild(sparkles);
 
       container.appendChild(effect);
@@ -331,7 +385,7 @@ export const createMarker = ({
   }
 
   if (type === "item") {
-    container.classList.add("item", "no-animation", "no-shadow");
+    container.classList.add("item", "no-animation");
   }
 
   // MapLibre는 element에 지도 위치용 transform을 직접 걸므로,
@@ -391,7 +445,7 @@ export const removeMarkerWithMotion = (marker: Marker, duration = 300) => {
 export const animateMarker = (
   marker: Marker,
   newPosition: [number, number],
-  duration: number = 500,
+  duration: number = 500
 ) => {
   const startLatLng = marker.getLngLat();
   const startLat = startLatLng.lat;
@@ -442,7 +496,7 @@ export const safeText = (input: string): string => {
 export const getCatchedCatElement = (
   imgUrl: string,
   greet: string,
-  durationMs = 3000,
+  durationMs = 3000
 ) => {
   const container = document.createElement("div");
   container.className = "click-catched-cat";
@@ -467,7 +521,7 @@ export const getCatchedCatElement = (
 // 두 좌표 [lat, lng] 간 거리 (미터) — Leaflet distanceTo 대체 (haversine)
 export const distanceInMeters = (
   a: { lat: number; lng: number },
-  b: { lat: number; lng: number },
+  b: { lat: number; lng: number }
 ) => {
   const R = 6371000;
   const toRad = (deg: number) => (deg * Math.PI) / 180;

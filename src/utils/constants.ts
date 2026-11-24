@@ -26,6 +26,7 @@ export const KKANG_COST_BY_RARITY: Record<CatInfo["rarity"], number> = {
   common: 1,
   rare: 2,
   unique: 3,
+  legend: 4,
 };
 
 /** 아이템 충전(보상형) 광고로 지급하는 아이템 개수 */

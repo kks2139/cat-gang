@@ -37,6 +37,7 @@ export const TOWER_WORK_MS_BY_RARITY: Record<CatInfo["rarity"], number> = {
   common: 60 * 60 * 1000,
   rare: 2 * 60 * 60 * 1000,
   unique: 3 * 60 * 60 * 1000,
+  legend: 4 * 60 * 60 * 1000, // 추후 추가 예정
 };
 // 높이 상한 (m) — 이 높이에 도달하면 완공된다
 export const TOWER_MAX_HEIGHT = 1000;
