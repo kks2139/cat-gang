@@ -19,6 +19,19 @@
   }
 }
 
+// 낮잠 모션 — 살짝 떠오르며 잠듦
+@keyframes zzz-float {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+
 // 캣 타워 관리 바텀시트 — 보라+핑크 톤 (타워 UI 공통 톤)
 .overlay {
   z-index: 2000;
@@ -445,6 +458,16 @@
       animation: hammer-swing 0.8s ease-in-out infinite;
     }
 
+    // 휴식 중 낮잠 모션 — 망치 자리(이름 우측)에 표시
+    .zzz {
+      flex: none;
+      font-size: 20px;
+      line-height: 1;
+      pointer-events: none;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+      animation: zzz-float 1.8s ease-in-out infinite;
+    }
+
     // 남은 근무 바 — 트랙 위에 남은 비율만큼 채우고 옆에 시간 표시
     .work-row {
       grid-column: 2;
@@ -479,6 +502,19 @@
         font-weight: 800;
         font-variant-numeric: tabular-nums;
         color: #ffffff;
+      }
+
+      // 작업 시간이 꽉 찼을 때(회복 완료) — 녹색으로 출근 가능 신호,
+      // 회복 중/근무 중은 기존 바이올렛 유지
+      &[data-full="true"] {
+        .fill {
+          background: linear-gradient(90deg, #22c55e 0%, #4ade80 100%);
+          box-shadow: 0 0 6px rgba(74, 222, 128, 0.5);
+        }
+
+        .time {
+          color: #4ade80;
+        }
       }
     }
 

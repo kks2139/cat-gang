@@ -155,6 +155,8 @@ export interface TowerWorkData {
   dateKey: string;
   /** 부하 키(`${name}_${createdAt}`) → 오늘 적립 근무 ms */
   work: Record<string, number>;
+  /** 스냅샷 시각 (ms epoch) — 휴식 회복 소급 계산의 기준점. 구버전 기록엔 없음 */
+  savedAt?: number;
 }
 
 const parseTowerWork = (value: string | null): TowerWorkData | null => {
@@ -166,6 +168,7 @@ const parseTowerWork = (value: string | null): TowerWorkData | null => {
     const data = JSON.parse(value) as {
       dateKey?: unknown;
       work?: unknown;
+      savedAt?: unknown;
     };
 
     if (typeof data?.dateKey !== "string" || !data.dateKey) {
@@ -184,7 +187,13 @@ const parseTowerWork = (value: string | null): TowerWorkData | null => {
       );
     }
 
-    return { dateKey: data.dateKey, work };
+    return {
+      dateKey: data.dateKey,
+      work,
+      ...(typeof data.savedAt === "number" && Number.isFinite(data.savedAt)
+        ? { savedAt: data.savedAt }
+        : {}),
+    };
   } catch {
     return null;
   }

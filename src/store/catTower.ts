@@ -18,7 +18,8 @@ import {
 /**
  * 캣 타워 — 부하 고양이들을 붙여 일을 시키면 시간이 지남에 따라 높이가 자라는 타워.
  * 부하는 등급 무관 30분에 1m씩 기여하지만, 하루 근무 시간(예산)이 등급별로 다르다 —
- * 예산을 다 쓴 부하는 그날 퇴근(성장 기여 0)하고 자정에 새로 출근한다.
+ * 예산을 다 쓴 부하는 그날 퇴근(성장 기여 0)한다. 휴식(미부착) 상태의 부하는
+ * 예산이 실제 시간의 1/3 속도로 회복되고, 자정에 전원 새 예산으로 출근한다.
  * 높이는 "마지막 기준 높이(heightAt) + 구간별 근무 적립"으로 계산하므로 앱을 끈
  * 사이에도 소급 정확히 자란다 (구간 사이 attached 멤버십이 고정이라 각 부하
  * min(경과, 남은 예산) 적립으로 재현 가능).
@@ -39,6 +40,9 @@ export const TOWER_WORK_MS_BY_RARITY: Record<CatInfo["rarity"], number> = {
   unique: 3 * 60 * 60 * 1000,
   legend: 4 * 60 * 60 * 1000, // 추후 추가 예정
 };
+// 휴식 회복 속도 — 휴식(미부착) 중인 부하는 실제 시간의 1/3만큼 근무 예산을
+// 되찾는다 (휴식 3분 → 1분 회복). 일하는 중엔 회복되지 않는다
+export const TOWER_REST_RECOVERY_RATE = 1 / 3;
 // 높이 상한 (m) — 이 높이에 도달하면 완공된다
 export const TOWER_MAX_HEIGHT = 1000;
 
@@ -137,6 +141,11 @@ let lastSyncedHeights: Record<string, number> = {};
 let lastSyncAt = 0;
 const RANKING_SYNC_MIN_MS = 60_000; // 동기화 최소 간격 (ms)
 
+// 휴식 회복의 스토리지 저장 스로틀 — 회복은 계속 진행되지만 기록 확정은
+// 타워 기준점 스냅샷과 마찬가지로 자주 찍을 필요가 없다
+let lastRestSaveAt = 0;
+const REST_SAVE_MIN_MS = 60_000;
+
 // [from, to] 구간을 로컬 자정 기준으로 쪼갠 세그먼트 목록.
 // 구간이 자정을 넘으면 날짜별로 근무 예산을 따로 적용해야 하기 때문이다
 const splitByDay = (from: number, to: number): Array<[number, number]> => {
@@ -154,9 +163,37 @@ const splitByDay = (from: number, to: number): Array<[number, number]> => {
   return segments;
 };
 
+// 세그먼트 [segFrom, segTo] 동안 휴식 중인 부하(오늘 기록이 있으나 미부착)의
+// 근무 예산을 회복시킨다 — 상한(등급 예산)까지만. 기록 없는 부하는 예산이
+// 꽉 차 있으므로 회복 대상이 아니다
+const applyRestRecovery = (
+  work: Record<string, number>,
+  segFrom: number,
+  segTo: number,
+  attachedKeys: string[]
+) => {
+  const restMs = (segTo - segFrom) * TOWER_REST_RECOVERY_RATE;
+
+  Object.keys(work).forEach((key) => {
+    if (attachedKeys.includes(key)) {
+      return;
+    }
+
+    const budget = TOWER_WORK_MS_BY_RARITY[rarityOfKey(key)];
+    // 소모량(work)을 깎아 남은 예산을 되찾는다 — restMs가 남은 예산보다
+    // 커도 0 밑으로 내려가 예산을 초과 회복하지 않게 클램프
+    const recovered = Math.min(restMs, Math.max(0, budget - work[key]));
+
+    if (recovered > 0) {
+      work[key] = Math.max(0, work[key] - recovered);
+    }
+  });
+};
+
 // 성장/근무 적립 계산 — updatedAt → now 구간을 날짜별로 쪼개고, 각 부하는
-// "그날 남은 근무 예산"만큼만 일한다(소진 시 퇴근). 구간 사이 attached 멤버십이
-// 고정이므로 min(경과, 남은 예산) 적립으로 앱 종료 중 성장도 정확히 소급된다.
+// "그날 남은 근무 예산"만큼만 일한다(소진 시 퇴근). 붙어 있지 않은 부하는
+// 그 구간 동안 근무 예산이 회복된다. 구간 사이 attached 멤버십이 고정이므로
+// min(경과, 남은 예산) 적립으로 앱 종료 중 성장/회복도 정확히 소급된다.
 // baseWork는 updatedAt 시점 기준 적립치(스토리지 값)다.
 const computeGrowth = (
   tower: CatTowerState,
@@ -203,6 +240,9 @@ const computeGrowth = (
       work[key] = (work[key] ?? 0) + worked;
       grown += worked * TOWER_METER_PER_CAT_PER_MS;
     });
+
+    // 휴식 중인 부하의 근무 예산 회복 (성장 기여 없음)
+    applyRestRecovery(work, segFrom, segTo, tower.attachedKeys);
   });
 
   const height = Math.min(
@@ -211,6 +251,33 @@ const computeGrowth = (
   );
 
   return { height, work: { dateKey, work } };
+};
+
+// 건설중 타워가 없을 때의 휴식 회복 — from → to 구간의 회복만 base 기록에
+// 적용해 전진시킨다 (붙은 부하가 없으므로 근무/성장 없음). 날짜를 넘기면
+// computeGrowth와 같은 자정 리셋 규칙을 따른다
+const advanceRestOnly = (
+  base: TowerWorkData,
+  from: number,
+  to: number
+): TowerWorkData => {
+  let work: Record<string, number> =
+    base.dateKey === dayKeyOf(from) ? { ...base.work } : {};
+  let dateKey = dayKeyOf(from);
+
+  splitByDay(from, to).forEach(([segFrom, segTo]) => {
+    const segDay = dayKeyOf(segFrom);
+
+    if (segDay !== dateKey) {
+      work = {};
+      dateKey = segDay;
+    }
+
+    // 붙은 부하가 없으므로 전원 휴식 회복 대상
+    applyRestRecovery(work, segFrom, segTo, []);
+  });
+
+  return { dateKey, work };
 };
 
 // 부하별 오늘 남은 근무 ms — 오늘 적립치가 있는 부하(퇴근 후 휴식 포함)와
@@ -276,10 +343,43 @@ export const useCatTowerStore = create<CatTowerStore>()(
       now: number
     ): { tower: CatTowerState; work: TowerWorkData } => {
       const { height, work } = computeGrowth(tower, now, get().baseWork);
+      // 스냅샷 시각을 기록한다 — 휴식 회복 소급 계산의 기준점
+      const withTs: TowerWorkData = { ...work, savedAt: now };
 
-      void storeTowerWork(work);
+      void storeTowerWork(withTs);
 
-      return { tower: { ...tower, heightAt: height, updatedAt: now }, work };
+      return { tower: { ...tower, heightAt: height, updatedAt: now }, work: withTs };
+    };
+
+    // 건설중 타워가 없을 때 — 휴식 회복을 now까지 전진시켜 확정한다.
+    // workLeft는 변했을 때만 갱신(틱마다 재계산은 기준점이 그대로라 멱등),
+    // baseWork 확정+스토리지 저장은 스로틀한다. force면 스로틀을 무시한다
+    // (새 타워 세우기 직전 등 기준점 정렬)
+    const commitRestTo = (now: number, force = false) => {
+      const base = get().baseWork;
+
+      if (!base?.savedAt || now <= base.savedAt) {
+        return;
+      }
+
+      const advanced = advanceRestOnly(base, base.savedAt, now);
+      const nextLeft = workLeftOf(advanced, []);
+
+      if (!sameWorkLeft(get().workLeft, nextLeft)) {
+        set((state) => {
+          state.workLeft = nextLeft as never;
+        });
+      }
+
+      if (force || now - lastRestSaveAt >= REST_SAVE_MIN_MS) {
+        lastRestSaveAt = now;
+        const withTs: TowerWorkData = { ...advanced, savedAt: now };
+
+        set((state) => {
+          state.baseWork = withTs as never;
+        });
+        void storeTowerWork(withTs);
+      }
     };
 
     // 완공 판정 — 상한에 도달한 건설중 타워를 완공 처리한다.
@@ -384,6 +484,12 @@ export const useCatTowerStore = create<CatTowerStore>()(
 
           // 앱을 끈 사이에 상한에 도달했을 수 있다 — 복원 직후 완공 판정
           completeIfDone();
+
+          // 건설중 타워가 없으면(전부 완공) 회복 기준점이 없다 — 스토리지
+          // 스냅샷 시각부터 지금까지의 휴식 회복을 지금 시점으로 확정한다
+          if (!getActiveTower(get().towers)) {
+            commitRestTo(Date.now(), true);
+          }
         },
         startPlacing() {
           // 건설중인 타워가 있으면 새로 세울 수 없다
@@ -417,12 +523,16 @@ export const useCatTowerStore = create<CatTowerStore>()(
             return;
           }
 
+          const now = Date.now();
+          // 새 타워의 updatedAt이 회복 기준점이 되게 — 먼저 휴식 회복을 정산한다
+          commitRestTo(now, true);
+
           const tower: CatTowerState = {
             id: newTowerId(),
             lat,
             lng,
-            createdAt: Date.now(),
-            updatedAt: Date.now(),
+            createdAt: now,
+            updatedAt: now,
             heightAt: 0,
             attachedKeys: [],
             color: DEFAULT_TOWER_COLOR,
@@ -551,7 +661,11 @@ export const useCatTowerStore = create<CatTowerStore>()(
             }
           });
 
-          const workChanged = !sameWorkLeft(get().workLeft, nextWorkLeft);
+          // completeIfDone 이후 기준 — 건설중 타워 존재 여부
+          const hasActive = towers.some((tower) => !tower.completedAt);
+          // 건설중 타워가 없으면 workLeft는 휴식 회복 경로가 관리한다
+          const workChanged =
+            hasActive && !sameWorkLeft(get().workLeft, nextWorkLeft);
 
           if (heightChanged || workChanged) {
             set((state) => {
@@ -586,6 +700,11 @@ export const useCatTowerStore = create<CatTowerStore>()(
                 replaceTower(snapped, work);
               });
             }
+          }
+
+          // 건설중 타워가 없으면 성장도 근무도 없다 — 휴식 회복만 전진시킨다
+          if (!hasActive) {
+            commitRestTo(now);
           }
         },
       },

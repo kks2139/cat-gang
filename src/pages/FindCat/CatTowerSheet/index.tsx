@@ -7,6 +7,7 @@ import Skeleton from "@/components/Skeleton";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
 import {
   getActiveTower,
+  TOWER_REST_RECOVERY_RATE,
   TOWER_WORK_MS_BY_RARITY,
   useCatTowerStore,
 } from "@/store/catTower";
@@ -19,6 +20,9 @@ import { formatDuration } from "@/utils/helper";
 import styles from "./index.module.scss";
 
 const cn = classNames.bind(styles);
+
+// 휴식 회복 표시용 — 근무 1분이 회복되는 데 걸리는 휴식 시간 (분)
+const REST_MIN_PER_WORK_MIN = Math.round(1 / TOWER_REST_RECOVERY_RATE);
 
 type SheetCat = CatInfo & { key: string };
 
@@ -166,6 +170,15 @@ export default function CatTowerSheet({
                     작업 가능 시간은 <b>다음 날이 되면</b> 다시 채워진다옹
                   </span>
                 </li>
+                <li>
+                  <span className={cn("hint-icon")} aria-hidden>
+                    🛌
+                  </span>
+                  <span className={cn("hint-text")}>
+                    휴식 중인 부하는 근무 시간이 회복된다옹 —{" "}
+                    <b>휴식 {REST_MIN_PER_WORK_MIN}분</b>당 <b>1분</b>
+                  </span>
+                </li>
               </ul>
             )}
 
@@ -307,6 +320,8 @@ export default function CatTowerSheet({
                       const leftMs = workLeft[cat.key] ?? totalMs;
                       const isOffWork = leftMs <= 0;
                       const isWorking = isAttached && !isOffWork;
+                      // 미부착 = 휴식 — 근무 시간이 회복되는 중 (예산까지 채움)
+                      const isResting = !isAttached;
                       const progress = Math.max(
                         0,
                         Math.min(1, leftMs / totalMs)
@@ -337,14 +352,24 @@ export default function CatTowerSheet({
                                   🔨
                                 </span>
                               )}
+                              {/* 휴식 중 회복이 진행되는 동안만 낮잠 모션 — 시간이 꽉 찼으면 없음 */}
+                              {isResting && leftMs < totalMs && (
+                                <span className={cn("zzz")} aria-hidden>
+                                  💤
+                                </span>
+                              )}
                             </div>
-                            {/* 남은 근무는 붙어있든 아니든 오늘 예산 기준으로 모두 표시 */}
-                            {isOffWork ? (
+                            {/* 남은 근무는 붙어있든 아니든 오늘 예산 기준으로 모두 표시.
+                                휴식 중이면 바가 다시 차오른다 */}
+                            {isAttached && isOffWork ? (
                               <span className={cn("off-label")}>
-                                퇴근 (내일 출근)
+                                퇴근 (휴식하면 회복)
                               </span>
                             ) : (
-                              <div className={cn("work-row")}>
+                              <div
+                                className={cn("work-row")}
+                                data-full={isResting && leftMs >= totalMs}
+                              >
                                 <div
                                   className={cn("work-bar")}
                                   role="progressbar"
@@ -358,9 +383,11 @@ export default function CatTowerSheet({
                                     style={{ width: `${progress * 100}%` }}
                                   />
                                 </div>
-                                {/* 남은 시간은 분 단위로만 표기 */}
+                                {/* 남은 시간은 분 단위로만 표기 — 회복 직후엔 회복 중 */}
                                 <em className={cn("time")}>
-                                  {Math.max(1, Math.ceil(leftMs / 60000))}분
+                                  {!isAttached && isOffWork
+                                    ? "회복 중"
+                                    : `${Math.max(1, Math.ceil(leftMs / 60000))}분`}
                                 </em>
                               </div>
                             )}
@@ -374,7 +401,7 @@ export default function CatTowerSheet({
                                 if (isAttached) {
                                   detach(cat.key);
                                   addToastMessage({
-                                    message: `${cat.name}가 캣 타워에서 내려왔다옹!`,
+                                    message: `${cat.name}가 휴식하며 근무 시간을 회복한다옹!`,
                                   });
                                 } else {
                                   attach(cat.key);
@@ -387,7 +414,7 @@ export default function CatTowerSheet({
                               {isAttached
                                 ? "휴식하기"
                                 : isOffWork
-                                ? "내일 출근"
+                                ? "휴식 중"
                                 : "일 시키기"}
                             </button>
                           </div>
