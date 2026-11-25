@@ -145,29 +145,9 @@ export default function CatTowerSheet({
                     🏗️
                   </span>
                   <span className={cn("hint-text")}>
-                    부하 1마리가 <b>30분에 1m</b>씩 타워를 키운다옹
-                  </span>
-                </li>
-                <li>
-                  <span className={cn("hint-icon")} aria-hidden>
-                    ⏰
-                  </span>
-                  <span className={cn("hint-text")}>
-                    하루 근무 시간 — 일반 <b>1시간</b> · 레어 <b>2시간</b> ·
-                    유니크 <b>3시간</b>
-                    <br />
-                    <em>
-                      (하루에 최대 +2m · +4m · +6m — 등급이 높을수록 오래
-                      일한다옹)
-                    </em>
-                  </span>
-                </li>
-                <li>
-                  <span className={cn("hint-icon")} aria-hidden>
-                    🌙
-                  </span>
-                  <span className={cn("hint-text")}>
-                    작업 가능 시간은 <b>다음 날이 되면</b> 다시 채워진다옹
+                    부하 1마리가 <b>30분에 1m</b>씩 타워를 키운다옹 — 하루 근무
+                    일반 <b>1시간</b> · 레어 <b>2시간</b> · 유니크{" "}
+                    <b>3시간</b>
                   </span>
                 </li>
                 <li>
@@ -175,8 +155,8 @@ export default function CatTowerSheet({
                     🛌
                   </span>
                   <span className={cn("hint-text")}>
-                    휴식 중인 부하는 근무 시간이 회복된다옹 —{" "}
-                    <b>휴식 {REST_MIN_PER_WORK_MIN}분</b>당 <b>1분</b>
+                    근무 시간은 <b>다음 날</b> 다시 채워진다옹 — 휴식{" "}
+                    <b>{REST_MIN_PER_WORK_MIN}분</b>당 <b>1분</b> 회복
                   </span>
                 </li>
               </ul>
@@ -346,16 +326,25 @@ export default function CatTowerSheet({
                                   </span>
                                 )}
                               </div>
-                              {/* 일하는 중 — 망치질 모션 */}
+                              {/* 일하는 중 — 망치질 모션 + 상태 표기 */}
                               {isWorking && (
-                                <span className={cn("hammer")} aria-hidden>
-                                  🔨
+                                <span className={cn("work-stamp")} aria-hidden>
+                                  <span className={cn("stamp-icon")}>🔨</span>
+                                  <span className={cn("stamp-label")}>
+                                    작업중
+                                  </span>
                                 </span>
                               )}
                               {/* 휴식 중 회복이 진행되는 동안만 낮잠 모션 — 시간이 꽉 찼으면 없음 */}
                               {isResting && leftMs < totalMs && (
-                                <span className={cn("zzz")} aria-hidden>
-                                  💤
+                                <span
+                                  className={cn("work-stamp", "resting")}
+                                  aria-hidden
+                                >
+                                  <span className={cn("stamp-icon")}>💤</span>
+                                  <span className={cn("stamp-label")}>
+                                    휴식중
+                                  </span>
                                 </span>
                               )}
                             </div>
@@ -391,12 +380,13 @@ export default function CatTowerSheet({
                                 </em>
                               </div>
                             )}
+                            {/* 휴식/일시키기는 언제든 전환 가능 — 근무 시간이
+                                0인 부하도 붙일 수 있다(기여 0, 떼면 회복) */}
                             <button
                               type="button"
                               className={cn("toggle-btn", {
                                 detached: isAttached,
                               })}
-                              disabled={!isAttached && isOffWork}
                               onClick={() => {
                                 if (isAttached) {
                                   detach(cat.key);
@@ -411,11 +401,7 @@ export default function CatTowerSheet({
                                 }
                               }}
                             >
-                              {isAttached
-                                ? "휴식하기"
-                                : isOffWork
-                                ? "휴식 중"
-                                : "일 시키기"}
+                              {isAttached ? "휴식하기" : "일 시키기"}
                             </button>
                           </div>
                         </li>

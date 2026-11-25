@@ -1,5 +1,50 @@
 @use "@/styles/mixins" as *;
 
+// 고양이 이미지 숨쉬기 모션
+@keyframes cat-breathe {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-7px) scale(1.02);
+  }
+}
+
+// 후광 맥동
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+}
+
+// 아이템 부유 모션 (지도 아이템과 톤 통일)
+@keyframes item-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+// 스탯 바 등장
+@keyframes bar-reveal {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
 .MyInfoDialog {
   .profile-card {
     @include glass-card(
@@ -16,24 +61,57 @@
     padding: 10px;
     margin-bottom: 20px;
 
-    .cat-image-wrapper {
-      position: relative;
-      margin-top: -50px; // Pop out effect
-      filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.4));
-      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    // 상단 — 이미지 좌측 + 등급/칭호/이름/울음소리 우측 스택
+    .cat-top {
+      display: flex;
+      align-items: center;
+      column-gap: 14px;
+      width: 100%;
 
-      .cat-image {
-        width: 160px;
-        height: 160px;
-        object-fit: contain;
+      .cat-image-wrapper {
+        position: relative;
+        // 이미지만 카드 위로 살짝 삐져나가는 팝아웃 — transform이라 레이아웃 박스는
+        // 그대로라 우측 스택은 카드 영역 안에 유지된다
+        transform: translateY(-22px);
+
+      // 플레이어 그린 후광 — 이미지 뒤에서 은은하게 맥동
+      &::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 150px;
+        height: 150px;
+        background: radial-gradient(
+          circle,
+          rgba(74, 222, 128, 0.5) 0%,
+          transparent 68%
+        );
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        animation: glow-pulse 3.2s ease-in-out infinite;
+        pointer-events: none;
       }
 
+      .cat-image {
+        position: relative;
+        width: 120px;
+        height: 120px;
+        object-fit: contain;
+        filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.4));
+        animation: cat-breathe 2.8s ease-in-out infinite;
+        will-change: transform;
+      }
+
+      // 등급 뱃지 — 이미지 하단 중앙
       .rarity-badge {
         position: absolute;
-        bottom: 10px;
-        right: -10px;
-        padding: 4px 10px;
-        border-radius: 20px;
+        bottom: -6px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1;
+        padding: 3px 10px;
+        border-radius: 999px;
         font-size: 10px;
         font-weight: 900;
         color: white;
@@ -50,43 +128,39 @@
         &.unique {
           background: #9b59b6;
         }
+        &.legend {
+          background: linear-gradient(135deg, #fbbf24, #d97706);
+        }
+      }
+
+      }
+
+      .cat-side {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        row-gap: 3px;
+        min-width: 0;
+
+        .name {
+          font-size: 20px;
+          font-weight: 900;
+          color: #4ade80;
+          font-family: "Fredoka", sans-serif;
+        }
+
+        .crying {
+          font-size: 13px;
+          color: rgba(255, 255, 255, 0.55);
+          font-style: italic;
+        }
       }
     }
 
     .cat-details {
       width: 100%;
       text-align: center;
-      margin-top: 10px;
-
-      .gang-title {
-        display: inline-flex;
-        align-items: center;
-        padding: 4px 14px;
-        margin-bottom: 6px;
-        background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
-        color: #ffffff;
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 800;
-        letter-spacing: -0.2px;
-        box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3);
-      }
-
-      .name {
-        font-size: 20px;
-        font-weight: 900;
-        color: #4ade80;
-        margin-bottom: 4px;
-        font-family: "Fredoka", sans-serif;
-      }
-
-      .crying {
-        font-size: 14px;
-        color: rgba(255, 255, 255, 0.55);
-        font-style: italic;
-        margin-bottom: 15px;
-      }
+      margin-top: 12px;
 
       .stats {
         display: flex;
@@ -119,6 +193,9 @@
             .bar {
               height: 100%;
               border-radius: 6px;
+              transform-origin: left center;
+              animation: bar-reveal 0.9s cubic-bezier(0.22, 1, 0.36, 1)
+                backwards;
               transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
 
               &.hp {
@@ -131,6 +208,14 @@
                 background: linear-gradient(90deg, #74b9ff, #0984e3);
               }
             }
+          }
+
+          .stat-item:nth-child(2) .bar {
+            animation-delay: 0.12s;
+          }
+
+          .stat-item:nth-child(3) .bar {
+            animation-delay: 0.24s;
           }
 
           .value {
@@ -220,6 +305,14 @@
         flex: 0 0 80px;
       }
 
+      // 아이템별 부유 위상차
+      > li:nth-child(2) .item-slot img {
+        animation-delay: 0.5s;
+      }
+      > li:nth-child(3) .item-slot img {
+        animation-delay: 1s;
+      }
+
       .item-slot {
         position: relative;
         display: flex;
@@ -244,6 +337,7 @@
           height: 55px;
           object-fit: contain;
           margin-bottom: 5px;
+          animation: item-float 3s ease-in-out infinite;
         }
 
         // 개수 뱃지 — 그린 그라데이션 알약으로 광고 보상 전/후 증감을 돋보이게

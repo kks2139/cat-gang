@@ -32,7 +32,7 @@
   }
 }
 
-// 캣 타워 관리 바텀시트 — 보라+핑크 톤 (타워 UI 공통 톤)
+// 캣 타워 관리 바텀시트 — 블랙&화이트 톤 (타워 UI 공통 톤)
 .overlay {
   z-index: 2000;
   position: fixed;
@@ -53,7 +53,7 @@
 
 .sheet-container {
   @include glass-card(
-    $border: rgba(236, 180, 255, 0.28),
+    $border: rgba(255, 255, 255, 0.24),
     $radius: 28px 28px 0 0,
     $shadow: 0 -10px 40px rgba(0, 0, 0, 0.4),
     $grad-top: rgba(255, 255, 255, 0.1),
@@ -61,20 +61,20 @@
   );
 
   width: 100%;
-  max-height: 80vh;
+  max-height: 88vh;
   border-bottom: none;
   padding: 16px 20px max(24px, env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
 
-  // 딥 바이올렛 틴트 — 타워 전용 톤 (핑크 억제)
+  // 딥 블랙 틴트 — 타워 전용 톤
   --glass-tint: linear-gradient(
     180deg,
-    rgba(59, 22, 100, 0.86) 0%,
-    rgba(76, 29, 149, 0.88) 55%,
-    rgba(91, 33, 182, 0.9) 100%
+    rgba(24, 24, 30, 0.86) 0%,
+    rgba(36, 36, 44, 0.88) 55%,
+    rgba(48, 48, 56, 0.9) 100%
   );
-  --glass-border: rgba(196, 181, 253, 0.3);
+  --glass-border: rgba(255, 255, 255, 0.3);
   --glass-highlight: rgba(255, 255, 255, 0.22);
 
   .sheet-header {
@@ -100,14 +100,14 @@
         display: inline-flex;
         align-items: baseline;
         padding: 3px 10px;
-        background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
-        color: #ffffff;
+        background: linear-gradient(135deg, #f4f4f5 0%, #d4d4d8 100%);
+        color: #18181b;
         border: 1px solid rgba(255, 255, 255, 0.4);
         border-radius: 999px;
         font-size: 12px;
         font-weight: 700;
         white-space: nowrap;
-        box-shadow: 0 2px 6px rgba(124, 58, 237, 0.35);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
       }
     }
 
@@ -141,17 +141,18 @@
   }
 
   // 규칙 요약 카드 — 한 줄에 규칙 하나씩 (모든 모드 공통). 어두운 카드에 담아
-  // 본문 목록과 시각적으로 분리하고, 줄바꿈을 허용해 긴 문구도 읽히게 한다
+  // 본문 목록과 시각적으로 분리하고, 줄바꿈을 허용해 긴 문구도 읽히게 한다.
+  // 목록 공간 확보를 위해 컴팩트하게 유지한다
   .sheet-hint-list {
-    margin-top: 10px;
+    margin-top: 8px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding: 12px 14px;
+    gap: 5px;
+    padding: 9px 12px;
     border-radius: 14px;
-    background: rgba(17, 12, 34, 0.45);
+    background: rgba(10, 10, 12, 0.45);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.75);
     letter-spacing: -0.2px;
@@ -159,8 +160,8 @@
     li {
       display: flex;
       align-items: flex-start;
-      gap: 8px;
-      line-height: 1.45;
+      gap: 6px;
+      line-height: 1.4;
     }
 
     .hint-icon {
@@ -190,8 +191,8 @@
   .sheet-body {
     flex: 1;
     overflow-y: auto;
-    max-height: 56vh;
-    margin-top: 12px;
+    max-height: 68vh;
+    margin-top: 10px;
     padding-right: 4px;
 
     &::-webkit-scrollbar {
@@ -231,7 +232,7 @@
     padding: 12px 14px;
     border-radius: 18px;
     // 어두운 반투명 카드 — 시트 배경 위에서 가라앉는 톤
-    background: rgba(17, 12, 34, 0.5);
+    background: rgba(10, 10, 12, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.18);
     cursor: pointer;
     text-align: left;
@@ -240,8 +241,8 @@
 
     &:active {
       transform: scale(0.97);
-      background: rgba(46, 20, 88, 0.55);
-      border-color: rgba(167, 139, 250, 0.45);
+      background: rgba(58, 58, 64, 0.55);
+      border-color: rgba(255, 255, 255, 0.45);
     }
 
     &[data-completed="true"] {
@@ -298,11 +299,11 @@
           font-size: 11px;
           font-weight: 800;
           letter-spacing: -0.2px;
-          // 건설중 — 딥 바이올렛 톤
-          color: #ffffff;
-          background: linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%);
+          // 건설중 — 화이트 톤
+          color: #18181b;
+          background: linear-gradient(135deg, #f4f4f5 0%, #d4d4d8 100%);
           border: 1px solid rgba(255, 255, 255, 0.35);
-          box-shadow: 0 2px 6px rgba(124, 58, 237, 0.35);
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
           white-space: nowrap;
 
           // 완공 — 골드 톤
@@ -334,14 +335,14 @@
     font-weight: 800;
     letter-spacing: -0.2px;
     color: #ffffff;
-    // 딥 바이올렛 솔리드 — 시트 톤과 통일
+    // 블랙 솔리드 — 시트 톤과 통일
     background: linear-gradient(
       135deg,
-      rgba(109, 40, 217, 0.9) 0%,
-      rgba(76, 29, 149, 0.95) 100%
+      rgba(63, 63, 70, 0.92) 0%,
+      rgba(24, 24, 27, 0.95) 100%
     );
-    border: 1px solid rgba(167, 139, 250, 0.4);
-    box-shadow: 0 3px 10px rgba(30, 10, 60, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
     cursor: pointer;
     transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
       filter 0.15s ease;
@@ -354,9 +355,10 @@
 
   // ----- cats 모드: 작업고양이 카드 (2열) — 이미지 좌측 세로 통합, 우측에 정보 스택 -----
   .cat-row {
-    // 등급별 톤 — MyCats와 같은 변수 체계
+    // 등급별 톤 — MyCats와 같은 변수 체계 (글로우까지 동일 강도로 부각)
     --rarity-border: rgba(255, 255, 255, 0.18);
     --rarity-strong: rgba(255, 255, 255, 0.92);
+    --rarity-glow: transparent;
 
     display: grid;
     grid-template-columns: 64px minmax(0, 1fr);
@@ -368,26 +370,31 @@
     padding: 12px;
     border-radius: 18px;
     // 어두운 반투명 카드 — 시트 배경 위에서 가라앉는 톤
-    background: rgba(17, 12, 34, 0.5);
+    background: rgba(10, 10, 12, 0.5);
     border: 1px solid var(--rarity-border);
+    box-shadow: 0 0 12px var(--rarity-glow), 0 2px 8px rgba(0, 0, 0, 0.3);
     transition: border-color 0.15s ease, background-color 0.15s ease;
 
     &[data-rarity="rare"] {
-      --rarity-border: rgba(125, 175, 255, 0.45);
+      --rarity-border: rgba(125, 175, 255, 0.75);
       --rarity-strong: #8cbcff;
+      --rarity-glow: rgba(125, 175, 255, 0.3);
+      border-width: 1.5px;
     }
 
     &[data-rarity="unique"] {
-      --rarity-border: rgba(195, 130, 255, 0.5);
+      --rarity-border: rgba(195, 130, 255, 0.85);
       --rarity-strong: #c382ff;
+      --rarity-glow: rgba(195, 130, 255, 0.4);
+      border-width: 1.5px;
     }
 
-    // 일하는 중 — 딥 바이올렛으로 부각 (어두운 톤 유지)
+    // 일하는 중 — 밝은 회색으로 부각 (등급 글로우는 유지)
     &[data-attached="true"] {
-      background: rgba(46, 20, 88, 0.55);
-      border-color: rgba(167, 139, 250, 0.45);
+      background: rgba(58, 58, 64, 0.55);
+      border-color: rgba(255, 255, 255, 0.5);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08),
-        0 0 10px rgba(76, 29, 149, 0.4);
+        0 0 12px var(--rarity-glow), 0 0 10px rgba(0, 0, 0, 0.45);
     }
 
     // 이미지 — 좌측에서 이름/바 행을 세로로 관통
@@ -447,25 +454,40 @@
       }
     }
 
-    // 일하는 중 망치질 모션 — 이름/등급 우측에서 들어올렸다 쾅 내려치기
-    .hammer {
+    // 작업/휴식 상태 스탬프 — 이모지 아래에 작게 상태 표기
+    .work-stamp {
       flex: none;
-      font-size: 22px;
-      line-height: 1;
-      pointer-events: none;
-      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
-      transform-origin: 70% 80%;
-      animation: hammer-swing 0.8s ease-in-out infinite;
-    }
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
 
-    // 휴식 중 낮잠 모션 — 망치 자리(이름 우측)에 표시
-    .zzz {
-      flex: none;
-      font-size: 20px;
-      line-height: 1;
-      pointer-events: none;
-      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
-      animation: zzz-float 1.8s ease-in-out infinite;
+      .stamp-icon {
+        font-size: 22px;
+        line-height: 1;
+        pointer-events: none;
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+      }
+
+      .stamp-label {
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: -0.2px;
+        color: rgba(255, 255, 255, 0.72);
+        white-space: nowrap;
+      }
+
+      // 망치질 모션 — 들어올렸다 쾅 내려치기
+      &:not(.resting) .stamp-icon {
+        transform-origin: 70% 80%;
+        animation: hammer-swing 0.8s ease-in-out infinite;
+      }
+
+      // 휴식 중 낮잠 모션 — 살짝 떠오르며 잠듦
+      &.resting .stamp-icon {
+        font-size: 20px;
+        animation: zzz-float 1.8s ease-in-out infinite;
+      }
     }
 
     // 남은 근무 바 — 트랙 위에 남은 비율만큼 채우고 옆에 시간 표시
@@ -488,8 +510,8 @@
           display: block;
           height: 100%;
           border-radius: 99px;
-          background: linear-gradient(90deg, #a78bfa 0%, #c4b5fd 100%);
-          box-shadow: 0 0 6px rgba(167, 139, 250, 0.5);
+          background: linear-gradient(90deg, #e4e4e7 0%, #a1a1aa 100%);
+          box-shadow: 0 0 6px rgba(255, 255, 255, 0.35);
           transition: width 0.3s ease;
         }
       }
@@ -538,14 +560,14 @@
       letter-spacing: -0.2px;
       text-align: center;
       color: #ffffff;
-      // 딥 바이올렛 솔리드 — 어두운 톤
+      // 블랙 솔리드 — 어두운 톤
       background: linear-gradient(
         135deg,
-        rgba(109, 40, 217, 0.9) 0%,
-        rgba(76, 29, 149, 0.95) 100%
+        rgba(63, 63, 70, 0.92) 0%,
+        rgba(24, 24, 27, 0.95) 100%
       );
-      border: 1px solid rgba(167, 139, 250, 0.4);
-      box-shadow: 0 3px 10px rgba(30, 10, 60, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
       cursor: pointer;
       transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
         filter 0.15s ease;
@@ -555,17 +577,17 @@
         filter: brightness(1.1);
       }
 
-      // 휴식하기 — 활성 액션이라 채워진 밝은 바이올렛 톤 (비활성처럼 안 보이게)
+      // 휴식하기 — 활성 액션이라 채워진 흰색 톤 (비활성처럼 안 보이게)
       &.detached {
-        background: linear-gradient(135deg, #c084fc 0%, #a855f7 100%);
+        background: linear-gradient(135deg, #fafafa 0%, #d4d4d8 100%);
         border-color: rgba(255, 255, 255, 0.4);
-        box-shadow: 0 3px 10px rgba(30, 10, 60, 0.4);
-        color: #ffffff;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+        color: #18181b;
       }
 
       // 오늘 근무 소진(퇴근) — 일 시키기 불가
       &:disabled {
-        background: rgba(17, 12, 34, 0.4);
+        background: rgba(10, 10, 12, 0.4);
         border-color: rgba(255, 255, 255, 0.12);
         box-shadow: none;
         color: rgba(255, 255, 255, 0.35);
@@ -596,7 +618,7 @@
     gap: 9px;
     padding: 14px 6px 11px;
     border-radius: 16px;
-    background: rgba(17, 12, 34, 0.5);
+    background: rgba(10, 10, 12, 0.5);
     border: 1.5px solid rgba(255, 255, 255, 0.18);
     cursor: pointer;
     transition: border-color 0.15s ease, background-color 0.15s ease,
@@ -607,10 +629,10 @@
     }
 
     &[data-selected="true"] {
-      background: rgba(46, 20, 88, 0.55);
-      border-color: rgba(167, 139, 250, 0.8);
+      background: rgba(58, 58, 64, 0.55);
+      border-color: rgba(255, 255, 255, 0.8);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08),
-        0 0 10px rgba(76, 29, 149, 0.4);
+        0 0 10px rgba(255, 255, 255, 0.1);
     }
 
     .chips {
@@ -656,7 +678,7 @@
       align-items: center;
       row-gap: 10px;
       padding: 14px 10px;
-      background: rgba(17, 12, 34, 0.5);
+      background: rgba(10, 10, 12, 0.5);
       border-radius: 18px;
     }
   }

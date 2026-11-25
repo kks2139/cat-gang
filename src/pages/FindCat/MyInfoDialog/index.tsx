@@ -9,12 +9,20 @@ import Dialog from "@/components/Dialog";
 import type { ItemType } from "@/components/Stage/Inventory";
 import { useItemQuery } from "@/queries/useItemQuery";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
-import { catCharacters, getGangInfo, MyCat } from "@/utils/cats";
+import { catCharacters, type CatInfo, getGangInfo, MyCat } from "@/utils/cats";
 import { NUMBER_FLOW_SPIN_TIMING } from "@/utils/constants";
 
 import styles from "./index.module.scss";
 
 const cn = classNames.bind(styles);
+
+// 등급 뱃지 문구
+const RARITY_LABEL: Record<CatInfo["rarity"], string> = {
+  common: "일반",
+  rare: "레어",
+  unique: "유니크",
+  legend: "레전드",
+};
 
 /** 보유 아이템 목록 — 클릭 시 광고 보상으로 2개를 추가한다 */
 const INVENTORY_ITEMS: ReadonlyArray<{
@@ -57,24 +65,28 @@ export default function MyInfoDialog({ onClose, isShow, onItemAdClick }: Props) 
       className={cn("MyInfoDialog")}
       isShow={isShow}
       title="내 고양이"
+      isTitleLeft
       buttonLable="확인"
       onButtonClick={() => {
         onClose?.();
       }}
     >
       <div className={cn("profile-card")}>
-        <div className={cn("cat-image-wrapper")}>
-          <div className={cn("rarity-badge", myCat.rarity)}>
-            {myCat.rarity.toUpperCase()}
+        <div className={cn("cat-top")}>
+          <div className={cn("cat-image-wrapper")}>
+            <img src={ImgCatMe} alt={myCat.name} className={cn("cat-image")} />
+            <span className={cn("rarity-badge", myCat.rarity)}>
+              {RARITY_LABEL[myCat.rarity]}
+            </span>
           </div>
-          <img src={ImgCatMe} alt={myCat.name} className={cn("cat-image")} />
+
+          <div className={cn("cat-side")}>
+            <div className={cn("name")}>{myCat.name}</div>
+            <div className={cn("crying")}>“{myCat.crying}”</div>
+          </div>
         </div>
 
         <div className={cn("cat-details")}>
-          <div className={cn("gang-title")}>{gangInfo.title}</div>
-          <div className={cn("name")}>{myCat.name}</div>
-          <div className={cn("crying")}>“{myCat.crying}”</div>
-
           <div className={cn("stats")}>
             <div className={cn("stat-item")}>
               <span className={cn("label")}>HP</span>

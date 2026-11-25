@@ -155,9 +155,10 @@ input {
       }
     }
 
-    img {
+    // 아이템 이미지 본체만 — 뜨는 모션 유지.
+    // 바닥 그림자는 캐릭터 마커와 같은 img.marker-shadow 실루엣이 담당
+    .item img {
       animation: item-float 2s ease-in-out infinite alternate !important;
-      filter: drop-shadow(0 8px 3px rgba(58, 58, 58, 0.4));
     }
 
     &.clicked {
@@ -1575,11 +1576,11 @@ input {
   border-radius: 999px;
   background: linear-gradient(
     135deg,
-    rgba(147, 51, 234, 0.88) 0%,
-    rgba(236, 72, 153, 0.88) 100%
+    rgba(39, 39, 44, 0.9) 0%,
+    rgba(63, 63, 70, 0.9) 100%
   );
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 3px 10px rgba(88, 28, 135, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
   color: #ffffff;
   font-size: 13px;
   font-weight: 800;
@@ -1790,15 +1791,15 @@ input {
   padding: 11px 12px 12px;
   animation: cat-tower-popup-in 0.22s cubic-bezier(0.34, 1.4, 0.64, 1) both;
   border-radius: 16px;
-  // 딥 바이올렛 틴트 (핑크 억제)
+  // 딥 블랙 틴트
   background: linear-gradient(
     180deg,
-    rgba(59, 22, 100, 0.92) 0%,
-    rgba(76, 29, 149, 0.9) 55%,
-    rgba(91, 33, 182, 0.92) 100%
+    rgba(24, 24, 30, 0.92) 0%,
+    rgba(36, 36, 44, 0.9) 55%,
+    rgba(48, 48, 56, 0.92) 100%
   );
-  border: 1px solid rgba(196, 181, 253, 0.4);
-  box-shadow: 0 6px 18px rgba(49, 15, 92, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
   color: #ffffff;
   // 흰 하이라이트 1px (glass-card 질감)
   outline: 1px solid rgba(255, 255, 255, 0.22);
@@ -1826,7 +1827,7 @@ input {
       font-size: 15px;
       font-weight: 800;
       font-variant-numeric: tabular-nums;
-      color: #ede9fe;
+      color: #ffffff;
 
       em {
         font-style: normal;
@@ -1845,11 +1846,11 @@ input {
     font-size: 12px;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.85);
-    background: rgba(17, 12, 34, 0.35);
+    background: rgba(10, 10, 12, 0.35);
     border: 1px solid rgba(255, 255, 255, 0.12);
 
     b {
-      color: #ddd6fe;
+      color: #ffffff;
       font-weight: 800;
     }
   }
@@ -1873,7 +1874,7 @@ input {
     letter-spacing: -0.2px;
     color: #ffffff;
     // 어두운 반투명 기본 버튼
-    background: rgba(17, 12, 34, 0.5);
+    background: rgba(10, 10, 12, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.26);
     cursor: pointer;
     white-space: nowrap;
@@ -1885,11 +1886,12 @@ input {
       filter: brightness(1.12);
     }
 
-    // 작업고양이 추가 — 딥 바이올렛 솔리드로 강조 (어두운 톤 유지)
+    // 작업고양이 추가 — 흰색 솔리드로 강조
     &.add {
-      background: linear-gradient(135deg, rgba(109, 40, 217, 0.92) 0%, rgba(76, 29, 149, 0.95) 100%);
-      border-color: rgba(167, 139, 250, 0.45);
-      box-shadow: 0 3px 10px rgba(30, 10, 60, 0.4);
+      background: linear-gradient(135deg, #fafafa 0%, #d4d4d8 100%);
+      border-color: rgba(255, 255, 255, 0.6);
+      color: #18181b;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
     }
   }
 }

@@ -70,6 +70,8 @@ export default function FindCat() {
 
   const { setIsStopFocusMe, setIsBattleOn } = useViewStore((s) => s.actions);
   const isMapLoading = useViewStore((s) => s.isMapLoading);
+  // 내위치 버튼 표시 — 자동 위치 추적이 꺼져 있으면 아이콘을 회색으로
+  const isStopFocusMe = useViewStore((s) => s.isStopFocusMe);
   const isShowStage = useCatStore((s) => s.isShowStage);
   const { setSelectedCat, setIsShowStage, setClickedOwnCat } = useCatStore(
     (s) => s.actions
@@ -264,6 +266,8 @@ export default function FindCat() {
       return;
     }
 
+    // 타워 포커스(팝업) 중이면 먼저 푼다
+    useViewStore.getState().closeTowerPopup?.();
     setTowerSheetMode("list");
     setIsShowTowerSheet(true);
   }, [ownCats.length]);
@@ -552,13 +556,15 @@ export default function FindCat() {
         }}
       />
 
-      {/* 하단 플로팅 액션 독 — 문구(위)+값(아래) 컴팩트 버튼 */}
+      {/* 하단 플로팅 액션 독 — 문구(위)+값(아래) 컴팩트 버튼 + 내위치 아이콘 */}
       <div className={cn("floating-dock")}>
         <Button
           className={cn("dock-btn", "my-cats-btn")}
           color="primary"
           disabled={isMapLoading || isPlacingTower}
           onClick={() => {
+            // 타워 포커스(팝업) 중이면 먼저 푼다
+            useViewStore.getState().closeTowerPopup?.();
             setIsStopFocusMe(true);
             setIsShowCatchedCatPopup(true);
           }}
@@ -573,6 +579,8 @@ export default function FindCat() {
           color="primary"
           disabled={isMapLoading || isPlacingTower}
           onClick={() => {
+            // 타워 포커스(팝업) 중이면 먼저 푼다
+            useViewStore.getState().closeTowerPopup?.();
             setIsStopFocusMe(true);
             setIsShowCatBook(true);
           }}
@@ -598,6 +606,33 @@ export default function FindCat() {
               <span className={cn("unit")}>채</span>
             </span>
           )}
+        </Button>
+        {/* 내위치 버튼 — 독 우측 끝 아이콘 전용 (Map이 등록한 locateMe를 호출) */}
+        <Button
+          className={cn("dock-btn", "locate-btn", { "stop-focus": isStopFocusMe })}
+          color="primary"
+          disabled={isMapLoading || isPlacingTower}
+          aria-label="내 위치로 이동"
+          onClick={() => {
+            useViewStore.getState().locateMe?.();
+          }}
+        >
+          <svg
+            className={cn("gps-icon")}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="7" />
+            <line x1="12" y1="2" x2="12" y2="5" />
+            <line x1="12" y1="19" x2="12" y2="22" />
+            <line x1="2" y1="12" x2="5" y2="12" />
+            <line x1="19" y1="12" x2="22" y2="12" />
+            <circle cx="12" cy="12" r="2.5" fill="currentColor" />
+          </svg>
         </Button>
       </div>
 

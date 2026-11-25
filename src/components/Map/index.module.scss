@@ -30,7 +30,7 @@
 // 상단 플로팅 캡슐 행 — 왼쪽 산책 거리 / 오른쪽 깡 (래퍼는 클릭 투과)
 .top-bar {
   position: absolute;
-  top: calc(max(16px, env(safe-area-inset-top)) + 10px);
+  top: calc(max(16px, env(safe-area-inset-top)) + 2px);
   left: 0;
   right: 0;
   z-index: 1000;
@@ -41,9 +41,18 @@
   padding: 0 16px;
 }
 
-// 산책 거리 캡슐 — 공통 글래스 카드 + 발바닥 아이콘 강조 (클릭 시 총 산책 거리 토스트)
+// 산책 거리 캡슐 — 공통 글래스 카드 + 블랙&화이트 톤 (클릭 시 총 산책 거리 토스트)
 .distance-display {
   @include glass-card($radius: 24px);
+
+  // 블랙 틴트 + 화이트 악센트 — 타워 UI와 같은 딥 블랙 계열
+  --glass-tint: linear-gradient(
+    180deg,
+    rgba(24, 24, 30, 0.88) 0%,
+    rgba(36, 36, 44, 0.9) 55%,
+    rgba(48, 48, 56, 0.92) 100%
+  );
+  --glass-border: rgba(255, 255, 255, 0.32);
 
   pointer-events: auto;
   display: inline-flex;
@@ -60,7 +69,7 @@
     transform: scale(0.94);
   }
 
-  // 발바닥 아이콘 — 주황 그라데이션 원형 배지 (공통 PawIcon)
+  // 발바닥 아이콘 — 화이트 그라데이션 원형 배지 (공통 PawIcon)
   .paw-icon {
     flex-shrink: 0;
     display: flex;
@@ -69,9 +78,9 @@
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #fdba74 0%, #f97316 100%);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35),
-      0 2px 8px rgba(249, 115, 22, 0.45);
+    background: linear-gradient(135deg, #fafafa 0%, #d4d4d8 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6),
+      0 2px 8px rgba(0, 0, 0, 0.4);
   }
 
   .label {
@@ -98,16 +107,22 @@
   }
 }
 
-// 깡 캡슐 — 오렌지 톤 글래스 카드 버튼 (래퍼가 pointer-events: none이라 버튼만 활성)
+// 깡 캡슐 — 블랙&오렌지 톤 글래스 카드 버튼 (래퍼가 pointer-events: none이라 버튼만 활성)
 .kkang-display {
-  @include glass-card(
-    $tint: rgba(249, 115, 22, 0.5),
-    $border: rgba(255, 214, 165, 0.5),
-    $radius: 24px,
-    $shadow: 0 4px 14px rgba(249, 115, 22, 0.25),
-    $grad-top: rgba(255, 237, 213, 0.3),
-    $grad-bottom: rgba(194, 65, 12, 0.5)
+  @include glass-card($radius: 24px);
+
+  // 블랙 틴트 + 오렌지 악센트
+  --glass-tint: linear-gradient(
+    180deg,
+    rgba(28, 21, 16, 0.9) 0%,
+    rgba(20, 15, 12, 0.92) 55%,
+    rgba(12, 9, 7, 0.94) 100%
   );
+  --glass-border: rgba(233, 139, 62, 0.45);
+  --glass-grad-top: rgba(250, 209, 156, 0.16);
+  --glass-grad-bottom: rgba(14, 13, 12, 0.4);
+  --glass-shadow: 0 1px 14px rgba(249, 115, 22, 0.3),
+    0 0 12px rgba(249, 115, 22, 0.12);
 
   pointer-events: auto;
   display: inline-flex;
@@ -126,7 +141,6 @@
 
   .kkang-icon {
     font-size: 24px;
-    filter: drop-shadow(0 0 4px rgb(250, 2, 2));
   }
 
   .count {
@@ -139,59 +153,8 @@
   }
 }
 
-// 내 위치 포커스 플로팅 액션 버튼 (FAB) — 공통 글래스 + 그린빛 하단 그라데이션
-.focus-button {
-  @include glass-card(
-    $border: rgba(255, 255, 255, 0.55),
-    $radius: 50%,
-    $shadow: 0 4px 16px rgba(22, 163, 74, 0.2),
-    $grad-top: rgba(255, 255, 255, 0.2),
-    $grad-bottom: rgba(187, 247, 208, 0.2)
-  );
-
-  z-index: 1000;
-  position: absolute;
-  bottom: calc(max(24px, env(safe-area-inset-bottom)) + 24px);
-  right: 16px;
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1), filter 0.15s ease;
-
-  .gps-icon {
-    width: 22px;
-    height: 22px;
-    color: #00c44b;
-    filter: drop-shadow(0 1px 5px rgb(56, 56, 56));
-    transition: color 0.2s ease;
-  }
-
-  &:active:not(:disabled) {
-    transform: scale(0.92);
-  }
-
-  // 로딩중 비활성화 상태
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
-    filter: grayscale(0.6);
-
-    .gps-icon {
-      color: #94a3b8;
-      filter: none;
-    }
-  }
-
-  &.stop-focus {
-    .gps-icon {
-      color: #94a3b8;
-    }
-  }
-}
+// 내 위치 버튼은 FindCat 하단 플로팅 독(FindCat/index.module.scss)으로 이동함
+// — 카메라 이동 로직은 Map이 view store의 locateMe로 등록해 노출한다
 
 // 맵 첫 진입 리빌(구름/안개 갈라짐) 연출은 CloudReveal 컴포넌트로 분리됨
 // — components/CloudReveal/index.module.scss 참고
@@ -202,4 +165,56 @@
   cursor: not-allowed;
   opacity: 0.55;
   pointer-events: none;
+}
+
+// 좁은 화면(≤362px) — 상단 캡슐을 한 단계 축소해 두 캡슐이 겹치지 않게 한다
+// (Entry 타이틀과 같은 브레이크포인트)
+@media (max-width: 362px) {
+  .top-bar {
+    padding: 0 12px;
+  }
+
+  .distance-display {
+    gap: 8px;
+    padding: 5px 12px;
+
+    .paw-icon {
+      width: 24px;
+      height: 24px;
+    }
+
+    .label {
+      font-size: 14px;
+    }
+
+    .distance {
+      font-size: 18px;
+    }
+
+    .unit {
+      font-size: 13px;
+    }
+  }
+
+  .kkang-display {
+    padding: 2px 12px 2px 3px;
+
+    .kkang-icon {
+      font-size: 20px;
+    }
+
+    .count {
+      font-size: 18px;
+    }
+  }
+}
+
+// 더 좁은 화면(≤320px) — 상단 캡슐 두 개를 세로로 쌓아 겹침을 막는다
+// (하단 독의 세로 배치는 FindCat 쪽 미디어쿼리)
+@media (max-width: 320px) {
+  .top-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
 }

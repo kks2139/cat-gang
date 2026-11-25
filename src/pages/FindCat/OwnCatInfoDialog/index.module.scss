@@ -1,5 +1,52 @@
 @use "@/styles/mixins" as *;
 
+// 고양이 이미지 숨쉬기 모션
+@keyframes cat-breathe {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-7px) scale(1.02);
+  }
+}
+
+// 등급 색 후광 맥동
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.75;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+}
+
+// 반짝이 트윙클
+@keyframes sparkle-pulse {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: rotate(45deg) scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: rotate(45deg) scale(1);
+  }
+}
+
+// 스탯 바 등장
+@keyframes bar-reveal {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
 .OwnCatInfoDialog {
   @include glass-card(
     $border: rgba(187, 247, 208, 0.35),
@@ -9,28 +56,66 @@
     $grad-bottom: rgba(0, 0, 0, 0.1)
   );
 
+  // 등급별 후광 색 (wrapper에 rarity 클래스)
+  --rarity-glow: rgba(120, 145, 150, 0.5); // common
+
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 10px;
 
-  .cat-image-wrapper {
-    position: relative;
-    margin-top: -40px;
-    filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.4));
+  // 상단 — 이미지 좌측 + 등급/이름/울음소리 우측 스택
+  .cat-top {
+    display: flex;
+    align-items: center;
+    column-gap: 14px;
+    width: 100%;
 
-    .cat-image {
-      width: 150px;
-      height: 150px;
-      object-fit: contain;
+    .cat-image-wrapper {
+      position: relative;
+      flex: none;
+      // 이미지만 카드 위로 살짝 삐져나가는 팝아웃 — transform이라 레이아웃 박스는
+      // 그대로라 우측 스택은 카드 영역 안에 유지된다
+      transform: translateY(-18px);
+
+    // 등급 색 후광 — 이미지 뒤에서 은은하게 맥동
+    &::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 140px;
+      height: 140px;
+      background: radial-gradient(
+        circle,
+        var(--rarity-glow) 0%,
+        transparent 68%
+      );
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      animation: glow-pulse 3.2s ease-in-out infinite;
+      pointer-events: none;
     }
 
+    .cat-image {
+      position: relative;
+      width: 112px;
+      height: 112px;
+      object-fit: contain;
+      filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.4));
+      animation: cat-breathe 2.8s ease-in-out infinite;
+      will-change: transform;
+    }
+
+    // 등급 뱃지 — 이미지 하단 중앙
     .rarity-badge {
       position: absolute;
-      bottom: 5px;
-      left: 100px;
-      padding: 4px 10px;
-      border-radius: 20px;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1;
+      padding: 3px 10px;
+      border-radius: 999px;
       font-size: 10px;
       font-weight: 900;
       color: white;
@@ -47,28 +132,102 @@
       &.unique {
         background: #9b59b6;
       }
+      &.legend {
+        background: linear-gradient(135deg, #fbbf24, #d97706);
+      }
+    }
+
+    // 레어 이상만 반짝이 별
+    &.rare::after,
+    &.unique::after {
+      content: "";
+      position: absolute;
+      top: 4px;
+      right: 12px;
+      width: 10px;
+      height: 10px;
+      background: #ffe9a3;
+      border-radius: 2px;
+      transform: rotate(45deg);
+      box-shadow: 0 0 10px rgba(255, 224, 130, 0.9);
+      animation: sparkle-pulse 2.2s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    // rare/unique 후광 색 (wrapper에 rarity 클래스)
+    &.rare {
+      --rarity-glow: rgba(52, 152, 219, 0.55);
+    }
+    &.unique {
+      --rarity-glow: rgba(155, 89, 182, 0.55);
     }
   }
 
-  .cat-details {
-    width: 100%;
-    text-align: center;
-    margin-top: 10px;
+  .cat-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    row-gap: 3px;
+    min-width: 0;
 
     .name {
       font-size: 20px;
       font-weight: 900;
       color: #4ade80;
-      margin-bottom: 4px;
       font-family: "Fredoka", sans-serif;
     }
 
     .crying {
-      font-size: 14px;
+      font-size: 13px;
       color: rgba(255, 255, 255, 0.55);
       font-style: italic;
-      margin-bottom: 15px;
     }
+
+    .active-chip {
+      display: inline-flex;
+      align-items: center;
+      column-gap: 6px;
+      margin-top: 5px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.75);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+
+      .chip-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.6);
+      }
+
+      &.night {
+        background: rgba(129, 140, 248, 0.16);
+        border-color: rgba(129, 140, 248, 0.4);
+
+        .chip-dot {
+          background: #818cf8;
+        }
+      }
+
+      &.day {
+        background: rgba(251, 191, 36, 0.14);
+        border-color: rgba(251, 191, 36, 0.4);
+
+        .chip-dot {
+          background: #fbbf24;
+        }
+      }
+    }
+  }
+  }
+
+  .cat-details {
+    width: 100%;
+    text-align: center;
+    margin-top: 12px;
 
     .stats {
       display: flex;
@@ -76,7 +235,7 @@
       row-gap: 8px;
       width: 100%;
       padding: 0 10px;
-      margin-bottom: 15px;
+      margin-bottom: 14px;
 
       .stat-item {
         display: flex;
@@ -97,11 +256,13 @@
           border-radius: 6px;
           overflow: hidden;
           box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25);
+          border: 1px solid rgba(255, 255, 255, 0.06);
 
           .bar {
             height: 100%;
             border-radius: 6px;
-            transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
+            transform-origin: left center;
+            animation: bar-reveal 0.9s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 
             &.hp {
               background: linear-gradient(90deg, #ff7675, #d63031);
@@ -121,58 +282,47 @@
           font-weight: 700;
           color: rgba(255, 255, 255, 0.85);
           text-align: right;
+          font-variant-numeric: tabular-nums;
         }
+      }
+
+      .stat-item:nth-child(2) .bar {
+        animation-delay: 0.12s;
+      }
+
+      .stat-item:nth-child(3) .bar {
+        animation-delay: 0.24s;
       }
     }
 
     .catch-info {
       margin: 0 10px;
-      padding: 12px;
+      padding: 12px 14px 14px;
       background: rgba(255, 255, 255, 0.06);
-      border: 2px dashed rgba(255, 255, 255, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.14);
       border-radius: 16px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-      position: relative;
-      overflow: hidden;
-
-      &::before {
-        content: "CONFIRMED";
-        position: absolute;
-        top: 10px;
-        right: -15px;
-        transform: rotate(35deg);
-        font-size: 10px;
-        font-weight: 900;
-        color: rgba(74, 222, 128, 0.6);
-        border: 1px solid rgba(74, 222, 128, 0.6);
-        padding: 2px 15px;
-        pointer-events: none;
-      }
+      text-align: center;
 
       .catch-header {
         display: flex;
         align-items: center;
         justify-content: center;
         column-gap: 6px;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
 
         .icon {
           font-size: 14px;
         }
 
         .catch-label {
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 800;
-          color: rgba(255, 255, 255, 0.6);
+          color: rgba(255, 255, 255, 0.55);
           letter-spacing: 0.5px;
         }
       }
 
       .catch-data {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-
         .date {
           font-size: 18px;
           font-weight: 900;
@@ -187,6 +337,18 @@
           color: rgba(255, 255, 255, 0.4);
           margin-top: 2px;
         }
+      }
+
+      .days-badge {
+        display: inline-block;
+        margin-top: 10px;
+        padding: 3px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 800;
+        color: #4ade80;
+        background: rgba(74, 222, 128, 0.12);
+        border: 1px solid rgba(74, 222, 128, 0.35);
       }
     }
   }

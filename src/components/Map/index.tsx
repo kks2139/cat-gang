@@ -1974,11 +1974,15 @@ function MapContent({
 }
 
 export default function Map({ className, onClickKkang, ...rest }: Props) {
-  const isStopFocusMe = useViewStore((s) => s.isStopFocusMe);
   const kkangCount = useKkangStore((s) => s.count);
-  const { setMap, setIsStopFocusMe, setIsMapLoading, addToastMessage } =
-    useViewStore((s) => s.actions);
-  // 캣 타워 위치 지정(새로 세우기/이동) 중엔 상단 버튼/내 위치 버튼을 잠근다
+  const {
+    setMap,
+    setIsStopFocusMe,
+    setIsMapLoading,
+    setLocateMe,
+    addToastMessage,
+  } = useViewStore((s) => s.actions);
+  // 캣 타워 위치 지정(새로 세우기/이동) 중엔 상단 버튼을 잠근다
   const isPlacingTower = useCatTowerStore((s) => s.isPlacingTower);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -1999,6 +2003,8 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
   const totalWalkDistance = (user?.total_distance ?? 0) + totalDistance;
 
   const onClickDistance = () => {
+    // 타워 포커스(팝업) 중이면 먼저 푼다
+    useViewStore.getState().closeTowerPopup?.();
     addToastMessage({
       message: `지금까지 총 ${(totalWalkDistance / 1000).toFixed(
         2
@@ -2246,6 +2252,38 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
     };
   }, [isLoading, setIsMapLoading]);
 
+  // 내 위치 포커스 이동 등록 — 하단 독의 내위치 버튼(FindCat)이 호출한다
+  // (버튼 잠금은 호출부가 isMapLoading/isPlacingTower로 막는다)
+  useEffect(() => {
+    setLocateMe(() => {
+      // 타워 포커스(팝업) 중이면 포커스만 푼다 — closePopup이 클릭 직전
+      // 카메라로 되돌리며(추적 중이었다면 추적도 재개) 이동과 충돌하지 않게 한다
+      const { closeTowerPopup } = useViewStore.getState();
+
+      if (closeTowerPopup) {
+        closeTowerPopup();
+        return;
+      }
+
+      const marker = myMarkerRef.current;
+
+      if (marker) {
+        const { lat, lng } = marker.getLngLat();
+
+        // panTo 완료 후에 자동 추적 재개 (panTo 도중 panTo/setView와 충돌 방지)
+        mapRef.current?.once("moveend", () => {
+          setIsStopFocusMe(false);
+        });
+        mapRef.current?.easeTo({
+          center: [lng, lat],
+          duration: 1500,
+        });
+      }
+    });
+
+    return () => setLocateMe(null);
+  }, [setIsStopFocusMe, setLocateMe]);
+
   // 리빌 진행 중 신호 — 구름/안개 연출이 다시 시작되면 리빌 완료 플래그를 되돌린다.
   // 완료(onExitComplete) 시점은 아래 AnimatePresence에서 스토어에 반영한다
   useEffect(() => {
@@ -2372,7 +2410,7 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
           onClick={onClickDistance}
           aria-label="총 산책 거리 보기"
         >
-          <PawIcon size={15} color="#834e00" className={cn("paw-icon")} />
+          <PawIcon size={15} color="#27272a" className={cn("paw-icon")} />
           <span className={cn("label")}>오늘 산책 거리</span>
           <NumberFlow
             className={cn("distance")}
@@ -2386,7 +2424,11 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
           type="button"
           className={cn("kkang-display")}
           disabled={isLoading || isPlacingTower}
-          onClick={onClickKkang}
+          onClick={() => {
+            // 타워 포커스(팝업) 중이면 먼저 푼다
+            useViewStore.getState().closeTowerPopup?.();
+            onClickKkang?.();
+          }}
           aria-label="깡 충전"
         >
           <span className={cn("kkang-icon")}>⚡</span>
@@ -2419,46 +2461,6 @@ export default function Map({ className, onClickKkang, ...rest }: Props) {
           />
         </div>
       </div>
-
-      <button
-        data-name="focus-button"
-        className={cn("focus-button", { "stop-focus": isStopFocusMe })}
-        aria-label="내 위치로 이동"
-        disabled={isLoading || isPlacingTower}
-        onClick={async () => {
-          const marker = myMarkerRef.current;
-
-          if (marker) {
-            const { lat, lng } = marker.getLngLat();
-
-            // panTo 완료 후에 자동 추적 재개 (panTo 도중 panTo/setView와 충돌 방지)
-            mapRef.current?.once("moveend", () => {
-              setIsStopFocusMe(false);
-            });
-            mapRef.current?.easeTo({
-              center: [lng, lat],
-              duration: 1500,
-            });
-          }
-        }}
-      >
-        <svg
-          className={cn("gps-icon")}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="12" cy="12" r="7" />
-          <line x1="12" y1="2" x2="12" y2="5" />
-          <line x1="12" y1="19" x2="12" y2="22" />
-          <line x1="2" y1="12" x2="5" y2="12" />
-          <line x1="19" y1="12" x2="22" y2="12" />
-          <circle cx="12" cy="12" r="2.5" fill="currentColor" />
-        </svg>
-      </button>
 
       {/* 첫 진입 리빌 — 구름/안개가 화면을 덮고 로딩 완료 후 양쪽으로 흩어진다
           (연출 상세는 CloudReveal 컴포넌트 담당)

@@ -30,15 +30,15 @@
   }
 
   .messages {
-    // 글래스 질감은 그대로, 톤만 블랙 & 화이트로 — 뒤로 쌓인 토스트의
-    // 밝기(depth) 연출은 framer-motion이 처리하므로 흑백에서도 그대로 먹는다
+    // 글래스 질감은 그대로, 톤만 블랙 & 화이트 반전 — 밝은 배경에 어두운 글씨
+    // (blur 미지원 웹뷰 대비 tint를 충분히 불투명하게)
     @include glass-card(
-      $tint: rgba(8, 8, 10, 0.78),
-      $border: rgba(255, 255, 255, 0.32),
+      $tint: rgba(244, 244, 245, 0.94),
+      $border: rgba(0, 0, 0, 0.14),
       $radius: 16px,
       $shadow: 0 8px 24px rgba(0, 0, 0, 0.4),
-      $grad-top: rgba(255, 255, 255, 0.14),
-      $grad-bottom: rgba(0, 0, 0, 0.22)
+      $grad-top: rgba(255, 255, 255, 0.6),
+      $grad-bottom: rgba(0, 0, 0, 0.08)
     );
 
     display: flex;
@@ -46,7 +46,7 @@
     column-gap: 10px;
     max-width: 100%;
     padding: 11px 20px 11px 16px;
-    color: #ffffff;
+    color: #18181b;
     font-size: 14px;
     font-weight: 600;
     letter-spacing: -0.2px;
@@ -54,15 +54,15 @@
     text-align: center;
     white-space: nowrap;
 
-    // 좌측 흰색 고양이 발바닥 아이콘
+    // 좌측 어두운 고양이 발바닥 아이콘 — 밝은 토스트 배경 위에서 보이게
     &::before {
       content: "";
       flex-shrink: 0;
       width: 16px;
       height: 16px;
-      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M12 11.5c-4 0-7 2.7-7 6 0 2.4 2 3.8 4.4 3.8 1.1 0 1.8-.5 2.6-.5s1.5.5 2.6.5c2.4 0 4.4-1.4 4.4-3.8 0-3.3-3-6-7-6z'/%3E%3Cellipse cx='5.5' cy='8.8' rx='2.1' ry='2.7' transform='rotate(-20 5.5 8.8)'/%3E%3Cellipse cx='12' cy='5.6' rx='2.2' ry='2.9'/%3E%3Cellipse cx='18.5' cy='8.8' rx='2.1' ry='2.7' transform='rotate(20 18.5 8.8)'/%3E%3C/svg%3E")
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2318181b'%3E%3Cpath d='M12 11.5c-4 0-7 2.7-7 6 0 2.4 2 3.8 4.4 3.8 1.1 0 1.8-.5 2.6-.5s1.5.5 2.6.5c2.4 0 4.4-1.4 4.4-3.8 0-3.3-3-6-7-6z'/%3E%3Cellipse cx='5.5' cy='8.8' rx='2.1' ry='2.7' transform='rotate(-20 5.5 8.8)'/%3E%3Cellipse cx='12' cy='5.6' rx='2.2' ry='2.9'/%3E%3Cellipse cx='18.5' cy='8.8' rx='2.1' ry='2.7' transform='rotate(20 18.5 8.8)'/%3E%3C/svg%3E")
         no-repeat center / contain;
-      filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.45));
+      filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
     }
 
     // 뒤로 쌓인 토스트가 앞 토스트에 겹치게 하는 간격 (깊이감 밀집)

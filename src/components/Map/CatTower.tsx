@@ -1561,6 +1561,20 @@ export default function CatTower({
     });
   }, [map]);
 
+  // 팝업이 열려 있는 동안 닫기 함수를 스토어에 등록 — 독/상단/내위치 버튼 등
+  // 다른 UI 클릭 시 타워 포커스를 함께 풀기 위해 외부에서 호출한다
+  useEffect(() => {
+    if (!popupEl) {
+      return;
+    }
+
+    useViewStore.getState().actions.setCloseTowerPopup(closePopup);
+
+    return () => {
+      useViewStore.getState().actions.setCloseTowerPopup(null);
+    };
+  }, [popupEl, closePopup]);
+
   const togglePopup = useCallback(
     (towerId: string) => {
       if (!map) {

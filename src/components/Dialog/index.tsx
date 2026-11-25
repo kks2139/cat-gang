@@ -28,6 +28,8 @@ interface Props {
   onBackClose?: () => void;
   /** 뒤로가기로 닫기 비활성화 (기본: 활성) */
   isBackClose?: boolean;
+  /** 제목을 최상단 좌측에 정렬 (정보창용) */
+  isTitleLeft?: boolean;
   children?: React.ReactNode;
   buttonDisabled?: boolean;
   className?: string;
@@ -44,6 +46,7 @@ export default function Dialog({
   buttonColor = "primary",
   onBackClose,
   isBackClose = true,
+  isTitleLeft,
   children,
   buttonDisabled,
   className,
@@ -93,7 +96,7 @@ export default function Dialog({
           exit={{ opacity: 0, transition: { duration: 0.1 } }}
         >
           <div className={cn("content")}>
-            <div className={cn("wrapper")}>
+            <div className={cn("wrapper", { "title-left": isTitleLeft })}>
               {title && <h3 className={cn("title")}>{title}</h3>}
               {subTitle && <h5 className={cn("sub-title")}>{subTitle}</h5>}
               {children && <div className={cn("body")}>{children}</div>}

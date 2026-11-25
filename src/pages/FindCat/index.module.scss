@@ -29,15 +29,18 @@
       $grad-top: rgba(255, 255, 255, 0.1),
       $grad-bottom: rgba(0, 0, 0, 0.1)
     );
+    --glass-tint: transparent;
 
     z-index: 1000;
     position: absolute;
     bottom: max(24px, env(safe-area-inset-bottom));
-    left: 16px;
+    // 가로 중앙 배치
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 10px;
+    gap: 12px;
+    padding: 8px 12px;
     white-space: nowrap;
 
     .dock-btn {
@@ -59,19 +62,19 @@
         white-space: nowrap;
       }
 
-      // 푸른 톤 유리 (내 부하/도감 버튼 전용 톤 — 다크 글래스 위 강조)
+      // 블루&블랙 톤 유리 (내 부하/도감 버튼 전용 톤 — 남색 블랙 베이스 + 블루 악센트)
       --glass-tint: linear-gradient(
         180deg,
-        rgba(40, 92, 170, 0.795) 0%,
-        rgba(26, 63, 131, 0.9) 55%,
-        rgba(24, 87, 223, 0.92) 100%
+        rgba(23, 42, 80, 0.88) 0%,
+        rgba(14, 26, 52, 0.92) 55%,
+        rgba(8, 16, 34, 0.94) 100%
       );
-      --glass-border: rgba(187, 218, 247, 0.35);
+      --glass-border: rgba(219, 227, 240, 0.4);
       --glass-grad-top: rgba(255, 255, 255, 0.18);
-      --glass-grad-bottom: rgba(0, 0, 0, 0.2);
+      --glass-grad-bottom: rgba(1, 46, 114, 0.637);
       --glass-highlight: rgba(255, 255, 255, 0.3);
-      --glass-shadow: 0 6px 18px rgba(0, 0, 0, 0.35),
-        0 0 14px rgba(22, 95, 163, 0.18);
+      --glass-shadow: 0 6px 18px rgba(0, 0, 0, 0.4),
+        0 0 14px rgba(49, 130, 246, 0.2);
 
       .badge {
         display: inline-flex;
@@ -88,38 +91,113 @@
           margin-left: 2px;
         }
       }
+
+      // 버튼별 배지 톤 — 각 버튼의 유리 틴트에 맞춘다 (블루 톤 / 딥 블랙 톤)
+      &.my-cats-btn .badge,
+      &.book-btn .badge {
+        background: rgba(49, 130, 246, 0.42);
+        border: 1px solid rgba(147, 197, 253, 0.45);
+      }
+
+      &.tower-btn .badge {
+        background: rgba(255, 255, 255, 0.14);
+        border: 1px solid rgba(255, 255, 255, 0.32);
+      }
     }
 
-    // 캣 타워 버튼 — 딥 바이올렛 톤 (타워 UI 전용, 핑크 억제)
+    // 캣 타워 버튼 — 딥 블랙 톤 (타워 UI 전용)
     .tower-btn {
       --glass-tint: linear-gradient(
         180deg,
-        rgba(109, 40, 217, 0.8) 0%,
-        rgba(88, 28, 135, 0.9) 55%,
-        rgba(76, 29, 149, 0.92) 100%
+        rgba(52, 52, 58, 0.85) 0%,
+        rgba(36, 36, 42, 0.9) 55%,
+        rgba(24, 24, 28, 0.92) 100%
       );
-      --glass-border: rgba(196, 181, 253, 0.38);
+      --glass-border: rgba(255, 255, 255, 0.38);
       --glass-grad-top: rgba(255, 255, 255, 0.18);
       --glass-grad-bottom: rgba(0, 0, 0, 0.2);
       --glass-highlight: rgba(255, 255, 255, 0.3);
-      --glass-shadow: 0 6px 18px rgba(0, 0, 0, 0.35),
-        0 0 14px rgba(139, 92, 246, 0.22);
+      --glass-shadow: 0 6px 18px rgba(0, 0, 0, 0.4),
+        0 0 14px rgba(255, 255, 255, 0.08);
+    }
+
+    // 내위치 버튼 — 독 우측 끝 아이콘 전용 (높이는 문구 버튼들에 맞춰 늘린다)
+    .locate-btn {
+      align-self: stretch;
+      justify-content: center;
+      min-width: 52px;
+      padding: 9px 12px;
+
+      .gps-icon {
+        width: 22px;
+        height: 22px;
+        color: #4d9fff;
+        filter: drop-shadow(0 1px 5px rgb(56, 56, 56));
+        transition: color 0.2s ease;
+      }
+
+      // 자동 위치 추적이 꺼진 상태 — 회색 아이콘
+      &.stop-focus .gps-icon {
+        color: #94a3b8;
+      }
+
+      &:disabled .gps-icon {
+        color: #94a3b8;
+        filter: none;
+      }
+    }
+  }
+
+  // 좁은 화면(≤362px) — 독 버튼을 축소해 컴팩트하게 유지한다
+  // (Entry 타이틀과 같은 브레이크포인트)
+  @media (max-width: 362px) {
+    .floating-dock {
+      gap: 8px;
+      padding: 8px;
+
+      .dock-btn {
+        min-width: 56px;
+        padding: 8px 12px 7px;
+        font-size: 15px;
+
+        .badge {
+          font-size: 12px;
+        }
+      }
+    }
+  }
+
+  // 더 좁은 화면(≤320px) — 독 버튼을 세로로 쌓아 폭을 크게 줄인다.
+  // 배너 광고 등 좌우 요소와 겹치지 않게 타워 지정 배너도 세로 독 위로 피한다
+  @media (max-width: 320px) {
+    .floating-dock {
+      flex-direction: column;
+      align-items: stretch;
+      // 세로 모드에선 좌측 배치로 되돌린다
+      left: 16px;
+      transform: none;
+    }
+
+    // 세로 독(4버튼 ≈252px) 위로 피한다
+    .tower-place-bar {
+      bottom: calc(max(24px, env(safe-area-inset-bottom)) + 268px);
     }
   }
 
   // 캣 타워 위치 지정 모드 배너 — 하단(플로팅 독 바로 위)에 안내 + 취소
   .tower-place-bar {
     @include glass-card(
-      $border: rgba(196, 181, 253, 0.35),
+      $border: rgba(255, 255, 255, 0.35),
       $radius: 999px,
-      $shadow: 0 8px 24px rgba(49, 15, 92, 0.45),
+      $shadow: 0 8px 24px rgba(0, 0, 0, 0.5),
       $grad-top: rgba(255, 255, 255, 0.16),
       $grad-bottom: rgba(0, 0, 0, 0.12)
     );
 
     z-index: 1200;
     position: absolute;
-    bottom: calc(max(24px, env(safe-area-inset-bottom)) + 122px);
+    // 플로팅 독(≈77px) 바로 위
+    bottom: calc(max(24px, env(safe-area-inset-bottom)) + 100px);
     left: 16px;
     right: 16px;
     margin: 0 auto;
@@ -130,14 +208,14 @@
     padding: 10px 20px;
     max-width: max-content;
 
-    // 딥 바이올렛 틴트 (핑크 억제)
+    // 딥 블랙 틴트
     --glass-tint: linear-gradient(
       180deg,
-      rgba(76, 29, 149, 0.88) 0%,
-      rgba(91, 33, 182, 0.9) 100%
+      rgba(24, 24, 30, 0.88) 0%,
+      rgba(48, 48, 56, 0.9) 100%
     );
 
-    --glass-border: rgba(196, 181, 253, 0.35);
+    --glass-border: rgba(255, 255, 255, 0.35);
 
     .place-text {
       color: #ffffff;
@@ -153,7 +231,7 @@
       padding: 8px 18px;
       border-radius: 99px;
       // 어두운 반투명 버튼
-      background: rgba(17, 12, 34, 0.45);
+      background: rgba(10, 10, 12, 0.45);
       border: 1px solid rgba(255, 255, 255, 0.24);
       color: rgba(255, 255, 255, 0.92);
       font-size: 13px;
@@ -162,7 +240,7 @@
       transition: background-color 0.15s ease, transform 0.15s ease;
 
       &:active {
-        background: rgba(17, 12, 34, 0.7);
+        background: rgba(10, 10, 12, 0.7);
         transform: scale(0.94);
       }
     }
@@ -196,6 +274,16 @@
       display: flex;
       flex-direction: column;
 
+      // 블루&블랙 틴트 — 부하/도감 시트 전용 톤
+      --glass-tint: linear-gradient(
+        180deg,
+        rgba(13, 26, 50, 0.9) 0%,
+        rgba(19, 36, 66, 0.88) 55%,
+        rgba(8, 16, 32, 0.92) 100%
+      );
+      --glass-border: rgba(125, 175, 255, 0.3);
+      --glass-highlight: rgba(255, 255, 255, 0.22);
+
       .sheet-header {
         display: flex;
         align-items: center;
@@ -218,13 +306,13 @@
             display: inline-flex;
             align-items: center;
             padding: 3px 10px;
-            background: linear-gradient(135deg, #4ade80 0%, #16a34a 100%);
+            background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
             color: #ffffff;
             border: 1px solid rgba(255, 255, 255, 0.4);
             border-radius: 999px;
             font-size: 12px;
             font-weight: 700;
-            box-shadow: 0 2px 6px rgba(22, 163, 74, 0.3);
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
           }
         }
 

@@ -1,5 +1,5 @@
 import classNames from "classnames/bind";
-import { format } from "date-fns";
+import { format, isToday, isYesterday } from "date-fns";
 
 import Skeleton from "@/components/Skeleton";
 import { useMyCatsQuery } from "@/queries/useMyCatsQuery";
@@ -9,6 +9,21 @@ import { catCharacters, type CatInfo, getCat } from "@/utils/cats";
 import styles from "./index.module.scss";
 
 const cn = classNames.bind(styles);
+
+// 포획 시각 문구 — 오늘이면 "오늘 HH:mm", 어제면 "어제 HH:mm", 그 전은 날짜 표기
+const formatCaptureDate = (createdAt: string) => {
+  const date = createdAt ? new Date(createdAt) : new Date();
+
+  if (isToday(date)) {
+    return `오늘 ${format(date, "HH:mm")}`;
+  }
+
+  if (isYesterday(date)) {
+    return `어제 ${format(date, "HH:mm")}`;
+  }
+
+  return format(date, "yy-MM-dd HH:mm");
+};
 
 export interface CatCatched {
   lat: number;
@@ -104,7 +119,7 @@ export default function MyCats({ className, onClickCat }: Props) {
                       </div>
                       <p className={cn("crying")}>{crying}</p>
                       <p className={cn("date")}>
-                        포획 · {format(createdAt || new Date(), "yy-MM-dd HH:mm")}
+                        포획 · {formatCaptureDate(createdAt)}
                       </p>
                     </div>
                     <span className={cn("locate")} aria-hidden="true">

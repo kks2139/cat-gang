@@ -106,7 +106,7 @@ interface CatTowerStore {
     place: (lat: number, lng: number) => void;
     /** 기존 타워를 해당 위치로 옮긴다 (높이/부하 유지) */
     moveTo: (lat: number, lng: number) => void;
-    /** 건설중 타워에 부하를 붙인다 (오늘 근무가 남은 부하만) */
+    /** 건설중 타워에 부하를 붙인다 (근무 시간이 0이어도 붙일 수 있다) */
     attach: (key: string) => void;
     /** 건설중 타워에서 부하를 뗀다 (휴식) */
     detach: (key: string) => void;
@@ -164,8 +164,9 @@ const splitByDay = (from: number, to: number): Array<[number, number]> => {
 };
 
 // 세그먼트 [segFrom, segTo] 동안 휴식 중인 부하(오늘 기록이 있으나 미부착)의
-// 근무 예산을 회복시킨다 — 상한(등급 예산)까지만. 기록 없는 부하는 예산이
-// 꽉 차 있으므로 회복 대상이 아니다
+// 근무 예산을 회복시킨다 — 소모량(work)을 restMs만큼 깎아 0까지. 기록 없는
+// 부하는 예산이 꽉 차 있으므로 회복 대상이 아니다. 소모량이 0 밑으로 내려가
+// 예산을 초과 회복하는 일은 없다 (근무 예산을 다 쓴 부하도 회복된다)
 const applyRestRecovery = (
   work: Record<string, number>,
   segFrom: number,
@@ -175,18 +176,11 @@ const applyRestRecovery = (
   const restMs = (segTo - segFrom) * TOWER_REST_RECOVERY_RATE;
 
   Object.keys(work).forEach((key) => {
-    if (attachedKeys.includes(key)) {
+    if (attachedKeys.includes(key) || work[key] <= 0) {
       return;
     }
 
-    const budget = TOWER_WORK_MS_BY_RARITY[rarityOfKey(key)];
-    // 소모량(work)을 깎아 남은 예산을 되찾는다 — restMs가 남은 예산보다
-    // 커도 0 밑으로 내려가 예산을 초과 회복하지 않게 클램프
-    const recovered = Math.min(restMs, Math.max(0, budget - work[key]));
-
-    if (recovered > 0) {
-      work[key] = Math.max(0, work[key] - recovered);
-    }
+    work[key] = Math.max(0, work[key] - restMs);
   });
 };
 
@@ -579,16 +573,9 @@ export const useCatTowerStore = create<CatTowerStore>()(
             return;
           }
 
+          // 근무 시간이 0인(퇴근한) 부하도 붙일 수 있다 — 기여는 0이고,
+          // 떼어 휴식해야 근무 시간이 회복된다 (붙어 있는 동안엔 회복 없음)
           const now = Date.now();
-          // 오늘 근무를 다 끝낸(퇴근한) 부하는 붙여도 성장에 기여하지 못한다
-          const { work } = computeGrowth(tower, now, get().baseWork);
-          const remaining =
-            TOWER_WORK_MS_BY_RARITY[rarityOfKey(key)] - (work.work[key] ?? 0);
-
-          if (remaining <= 0) {
-            return;
-          }
-
           const { tower: snapped, work: snappedWork } = snapshotTower(
             tower,
             now

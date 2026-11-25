@@ -215,19 +215,21 @@
       width: 200px;
 
       .start {
-        // 글래스 스타일 + 약간 어두운 톤 (FindCat 하단 독과 통일된 짙은 그린 유리)
+        // 글래스 스타일 + 블랙톤 혼합 (그린 악센트, 한 톤 밝게)
         --glass-tint: linear-gradient(
           180deg,
-          rgba(41, 194, 102, 0.82) 0%,
-          rgba(35, 126, 72, 0.85) 55%,
-          rgba(24, 70, 42, 0.85) 100%
+          rgba(24, 70, 46, 0.85) 0%,
+          rgba(15, 44, 30, 0.88) 55%,
+          rgba(9, 24, 16, 0.9) 100%
         );
-        --glass-border: rgba(187, 247, 208, 0.4);
-        --glass-grad-top: rgba(255, 255, 255, 0.2);
-        --glass-grad-bottom: rgba(0, 0, 0, 0.2);
-        --glass-highlight: rgba(255, 255, 255, 0.32);
-        --glass-shadow: 0 10px 28px rgba(0, 0, 0, 0.45),
-          0 0 20px rgba(22, 163, 74, 0.25);
+        --glass-border: rgba(187, 247, 208, 0.45);
+        --glass-grad-top: rgba(255, 255, 255, 0.26);
+        --glass-grad-bottom: rgba(0, 0, 0, 0.24);
+        --glass-highlight: rgba(255, 255, 255, 0.4);
+        --glass-shadow: 0 6px 18px rgba(0, 0, 0, 0.45),
+          0 0 14px rgba(22, 163, 74, 0.16);
+        // 호흡 글로우 색 (게임식 아이들 모션용)
+        --btn-glow: rgba(22, 163, 74, 0.5);
 
         // 버튼 위를 지나가는 광택
         &::before {
@@ -244,7 +246,7 @@
             transparent 80%
           );
           transform: skewX(-20deg);
-          animation: btn-shine 3.2s ease-in-out infinite;
+          animation: btn-shine 2.8s ease-in-out infinite;
           pointer-events: none;
         }
 
@@ -253,6 +255,8 @@
           align-items: center;
           justify-content: center;
           gap: 8px;
+          // 버튼 자체 transform(눌림)과 충돌 없게 내용물만 둥실 떠오르기
+          animation: btn-bob 2.4s ease-in-out infinite;
         }
 
         .paw {
@@ -263,23 +267,48 @@
         }
       }
 
-      // 랭킹 버튼 — 시작하기와 크기·패딩 동일(size=large), 톤만 오렌지
+      // 랭킹 버튼 — 시작하기와 크기·패딩 동일(size=large), 블랙톤 혼합 + 오렌지 악센트
       .ranking {
         width: 100%;
 
-        // 오렌지 톤 유리 (시작하기 그린과 대응되는 구조)
+        // 거의 블랙에 오렌지를 살짝만 섞은 유리(한 톤 밝게) + 어두운 오렌지 테두리
         --glass-tint: linear-gradient(
           180deg,
-          rgba(251, 146, 60, 0.82) 0%,
-          rgba(234, 88, 12, 0.85) 55%,
-          rgba(124, 45, 18, 0.85) 100%
+          rgba(34, 26, 19, 0.88) 0%,
+          rgba(21, 17, 14, 0.9) 55%,
+          rgba(13, 11, 9, 0.92) 100%
         );
-        --glass-border: rgba(254, 215, 170, 0.4);
-        --glass-grad-top: rgba(255, 255, 255, 0.2);
-        --glass-grad-bottom: rgba(0, 0, 0, 0.2);
-        --glass-highlight: rgba(255, 255, 255, 0.32);
-        --glass-shadow: 0 10px 28px rgba(0, 0, 0, 0.45),
-          0 0 20px rgba(249, 115, 22, 0.25);
+        --glass-border: rgba(180, 83, 9, 0.45);
+        --glass-grad-top: rgba(255, 255, 255, 0.26);
+        --glass-grad-bottom: rgba(0, 0, 0, 0.24);
+        --glass-highlight: rgba(255, 255, 255, 0.4);
+        --glass-shadow: 0 6px 18px rgba(0, 0, 0, 0.45),
+          0 0 14px rgba(249, 115, 22, 0.12);
+        --btn-glow: rgba(249, 115, 22, 0.45);
+      }
+
+      // 게임식 공통 모션 — 호흡 글로우 + 스프링 눌림
+      .start,
+      .ranking {
+        font-weight: 800;
+        animation: btn-breathe 2.4s ease-in-out infinite;
+        transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+        // 눌리는 순간 글로우 애니를 꺼야 :active 그림자가 보인다
+        &:active {
+          animation: none;
+        }
+      }
+
+      // 유리 헤어라인 링
+      .start::after,
+      .ranking::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
       }
     }
   }
@@ -383,6 +412,29 @@
     85%,
     100% {
       left: 130%;
+    }
+  }
+
+  // 게임식 버튼 모션 키프레임
+  @keyframes btn-breathe {
+    0%,
+    100% {
+      box-shadow: inset 0 1px 0 var(--glass-highlight),
+        0 6px 18px rgba(0, 0, 0, 0.45), 0 0 8px var(--btn-glow);
+    }
+    50% {
+      box-shadow: inset 0 1px 0 var(--glass-highlight),
+        0 6px 18px rgba(0, 0, 0, 0.45), 0 0 22px var(--btn-glow);
+    }
+  }
+
+  @keyframes btn-bob {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-3px);
     }
   }
 

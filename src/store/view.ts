@@ -26,7 +26,14 @@ interface ViewStore {
   isMapRevealDone: boolean;
   // 맵(/find-cat) 첫 진입 여부 — keep-alive 유지 판단용 (진행 후 되돌릴 일 없음)
   isFindCatCached: boolean;
+  // 캣 타워 팝업(포커스)을 닫는 함수 — 팝업이 열려 있을 때만 CatTower가 등록한다.
+  // 다른 UI 버튼(독/상단) 클릭 시 포커스를 함께 풀기 위해 외부에서 호출한다
+  closeTowerPopup: (() => void) | null;
+  // 내 위치로 카메라를 옮기는 함수 — Map이 등록하고, 하단 독의 내위치 버튼(FindCat)이 호출한다
+  locateMe: (() => void) | null;
   actions: {
+    setCloseTowerPopup: (close: (() => void) | null) => void;
+    setLocateMe: (locate: (() => void) | null) => void;
     addToastMessage: (message: Omit<Message, "id">) => void;
     removeToastMessage: () => void;
     setMap: (map: MaplibreMap | null) => void;
@@ -47,7 +54,19 @@ export const useViewStore = create<ViewStore>()(
     isMapLoading: false,
     isMapRevealDone: false,
     isFindCatCached: false,
+    closeTowerPopup: null,
+    locateMe: null,
     actions: {
+      setCloseTowerPopup(close) {
+        set((state) => {
+          state.closeTowerPopup = close;
+        });
+      },
+      setLocateMe(locate) {
+        set((state) => {
+          state.locateMe = locate;
+        });
+      },
       addToastMessage({ message, duration = 2500, position }) {
         set((state) => {
           state.toastMessages.unshift({

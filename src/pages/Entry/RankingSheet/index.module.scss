@@ -28,6 +28,16 @@
     padding: 16px 20px max(24px, env(safe-area-inset-bottom));
     display: flex;
     flex-direction: column;
+
+    // 딥 블루 틴트 — 랭킹 시트 전용 (부하/도감 시트보다 진한 남색)
+    --glass-tint: linear-gradient(
+      180deg,
+      rgba(10, 24, 58, 0.92) 0%,
+      rgba(16, 38, 86, 0.9) 55%,
+      rgba(6, 14, 38, 0.94) 100%
+    );
+    --glass-border: rgba(125, 175, 255, 0.32);
+    --glass-highlight: rgba(255, 255, 255, 0.22);
   }
 
   // 시트 하단 배너 광고 (너비/높이는 AdBanner 컴포넌트 기본값 사용)
@@ -114,11 +124,11 @@
       // (glass-card를 통째로 새로 적용하므로 background 재선언 충돌 없음)
       .tab-pill {
         @include glass-card(
-          $border: rgba(187, 247, 208, 0.4),
+          $border: rgba(125, 175, 255, 0.45),
           $radius: 999px,
-          $shadow: 0 4px 12px rgba(22, 163, 74, 0.3),
-          $grad-top: rgba(41, 194, 102, 0.6),
-          $grad-bottom: rgba(0, 70, 12, 0.5)
+          $shadow: 0 4px 12px rgba(37, 99, 235, 0.35),
+          $grad-top: rgba(59, 130, 246, 0.6),
+          $grad-bottom: rgba(10, 30, 80, 0.5)
         );
 
         position: absolute;

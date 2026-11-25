@@ -228,44 +228,47 @@ export const createMarker = ({
     catImg.dataset.catImg = "true";
     catImg.src = imgUrl;
 
+    // 발밑 그림자 — 캐릭터 이미지 실루엣을 그대로 눌러 편편하게 한 복제.
+    // 고정 크기 타원이 아니라 이미지 폭/밑변을 따르므로 마커마다 크기가 달라도 맞는다
+    // (아이템 마커도 동일하게 img.marker-shadow가 바닥 그림자를 담당한다)
+    const shadowImg = document.createElement("img");
+    shadowImg.className = "marker-shadow";
+    shadowImg.setAttribute("aria-hidden", "true");
+    shadowImg.src = imgUrl;
+
+    const syncShadow = () => {
+      const h = catImg.clientHeight;
+
+      if (!h) {
+        return;
+      }
+
+      // 이미지 하단(땅)에 납작하게 깔리도록 높이와 밑변 위치를 맞춘다
+      shadowImg.style.height = `${h * MARKER_SHADOW_SQUASH}px`;
+      shadowImg.style.bottom = `${(container.clientHeight - h) / 2}px`;
+    };
+
+    // 레이아웃 확정 후(마커가 DOM에 붙은 다음 프레임) 측정해야 치수가 잡힌다
+    const scheduleSync = () => {
+      requestAnimationFrame(syncShadow);
+    };
+
+    if (catImg.complete) {
+      scheduleSync();
+    } else {
+      catImg.addEventListener("load", scheduleSync, { once: true });
+    }
+
     if (type === "item") {
-      // 클릭 시 골골대는 모션 적용을 위함
+      // 클릭 시 골골대는 모션 적용을 위함 — 그림자는 컨테이너 바닥에 깔고
+      // 아이템 이미지는 래퍼(.item) 안에서 뜬다(item-float)
       const itemWrapper = document.createElement("div");
       itemWrapper.className = "item";
 
+      container.appendChild(shadowImg);
       container.appendChild(itemWrapper);
       itemWrapper.appendChild(catImg);
     } else {
-      // 발밑 그림자 — 캐릭터 이미지 실루엣을 그대로 눌러 편편하게 한 복제.
-      // 고정 크기 타원이 아니라 이미지 폭/밑변을 따르므로 마커마다 크기가 달라도 맞는다
-      const shadowImg = document.createElement("img");
-      shadowImg.className = "marker-shadow";
-      shadowImg.setAttribute("aria-hidden", "true");
-      shadowImg.src = imgUrl;
-
-      const syncShadow = () => {
-        const h = catImg.clientHeight;
-
-        if (!h) {
-          return;
-        }
-
-        // 이미지 하단(땅)에 납작하게 깔리도록 높이와 밑변 위치를 맞춘다
-        shadowImg.style.height = `${h * MARKER_SHADOW_SQUASH}px`;
-        shadowImg.style.bottom = `${(container.clientHeight - h) / 2}px`;
-      };
-
-      // 레이아웃 확정 후(마커가 DOM에 붙은 다음 프레임) 측정해야 치수가 잡힌다
-      const scheduleSync = () => {
-        requestAnimationFrame(syncShadow);
-      };
-
-      if (catImg.complete) {
-        scheduleSync();
-      } else {
-        catImg.addEventListener("load", scheduleSync, { once: true });
-      }
-
       container.appendChild(shadowImg);
       container.appendChild(catImg);
     }
