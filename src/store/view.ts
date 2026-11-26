@@ -13,6 +13,12 @@ export interface Message {
 // 토스트 id — 유일성만 필요하므로 단조 증가 카운터로 보장 (랜덤 중복 방지)
 let toastIdSeq = 0;
 
+// 메시지별 제거 타이머 — duration이 섞여도 만료 순서가 어긋나지 않는다
+const toastTimers = new Map<number, ReturnType<typeof setTimeout>>();
+
+// 스토어 보유 상한 (화면 노출은 ToastMessage에서 최근 4개로 제한, 나머지는 숨김 스택)
+const MAX_STORED_TOASTS = 10;
+
 interface ViewStore {
   toastMessages: Message[];
   map: MaplibreMap | null;
@@ -35,7 +41,7 @@ interface ViewStore {
     setCloseTowerPopup: (close: (() => void) | null) => void;
     setLocateMe: (locate: (() => void) | null) => void;
     addToastMessage: (message: Omit<Message, "id">) => void;
-    removeToastMessage: () => void;
+    removeToastMessage: (id?: number) => void;
     setMap: (map: MaplibreMap | null) => void;
     setIsStopFocusMe: (value: boolean) => void;
     setIsBattleOn: (value: boolean) => void;
@@ -69,20 +75,38 @@ export const useViewStore = create<ViewStore>()(
       },
       addToastMessage({ message, duration = 2500, position }) {
         set((state) => {
-          state.toastMessages.unshift({
-            message,
-            id: ++toastIdSeq,
-            position,
-          });
+          const id = ++toastIdSeq;
+          state.toastMessages.unshift({ message, id, position });
+          toastTimers.set(
+            id,
+            setTimeout(() => get().actions.removeToastMessage(id), duration)
+          );
 
-          setTimeout(() => {
-            get().actions.removeToastMessage();
-          }, duration);
+          // 스토어 보유 상한 — 초과분은 즉시 폐기 (화면 노출은 렌더러에서 제한)
+          if (state.toastMessages.length > MAX_STORED_TOASTS) {
+            const dropped = state.toastMessages.pop();
+            if (dropped) {
+              const droppedTimer = toastTimers.get(dropped.id);
+              if (droppedTimer) clearTimeout(droppedTimer);
+              toastTimers.delete(dropped.id);
+            }
+          }
         });
       },
-      removeToastMessage() {
+      removeToastMessage(id?: number) {
         set((state) => {
-          state.toastMessages.pop();
+          // id 지정 시 해당 토스트만, 미지정 시 가장 오래된 것 제거 (하위 호환)
+          const index =
+            id === undefined
+              ? state.toastMessages.length - 1
+              : state.toastMessages.findIndex((toast) => toast.id === id);
+          if (index === -1) return;
+          const removed = state.toastMessages.splice(index, 1)[0];
+          if (removed) {
+            const timer = toastTimers.get(removed.id);
+            if (timer) clearTimeout(timer);
+            toastTimers.delete(removed.id);
+          }
         });
       },
       setMap(map) {

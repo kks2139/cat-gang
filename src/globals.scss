@@ -433,8 +433,7 @@ input {
 
         // 발가락 3개 구현
         box-shadow: -5.5px -6px 0 -1px var(--flag-paw),
-          0.5px -8.5px 0 -1px var(--flag-paw), 6.5px -6px 0 -1px
-            var(--flag-paw);
+          0.5px -8.5px 0 -1px var(--flag-paw), 6.5px -6px 0 -1px var(--flag-paw);
       }
 
       // 깃발 표면을 스치는 광택 (한 번 흐르고 반복)
@@ -575,8 +574,7 @@ input {
         transform: rotateY(14deg) skewY(2deg) scaleX(0.97) translateY(0);
       }
       20% {
-        transform: rotateY(38deg) skewY(-6deg) scaleX(0.86)
-          translateY(-1.5px);
+        transform: rotateY(38deg) skewY(-6deg) scaleX(0.86) translateY(-1.5px);
       }
       42% {
         transform: rotateY(2deg) skewY(1.5deg) scaleX(1.06) translateY(0.5px);
@@ -870,7 +868,6 @@ input {
       transform: translateY(0) scale(1.03, 0.96);
     }
   }
-
 
   @keyframes marker-appear {
     0% {
@@ -1787,8 +1784,8 @@ input {
 }
 
 .cat-tower-popup-body {
-  width: 176px;
-  padding: 11px 12px 12px;
+  width: 158px;
+  padding: 10px 11px 11px;
   animation: cat-tower-popup-in 0.22s cubic-bezier(0.34, 1.4, 0.64, 1) both;
   border-radius: 16px;
   // 딥 블랙 틴트
@@ -1840,11 +1837,13 @@ input {
   }
 
   .cat-tower-popup-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin-top: 8px;
-    padding: 5px 9px;
+    padding: 5px 8px;
     border-radius: 10px;
     font-size: 12px;
-    font-weight: 600;
     color: rgba(255, 255, 255, 0.85);
     background: rgba(10, 10, 12, 0.35);
     border: 1px solid rgba(255, 255, 255, 0.12);
@@ -1852,6 +1851,12 @@ input {
     b {
       color: #ffffff;
       font-weight: 800;
+    }
+
+    .cat-tower-popup-divider {
+      width: 2px;
+      height: 18px;
+      background: rgba(255, 255, 255, 0.2);
     }
   }
 
@@ -1878,8 +1883,8 @@ input {
     border: 1px solid rgba(255, 255, 255, 0.26);
     cursor: pointer;
     white-space: nowrap;
-    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-      filter 0.15s ease, background-color 0.15s ease;
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), filter 0.15s ease,
+      background-color 0.15s ease;
 
     &:active {
       transform: scale(0.93);

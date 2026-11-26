@@ -145,9 +145,8 @@ export default function CatTowerSheet({
                     🏗️
                   </span>
                   <span className={cn("hint-text")}>
-                    부하 1마리가 <b>30분에 1m</b>씩 타워를 키운다옹 — 하루 근무
-                    일반 <b>1시간</b> · 레어 <b>2시간</b> · 유니크{" "}
-                    <b>3시간</b>
+                    부하 1마리가 <b>30분에 1m</b>씩 타워를 키운다옹 - 하루 근무
+                    일반 <b>1시간</b> · 레어 <b>2시간</b> · 유니크 <b>3시간</b>
                   </span>
                 </li>
                 <li>
@@ -155,7 +154,7 @@ export default function CatTowerSheet({
                     🛌
                   </span>
                   <span className={cn("hint-text")}>
-                    근무 시간은 <b>다음 날</b> 다시 채워진다옹 — 휴식{" "}
+                    근무 시간은 <b>다음 날</b> 다시 채워진다옹 - 휴식{" "}
                     <b>{REST_MIN_PER_WORK_MIN}분</b>당 <b>1분</b> 회복
                   </span>
                 </li>
@@ -376,7 +375,10 @@ export default function CatTowerSheet({
                                 <em className={cn("time")}>
                                   {!isAttached && isOffWork
                                     ? "회복 중"
-                                    : `${Math.max(1, Math.ceil(leftMs / 60000))}분`}
+                                    : `${Math.max(
+                                        1,
+                                        Math.ceil(leftMs / 60000)
+                                      )}분`}
                                 </em>
                               </div>
                             )}

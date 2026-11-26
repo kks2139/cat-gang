@@ -193,7 +193,10 @@
     overflow-y: auto;
     max-height: 68vh;
     margin-top: 10px;
-    padding-right: 4px;
+    // 등급 글로우(24px 확산)가 스크롤 컨테이너에 잘리지 않게 사방 여백 확보 —
+    // 오버플로우는 padding 박스에서 클립되므로 이 여백 안에서는 그림자가 온전히 보인다
+    padding: 12px;
+    padding-right: 16px;
 
     &::-webkit-scrollbar {
       width: 4px;
@@ -204,11 +207,11 @@
     }
   }
 
-  // 작업고양이 목록 — 2열 그리드
+  // 작업고양이 목록 — 가로 1열 카드
   .cat-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    display: flex;
+    flex-direction: column;
+    row-gap: 10px;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -344,8 +347,7 @@
     border: 1px solid rgba(255, 255, 255, 0.35);
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
     cursor: pointer;
-    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-      filter 0.15s ease;
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), filter 0.15s ease;
 
     &:active {
       transform: scale(0.96);
@@ -353,51 +355,50 @@
     }
   }
 
-  // ----- cats 모드: 작업고양이 카드 (2열) — 이미지 좌측 세로 통합, 우측에 정보 스택 -----
+  // ----- cats 모드: 작업고양이 카드 (가로 1열) — 이미지 좌측, 우측에 정보 스택.
+  //       등급 표시는 카드가 아니라 이미지 영역(테두리 광)이 담당한다 -----
   .cat-row {
-    // 등급별 톤 — MyCats와 같은 변수 체계 (글로우까지 동일 강도로 부각)
-    --rarity-border: rgba(255, 255, 255, 0.18);
+    // 등급별 톤 — 이미지 링/글로우와 등급 배지에 쓴다 (common은 중립 링)
     --rarity-strong: rgba(255, 255, 255, 0.92);
     --rarity-glow: transparent;
+    --rarity-ring: rgba(255, 255, 255, 0.25);
 
     display: grid;
-    grid-template-columns: 64px minmax(0, 1fr);
+    grid-template-columns: 72px minmax(0, 1fr);
     grid-template-rows: auto auto auto;
-    column-gap: 10px;
+    column-gap: 12px;
     row-gap: 8px;
     align-items: center;
     height: 100%;
     padding: 12px;
     border-radius: 18px;
-    // 어두운 반투명 카드 — 시트 배경 위에서 가라앉는 톤
+    // 어두운 반투명 카드 — 등급 표시는 이미지 영역(테두리 광)이 담당
     background: rgba(10, 10, 12, 0.5);
-    border: 1px solid var(--rarity-border);
-    box-shadow: 0 0 12px var(--rarity-glow), 0 2px 8px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     transition: border-color 0.15s ease, background-color 0.15s ease;
 
     &[data-rarity="rare"] {
-      --rarity-border: rgba(125, 175, 255, 0.75);
       --rarity-strong: #8cbcff;
-      --rarity-glow: rgba(125, 175, 255, 0.3);
-      border-width: 1.5px;
+      --rarity-glow: rgba(125, 175, 255, 0.55);
+      --rarity-ring: rgba(125, 175, 255, 0.8);
     }
 
     &[data-rarity="unique"] {
-      --rarity-border: rgba(195, 130, 255, 0.85);
       --rarity-strong: #c382ff;
-      --rarity-glow: rgba(195, 130, 255, 0.4);
-      border-width: 1.5px;
+      --rarity-glow: rgba(195, 130, 255, 0.65);
+      --rarity-ring: rgba(195, 130, 255, 0.9);
     }
 
-    // 일하는 중 — 밝은 회색으로 부각 (등급 글로우는 유지)
+    // 일하는 중 — 밝은 회색으로 부각
     &[data-attached="true"] {
       background: rgba(58, 58, 64, 0.55);
       border-color: rgba(255, 255, 255, 0.5);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08),
-        0 0 12px var(--rarity-glow), 0 0 10px rgba(0, 0, 0, 0.45);
+        0 0 10px rgba(0, 0, 0, 0.45);
     }
 
-    // 이미지 — 좌측에서 이름/바 행을 세로로 관통
+    // 이미지 — 좌측에서 이름/바 행을 세로로 관통. 등급 표시는 여기서 담당
     img {
       grid-column: 1;
       grid-row: 1 / 3;
@@ -407,10 +408,12 @@
         rgba(255, 255, 255, 0.16) 0%,
         rgba(255, 255, 255, 0.06) 100%
       );
-      width: 64px;
-      height: 64px;
+      width: 72px;
+      height: 72px;
       object-fit: cover;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      // 등급색 테두리 링 + 짧은 글로우
+      box-shadow: 0 0 0 2px var(--rarity-ring),
+        0 0 12px var(--rarity-glow), 0 2px 8px rgba(0, 0, 0, 0.3);
     }
 
     // 우측 상단 — 이름(아래 등급) + 망치
@@ -435,9 +438,11 @@
         font-weight: 500;
         font-size: 15px;
         letter-spacing: -0.2px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        // 긴 이름은 잘리지 않고 개행해 모두 표기
+        white-space: normal;
+        word-break: keep-all;
+        overflow-wrap: break-word;
+        line-height: 1.25;
         max-width: 100%;
       }
 
@@ -544,7 +549,6 @@
     .off-label {
       grid-column: 2;
       font-size: 12px;
-      font-weight: 600;
       text-align: left;
       color: rgba(255, 255, 255, 0.45);
     }
@@ -552,8 +556,7 @@
     .toggle-btn {
       // 이미지 아래 카드 전체 폭 — 우측 빈 공간 없이 채운다
       grid-column: 1 / -1;
-      width: 100%;
-      padding: 9px 0;
+      padding: 4px 0;
       border-radius: 99px;
       font-size: 14px;
       font-weight: 800;
@@ -691,7 +694,5 @@
     font-size: 15px;
     color: rgba(255, 255, 255, 0.45);
     text-align: center;
-    // 2열 그리드(cats 모드)에서 전체 폭 차지
-    grid-column: 1 / -1;
   }
 }

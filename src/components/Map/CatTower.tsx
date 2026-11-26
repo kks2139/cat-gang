@@ -308,7 +308,7 @@ const isOnBuilding = (map: MaplibreMap, lat: number, lng: number): boolean => {
   const samples: [number, number][] = [[lng, lat]];
 
   for (let k = 0; k < 8; k += 1) {
-    const rad = ((k * 45) * Math.PI) / 180;
+    const rad = (k * 45 * Math.PI) / 180;
 
     samples.push([
       lng + metersToDegLng(FOUNDATION_EDGE_M * Math.sin(rad), lat),
@@ -568,11 +568,7 @@ const getTowerData = (
     });
 
     // 꼭대기 발판 중앙 흰색 발바닥 — 정북 방향, 둥지 문양보다 크게
-    pushPawMark(
-      visualHeight + TOWER_PERCH_T * TOWER_SCALE,
-      90,
-      TOWER_SCALE
-    );
+    pushPawMark(visualHeight + TOWER_PERCH_T * TOWER_SCALE, 90, TOWER_SCALE);
   }
 
   return {
@@ -587,8 +583,10 @@ const getTowersData = (
   heights: Record<string, number>
 ): GeoJSONData => ({
   type: "FeatureCollection",
-  features: towers.flatMap((tower) =>
-    getTowerData(tower.lat, tower.lng, heights[tower.id] ?? 0, tower.id).features
+  features: towers.flatMap(
+    (tower) =>
+      getTowerData(tower.lat, tower.lng, heights[tower.id] ?? 0, tower.id)
+        .features
   ),
 });
 
@@ -646,17 +644,24 @@ function TowerPopupContent({
         </span>
       </div>
       {isCompleted ? (
-        <div className="cat-tower-popup-info">완공된 타워다옹!</div>
+        <div className="cat-tower-popup-info">완공 타워다옹!</div>
       ) : attachedCount === 0 ? (
-        <div className="cat-tower-popup-info">일하는 부하가 없다옹</div>
+        <div className="cat-tower-popup-info">부하가 없다옹</div>
       ) : workingCount === 0 ? (
-        <div className="cat-tower-popup-info">
-          부하가 모두 퇴근했다옹 (내일 다시 출근)
-        </div>
+        <div className="cat-tower-popup-info">전원 퇴근다옹 (내일 출근)</div>
       ) : (
         <div className="cat-tower-popup-info">
-          <b>{workingCount}</b>마리 일하는 중
-          {restingCount > 0 && ` · 퇴근 ${restingCount}마리`}
+          <span>
+            작업중 <b>{workingCount}</b>
+          </span>
+          {restingCount > 0 && (
+            <>
+              <i className="cat-tower-popup-divider" />
+              <span>
+                퇴근 <b>{restingCount}</b>
+              </span>
+            </>
+          )}
         </div>
       )}
       <div className="cat-tower-popup-actions">
@@ -745,8 +750,7 @@ export default function CatTower({
   const workingTowerId = useCatTowerStore((s) => {
     const tower = getActiveTower(s.towers);
 
-    return tower &&
-      tower.attachedKeys.some((key) => (s.workLeft[key] ?? 1) > 0)
+    return tower && tower.attachedKeys.some((key) => (s.workLeft[key] ?? 1) > 0)
       ? tower.id
       : null;
   });
@@ -817,7 +821,7 @@ export default function CatTower({
       labelMarkersRef.current[towerState.id] = new Marker({
         element: el,
         anchor: "bottom",
-        offset: [0, 46],
+        offset: [0, 38],
       })
         .setLngLat([towerState.lng, labelLat] as LngLatLike)
         .addTo(map);
@@ -860,13 +864,14 @@ export default function CatTower({
       const state = useCatTowerStore.getState();
       const otherFeatures = state.towers
         .filter((tower) => tower.id !== towerId)
-        .flatMap((tower) =>
-          getTowerData(
-            tower.lat,
-            tower.lng,
-            state.heights[tower.id] ?? 0,
-            tower.id
-          ).features
+        .flatMap(
+          (tower) =>
+            getTowerData(
+              tower.lat,
+              tower.lng,
+              state.heights[tower.id] ?? 0,
+              tower.id
+            ).features
         );
 
       const startAt = performance.now();
@@ -1049,7 +1054,9 @@ export default function CatTower({
       return;
     }
 
-    const makeTowerColorPaint = (kind: "foundation" | "branch" | "nest" | "perch") => {
+    const makeTowerColorPaint = (
+      kind: "foundation" | "branch" | "nest" | "perch"
+    ) => {
       const branches: unknown[] = [];
       const fallbackTheme = resolveTowerColor(towers[0]?.color);
 
@@ -1079,7 +1086,10 @@ export default function CatTower({
       const fallbackTheme = resolveTowerColor(towers[0]?.color);
 
       towers.forEach((tower) => {
-        branches.push(tower.id, trunkBandColor(resolveTowerColor(tower.color), isNight));
+        branches.push(
+          tower.id,
+          trunkBandColor(resolveTowerColor(tower.color), isNight)
+        );
       });
 
       return [
@@ -1091,7 +1101,11 @@ export default function CatTower({
     };
 
     if (map.getLayer(LAYER_TOWER)) {
-      map.setPaintProperty(LAYER_TOWER, "fill-extrusion-color", makeTrunkColorPaint());
+      map.setPaintProperty(
+        LAYER_TOWER,
+        "fill-extrusion-color",
+        makeTrunkColorPaint()
+      );
     }
 
     if (map.getLayer(LAYER_BRANCH)) {
@@ -1290,8 +1304,8 @@ export default function CatTower({
       show && movingTower
         ? { lat: movingTower.lat, lng: movingTower.lng }
         : show
-          ? getMyPosition()
-          : undefined;
+        ? getMyPosition()
+        : undefined;
 
     // 내 위치를 아직 못 받았으면 구역을 숨긴 채 대기한다
     [LAYER_ZONE_FILL, LAYER_ZONE_LINE].forEach((layerId) => {
@@ -1358,14 +1372,7 @@ export default function CatTower({
       zonePulseMarkerRef.current?.remove();
       zonePulseMarkerRef.current = null;
     };
-  }, [
-    map,
-    isPlacingTower,
-    isMoveTower,
-    movingTowerId,
-    towers,
-    getMyPosition,
-  ]);
+  }, [map, isPlacingTower, isMoveTower, movingTowerId, towers, getMyPosition]);
 
   // --- 타워 포커스 동안 제스처 재배치 (타워 화면 중심 고정) ---
   // 타워가 화면 중심에 고정된 상태로 줌/회전/피치는 모두 중심(타워) 기준으로
@@ -1423,16 +1430,14 @@ export default function CatTower({
         // 중심축 궤도 회전, 세로 드래그는 기존 두 손가락 세로 드래그와 같은
         // 방향(위로 올리면 피치 상승)으로 카메라를 지면 가까이/위로 조절한다
         map.setBearing(
-          startBearing -
-            (touch.clientX - startX) * FOCUS_ORBIT_BEARING_PER_PX
+          startBearing - (touch.clientX - startX) * FOCUS_ORBIT_BEARING_PER_PX
         );
         map.setPitch(
           Math.min(
             TOWER_VIEW_PITCH,
             Math.max(
               FOCUS_ORBIT_MIN_PITCH,
-              startPitch -
-                (touch.clientY - startY) * FOCUS_ORBIT_PITCH_PER_PX
+              startPitch - (touch.clientY - startY) * FOCUS_ORBIT_PITCH_PER_PX
             )
           )
         );
@@ -1627,13 +1632,13 @@ export default function CatTower({
 
       // 높이 뱃지 '아래'에 붙이기 — 뱃지와 같은 앵커 좌표(기초 지반 남측)에서
       // 세로로만 내려 놓아 좁은 화면에서도 좌우로 잘리지 않게 한다
-      // (뱃지 마커가 offset 46px 아래에 끝나므로 그 아래 6px 간격)
+      // (뱃지 마커가 offset 38px 아래에 끝나므로 그 아래 6px 간격)
       const badgeLat = towerState.lat - metersToDegLat(FOUNDATION_EDGE_M);
 
       popupMarkerRef.current = new Marker({
         element: el,
         anchor: "top",
-        offset: [0, 52],
+        offset: [0, 44],
       })
         .setLngLat([towerState.lng, badgeLat] as LngLatLike)
         .addTo(map);
