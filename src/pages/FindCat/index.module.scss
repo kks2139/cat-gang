@@ -48,6 +48,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       gap: 6px;
       height: auto;
       min-width: 64px;
@@ -107,6 +108,8 @@
 
     // 캣 타워 버튼 — 딥 블랙 톤 (타워 UI 전용)
     .tower-btn {
+      // 타워가 없어도(badge 미노출) 다른 버튼과 같은 높이를 유지한다
+      align-self: stretch;
       --glass-tint: linear-gradient(
         180deg,
         rgba(52, 52, 58, 0.85) 0%,

@@ -20,6 +20,7 @@
     bottom: auto;
     transform: translate(-50%, -50%);
     width: auto;
+    max-width: min(340px, calc(100% - 32px));
   }
 
   // 상단 토스트 — 지도 상단 캡슐(오늘 산책 거리/깡) 아래에 노출
@@ -52,7 +53,9 @@
     letter-spacing: -0.2px;
     line-height: 1.4;
     text-align: center;
-    white-space: nowrap;
+    white-space: pre-wrap;
+    word-break: keep-all;
+    overflow-wrap: break-word;
 
     // 좌측 어두운 고양이 발바닥 아이콘 — 밝은 토스트 배경 위에서 보이게
     &::before {

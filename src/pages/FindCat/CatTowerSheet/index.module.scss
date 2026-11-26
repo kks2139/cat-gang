@@ -281,6 +281,18 @@
         align-items: baseline;
         column-gap: 4px;
 
+        // 타워 이름 — 이름 지은 타워만 높이 앞에 표시
+        .name {
+          font-size: 13px;
+          font-weight: 800;
+          color: #ffd66e;
+          letter-spacing: -0.2px;
+          max-width: 110px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
         .height {
           font-size: 20px;
           font-weight: 800;
@@ -613,6 +625,85 @@
     list-style: none;
   }
 
+  // 꾸미기 섹션 라벨 (타워 색상 / 조명 / 계절 효과)
+  .decor-label {
+    margin: 12px 2px 8px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: -0.2px;
+    color: rgba(255, 255, 255, 0.55);
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+
+  // 조명 토글 — 전면 폭 행, 좌측 상태 문구 + 우측 스위치
+  .beam-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(10, 10, 12, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: -0.2px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+
+    &:active {
+      transform: scale(0.98);
+    }
+
+    .beam-state {
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.75);
+    }
+
+    // iOS 스타일 스위치 — 켜짐이면 검색등 톤(골드)으로 채우고 노브를 우측으로
+    .beam-switch {
+      flex: none;
+      position: relative;
+      display: block;
+      width: 46px;
+      height: 26px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+
+      &::after {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #ffffff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+        transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+    }
+
+    // data-on은 이 버튼에 붙으므로 버튼 레벨에서 분기해야 매칭된다
+    &[data-on="true"] {
+      .beam-switch {
+        background: linear-gradient(135deg, #fde68a 0%, #f59e0b 100%);
+        border-color: rgba(255, 255, 255, 0.4);
+
+        &::after {
+          transform: translateX(20px);
+        }
+      }
+    }
+  }
+
   .color-swatch {
     width: 100%;
     display: flex;
@@ -652,6 +743,13 @@
 
         & + i {
           margin-left: -5px;
+        }
+
+        // 계절 "효과 없음" 칩 — 빈 원
+        &.chip-none {
+          background: transparent;
+          border-style: dashed;
+          box-shadow: none;
         }
       }
     }

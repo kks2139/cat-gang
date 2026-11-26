@@ -7,6 +7,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { AdBanner, useFullScreenAd } from "@/components/Ads";
 import Button from "@/components/Button";
 import Dialog from "@/components/Dialog";
+import Input from "@/components/Input";
 import Map, { type OwnCat } from "@/components/Map";
 import { TOWER_ZONE_RADIUS } from "@/components/Map/CatTower";
 import Stage from "@/components/Stage";
@@ -33,6 +34,7 @@ import {
   getFireworkElement,
   getPostposition,
   removeMarkerWithMotion,
+  safeText,
   wait,
 } from "@/utils/helper";
 import { getCelebratedTowerIds, markTowerCelebrated } from "@/utils/storage";
@@ -88,6 +90,9 @@ export default function FindCat() {
   >("list");
   // cats/decor 모드의 대상 타워 id (decor는 완공 타워에도 쓴다)
   const [towerSheetTargetId, setTowerSheetTargetId] = useState<string>();
+  // 이름 짓기 다이얼로그 — 대상 타워 id가 있으면 열림 (기존 이름은 초기값으로)
+  const [namingTowerId, setNamingTowerId] = useState<string>();
+  const [towerNameInput, setTowerNameInput] = useState("");
   const [isShowExitConfirm, setIsShowExitConfirm] = useState(false);
   const [isShowKkangEmpty, setIsShowKkangEmpty] = useState(false);
   const [isShowKkangAd, setIsShowKkangAd] = useState(false);
@@ -411,6 +416,11 @@ export default function FindCat() {
       return;
     }
 
+    // 이름 짓기 다이얼로그도 Dialog 자체 dismiss가 닫는다 (팝업/포커스는 유지)
+    if (namingTowerId) {
+      return;
+    }
+
     if (isPlacingTower) {
       useCatTowerStore.getState().actions.cancelPlacing();
       return;
@@ -459,6 +469,7 @@ export default function FindCat() {
     isShowTowerSheet,
     isShowVictoryDialog,
     itemAdType,
+    namingTowerId,
     ownCatInfo,
   ]);
 
@@ -544,6 +555,15 @@ export default function FindCat() {
           setTowerSheetTargetId(towerId);
           setTowerSheetMode("decor");
           setIsShowTowerSheet(true);
+        }}
+        onTowerName={(towerId) => {
+          // 타워 팝업의 이름 짓기 — 팝업(포커스)을 유지한 채 다이얼로그만 연다.
+          // 다이얼로그 뒤로가기는 Dialog 자체 dismiss가 닫는다 (closeTopLayer 개입 없음)
+          setNamingTowerId(towerId);
+          setTowerNameInput(
+            useCatTowerStore.getState().towers.find((t) => t.id === towerId)
+              ?.name ?? ""
+          );
         }}
         onTowerPlaced={() => {
           setIsStopFocusMe(true);
@@ -1065,6 +1085,66 @@ export default function FindCat() {
         onBackClose={() => setIsShowKkangAd(false)}
         onSubButtonClick={() => setIsShowKkangAd(false)}
       />
+
+      {/* 캣 타워 이름 짓기 팝업 (타워 팝업의 이름 짓기 클릭 — 팝업/포커스 유지) */}
+      <Dialog
+        isShow={!!namingTowerId}
+        title={towerNameInput ? "이름 바꾸기" : "타워 이름 짓기"}
+        subTitle={
+          towerNameInput
+            ? "새 이름을 지어달라옹"
+            : "타워에 붙일 이름을 지어달라옹!\n(안 지으면 이름 없음)"
+        }
+        buttonLable={towerNameInput ? "바꾸기" : "짓기"}
+        buttonColor="green"
+        buttonDisabled={!towerNameInput.trim()}
+        subButtonLable={
+          // 기존 이름이 있으면 "없애기"로 이름을 뗄 수 있다
+          towerNameInput ? "없애기" : "취소"
+        }
+        onButtonClick={() => {
+          const towerId = namingTowerId;
+          const name = safeText(towerNameInput, 6);
+
+          if (!towerId || !name) {
+            return;
+          }
+
+          useCatTowerStore.getState().actions.setName(towerId, name);
+          setNamingTowerId(undefined);
+          setTowerNameInput("");
+          addToastMessage({
+            message: `타워 이름을 ${name}(으)로 지었다옹!`,
+            position: "center",
+          });
+        }}
+        onSubButtonClick={() => {
+          // 기존 이름이 있던 타워에서 "없애기" — 이름을 뗀다
+          if (towerNameInput && namingTowerId) {
+            useCatTowerStore.getState().actions.setName(namingTowerId, null);
+            addToastMessage({
+              message: "타워 이름을 없앴다옹.",
+              position: "center",
+            });
+          }
+          setNamingTowerId(undefined);
+          setTowerNameInput("");
+        }}
+        onBackClose={() => {
+          setNamingTowerId(undefined);
+          setTowerNameInput("");
+        }}
+      >
+        <Input
+          autoFocus
+          placeholder="최대 6글자 (특수문자 제외)"
+          value={towerNameInput}
+          maxLength={6}
+          onChange={(e) => {
+            setTowerNameInput(safeText(e.target.value, 6));
+          }}
+        />
+      </Dialog>
 
       {/* 나가기 컨펌 팝업 (뒤로가기 시 노출) */}
       <Dialog

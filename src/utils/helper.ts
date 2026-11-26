@@ -488,12 +488,12 @@ export const getNightTime = (date: Date) => {
 /**
  * 1. 모든 공백 제거
  * 2. 특수문자 및 기호 제거 (영문, 한글, 숫자만 남김)
- * 3. 최대 10자리까지 제한
+ * 3. 최대 10자리까지 제한 (maxLen으로 조정 가능)
  */
-export const safeText = (input: string): string => {
+export const safeText = (input: string, maxLen = 10): string => {
   const cleaned = input.replace(/[\s/!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/g, "");
 
-  return cleaned.slice(0, 10);
+  return cleaned.slice(0, maxLen);
 };
 
 export const getCatchedCatElement = (

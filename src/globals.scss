@@ -1590,6 +1590,13 @@ input {
     font-size: 13px;
   }
 
+  // 타워 이름 — 이름 지은 타워만 아이콘 왼쪽에 표시
+  .cat-tower-label-name {
+    font-size: 12px;
+    font-weight: 800;
+    color: #ffd66e;
+  }
+
   .cat-tower-label-num {
     font-variant-numeric: tabular-nums;
   }
@@ -1598,6 +1605,179 @@ input {
     font-size: 11px;
     font-weight: 700;
     opacity: 0.85;
+  }
+}
+
+// ----- 캣 타워 시즌 파티클 (봄 꽃잎/여름 잎/가을 낙엽/겨울 눈송이) -----
+// 타워 주변 지상 좌표에 뿌린 DOM 마커의 내부 <i>가 떨어지는 모션 —
+// 래퍼(maplibre 배치)가 아닌 내부 요소에만 애니메이션을 건다 (맵 렌더 비용 0)
+.cat-tower-season-p {
+  background: transparent;
+  border: none;
+  pointer-events: none;
+
+  i {
+    display: block;
+    width: 8px;
+    height: 6px;
+    opacity: 0;
+    animation: cat-season-fall var(--dur, 6s) linear var(--delay, 0s) infinite;
+
+    // 봄 꽃잎 — 꽃잎 모양 + 회전 낙하
+    &.petal {
+      border-radius: 90% 10% 90% 10%;
+      box-shadow: 0 0 3px rgba(255, 255, 255, 0.35);
+    }
+
+    // 여름/가을 잎 — 잎 모양(한쪽 뾰족) + 크게 흔들리는 낙하
+    &.leaf,
+    &.leaf-red {
+      width: 9px;
+      height: 5px;
+      border-radius: 100% 4% 100% 4%;
+    }
+
+    // 겨울 눈송이 — 흰 원 + 은은한 글로우, 느린 흔들림 낙하
+    &.snow {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #ffffff;
+      box-shadow: 0 0 5px rgba(255, 255, 255, 0.85);
+      animation-name: cat-season-snow;
+    }
+  }
+}
+
+// 낙하 모션 — 시작점(--h0: 꼭대기 위)에서 지면까지, 줌에 비례해 JS가
+// CSS 변수를 갱신하므로 월드 스케일에 맞게 낙하한다
+@keyframes cat-season-fall {
+  0% {
+    transform: translate(0, var(--h0, -74px)) rotate(0deg)
+      scale(var(--pscale, 1));
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translate(var(--drift, 12px), 0) rotate(var(--spin, 220deg))
+      scale(var(--pscale, 1));
+    opacity: 0;
+  }
+}
+
+// 눈 낙하 모션 — 좌우로 살짝 흔들리며 천천히 내려온다
+@keyframes cat-season-snow {
+  0% {
+    transform: translate(0, var(--h0, -74px)) scale(var(--pscale, 1));
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.95;
+  }
+  50% {
+    transform: translate(
+        calc(var(--drift, 10px) * 0.5),
+        calc(var(--h0, -74px) * 0.5)
+      )
+      scale(var(--pscale, 1));
+  }
+  90% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(var(--drift, 10px), 0) scale(var(--pscale, 1));
+    opacity: 0;
+  }
+}
+
+// ----- 캣 타워 밤 조명 (야간 검색등 — 기초 앞 양옆에서 하늘로 쏘는 빛기둥) -----
+// 지상 좌표에 바닥을 고정한 DOM 마커 + CSS 스윙 — 아래가 좁고 위로 퍼지며
+// 상단에서 투명해지는 그라데이션으로 "하늘로 사라지는" 빛을 표현한다.
+// 밤에만 생성되고 애니메이션은 내부 <i>에 둔다 (맵 렌더 비용 0)
+.cat-tower-beam {
+  background: transparent;
+  border: none;
+  pointer-events: none;
+
+  i {
+    display: block;
+    width: 112px;
+    height: 400px;
+    // 아래(출발점)가 좁고 위로 퍼지는 콘 — 상단으로 갈수록 투명
+    background: linear-gradient(
+      to top,
+      rgba(255, 241, 194, 0.62) 0%,
+      rgba(255, 241, 194, 0.28) 45%,
+      rgba(255, 241, 194, 0) 85%
+    );
+    clip-path: polygon(49% 100%, 51% 100%, 100% 0%, 0% 0%);
+    transform-origin: 50% 100%;
+    animation: cat-tower-beam-swing 7s ease-in-out infinite alternate;
+  }
+
+  // 좌우 빗면이 바깥쪽(하늘)으로 벌어지는 기본각 — 발판 위에 눕지 않게.
+  // 반대 위상(-3.5s)으로 스윙해 교차하는 느낌
+  &.left i {
+    --tilt: -22deg;
+  }
+
+  &.right i {
+    --tilt: 22deg;
+    animation-delay: -3.5s;
+  }
+
+  // 어두운 원통 램프 — 빛기둥이 원통 뒤에서 솟아나는 모습.
+  // (원통이 빔의 좁은 하단을 가리고 렌즈만 빛난다)
+  .lamp {
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 6px;
+    height: 10px;
+    // 바닥 중심 기준 배율 확대 — 줌에 따라 램프도 함께 커진다
+    transform: translateX(-50%) scale(var(--bscale, 1));
+    transform-origin: 50% 100%;
+    border-radius: 5px 5px 3px 3px;
+    // 좌우 가장자리가 어두운 원통 음영
+    background: linear-gradient(
+      90deg,
+      #0f1218 0%,
+      #39404f 45%,
+      #20242f 70%,
+      #0b0d12 100%
+    );
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+
+    // 원통 상단 렌즈 글로우
+    &::after {
+      content: "";
+      position: absolute;
+      top: -4px;
+      left: 50%;
+      width: 20px;
+      height: 10px;
+      transform: translateX(-50%);
+      border-radius: 50%;
+      background: radial-gradient(
+        ellipse,
+        rgba(255, 248, 220, 0.95) 0%,
+        rgba(255, 248, 220, 0) 72%
+      );
+    }
+  }
+}
+
+@keyframes cat-tower-beam-swing {
+  from {
+    transform: rotate(calc(var(--tilt, 0deg) - 12deg)) scale(var(--bscale, 1));
+  }
+  to {
+    transform: rotate(calc(var(--tilt, 0deg) + 12deg)) scale(var(--bscale, 1));
   }
 }
 
@@ -1784,7 +1964,7 @@ input {
 }
 
 .cat-tower-popup-body {
-  width: 158px;
+  width: 170px;
   padding: 10px 11px 11px;
   animation: cat-tower-popup-in 0.22s cubic-bezier(0.34, 1.4, 0.64, 1) both;
   border-radius: 16px;
@@ -1802,45 +1982,11 @@ input {
   outline: 1px solid rgba(255, 255, 255, 0.22);
   outline-offset: -1px;
 
-  .cat-tower-popup-title-row {
-    display: flex;
-    align-items: baseline;
-    gap: 5px;
-
-    .cat-tower-popup-icon {
-      font-size: 14px;
-      align-self: center;
-    }
-
-    .cat-tower-popup-title {
-      font-size: 14px;
-      font-weight: 800;
-      letter-spacing: -0.2px;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    }
-
-    .cat-tower-popup-height {
-      margin-left: auto;
-      font-size: 15px;
-      font-weight: 800;
-      font-variant-numeric: tabular-nums;
-      color: #ffffff;
-
-      em {
-        font-style: normal;
-        font-size: 11px;
-        font-weight: 700;
-        opacity: 0.85;
-        margin-left: 1px;
-      }
-    }
-  }
-
+  // 타워 이름/높이는 위쪽 뱃지가 표시 — 팝업은 상태/액션만 담는다
   .cat-tower-popup-info {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-top: 8px;
     padding: 5px 8px;
     border-radius: 10px;
     font-size: 12px;

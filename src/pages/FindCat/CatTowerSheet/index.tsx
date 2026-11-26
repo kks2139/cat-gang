@@ -13,6 +13,7 @@ import {
 } from "@/store/catTower";
 import { useViewStore } from "@/store/view";
 import { catCharacters, type CatInfo, getCat } from "@/utils/cats";
+import { TOWER_SEASONS } from "@/utils/catTowerSeasons";
 import { resolveTowerColor, TOWER_THEMES } from "@/utils/catTowerThemes";
 import { NUMBER_FLOW_SPIN_TIMING } from "@/utils/constants";
 import { formatDuration } from "@/utils/helper";
@@ -56,7 +57,9 @@ export default function CatTowerSheet({
   // 부하별 오늘 남은 근무 ms — 일하는 중/퇴근 표시에 쓴다
   const workLeft = useCatTowerStore((s) => s.workLeft);
   const activeTower = useCatTowerStore((s) => getActiveTower(s.towers));
-  const { attach, detach, setColor } = useCatTowerStore((s) => s.actions);
+  const { attach, detach, setColor, setSeason, setBeams } = useCatTowerStore(
+    (s) => s.actions
+  );
   const { addToastMessage } = useViewStore((s) => s.actions);
 
   const { data, isLoading } = useMyCatsQuery();
@@ -66,6 +69,12 @@ export default function CatTowerSheet({
   const currentColor = resolveTowerColor(
     towers.find((tower) => tower.id === targetTowerId)?.color
   ).id;
+  // 현재 선택된 시즌 (없으면 null — 효과 없음)
+  const currentSeason =
+    towers.find((tower) => tower.id === targetTowerId)?.season ?? null;
+  // 조명 표시 여부 (밤낮 무관 — 컬럼 부재 환경 폴백 true)
+  const currentBeams =
+    towers.find((tower) => tower.id === targetTowerId)?.beams ?? true;
 
   // 유효한 고양이만 매핑 (키: `${name}_${createdAt}`)
   const myCats = (data
@@ -167,6 +176,10 @@ export default function CatTowerSheet({
                   <span aria-hidden>🎨</span>색을 골라 타워를 꾸며본다옹
                 </li>
                 <li>
+                  <span aria-hidden>🌸</span>계절을 고르면 타워 주변에 꽃잎과
+                  눈이 내린다옹
+                </li>
+                <li>
                   <span aria-hidden>🔄</span>언제든 다시 바꿀 수 있다옹
                 </li>
               </ul>
@@ -196,6 +209,11 @@ export default function CatTowerSheet({
                               <span className={cn("tower-icon")}>🗼</span>
                               <div className={cn("info")}>
                                 <div className={cn("height-row")}>
+                                  {tower.name && (
+                                    <span className={cn("name")}>
+                                      {tower.name}
+                                    </span>
+                                  )}
                                   <NumberFlow
                                     className={cn("height")}
                                     value={height}
@@ -251,34 +269,131 @@ export default function CatTowerSheet({
                   )}
                 </>
               ) : mode === "decor" ? (
-                <ul className={cn("color-grid")}>
-                  {TOWER_THEMES.map((t) => (
-                    <li key={t.id}>
+                <>
+                  <p className={cn("decor-label")}>타워 색상</p>
+                  <ul className={cn("color-grid")}>
+                    {/* 과거 선택분 렌더 보존용 hidden 테마는 노출하지 않는다 */}
+                    {TOWER_THEMES.filter((t) => !t.hidden).map((t) => (
+                      <li key={t.id}>
+                        <button
+                          type="button"
+                          className={cn("color-swatch")}
+                          data-selected={currentColor === t.id}
+                          onClick={() => {
+                            if (!targetTowerId) {
+                              return;
+                            }
+
+                            setColor(targetTowerId, t.id);
+                            addToastMessage({
+                              message: `타워 색을 ${t.name}으로 바꿨다옹!`,
+                              position: "top",
+                            });
+                          }}
+                        >
+                          <span className={cn("chips")}>
+                            <i style={{ background: t.day.trunkA }} />
+                            <i style={{ background: t.day.trunkB }} />
+                            <i style={{ background: t.day.nest }} />
+                          </span>
+                          <span className={cn("name")}>{t.name}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <p className={cn("decor-label")}>조명</p>
+                  <button
+                    type="button"
+                    className={cn("beam-toggle")}
+                    data-on={currentBeams}
+                    onClick={() => {
+                      if (!targetTowerId) {
+                        return;
+                      }
+
+                      setBeams(targetTowerId, !currentBeams);
+                      addToastMessage({
+                        message: currentBeams
+                          ? "조명을 껐다옹."
+                          : "조명을 켰다옹! 타워 앞에 빛기둥이 솟아난다옹!",
+                        position: "top",
+                      });
+                    }}
+                  >
+                    <span className={cn("beam-state")}>
+                      {currentBeams ? "켜짐" : "꺼짐"}
+                    </span>
+                    <span className={cn("beam-switch")} aria-hidden />
+                  </button>
+
+                  <p className={cn("decor-label")}>계절 효과</p>
+                  <ul className={cn("color-grid")}>
+                    <li>
                       <button
                         type="button"
                         className={cn("color-swatch")}
-                        data-selected={currentColor === t.id}
+                        data-selected={!currentSeason}
                         onClick={() => {
-                          if (!targetTowerId) {
+                          if (!targetTowerId || !currentSeason) {
                             return;
                           }
 
-                          setColor(targetTowerId, t.id);
+                          setSeason(targetTowerId, null);
                           addToastMessage({
-                            message: `타워 색을 ${t.name}으로 바꿨다옹!`,
+                            message: "계절 효과를 껐다옹.",
+                            position: "top",
                           });
                         }}
                       >
                         <span className={cn("chips")}>
-                          <i style={{ background: t.day.trunkA }} />
-                          <i style={{ background: t.day.trunkB }} />
-                          <i style={{ background: t.day.nest }} />
+                          <i className={cn("chip-none")} />
                         </span>
-                        <span className={cn("name")}>{t.name}</span>
+                        <span className={cn("name")}>효과 없음</span>
                       </button>
                     </li>
-                  ))}
-                </ul>
+                    {TOWER_SEASONS.map((season) => {
+                      // 아이콘은 실제 파티클 조각 1개 모양(첫 색)으로 노출
+                      const p = season.particles[0];
+                      const shape =
+                        p.kind === "snow"
+                          ? "50%"
+                          : p.kind === "petal"
+                          ? "90% 10% 90% 10%"
+                          : "100% 4% 100% 4%";
+
+                      return (
+                        <li key={season.id}>
+                          <button
+                            type="button"
+                            className={cn("color-swatch")}
+                            data-selected={currentSeason === season.id}
+                            onClick={() => {
+                              if (!targetTowerId) {
+                                return;
+                              }
+
+                              setSeason(targetTowerId, season.id);
+                              addToastMessage({
+                                message: `계절 효과를 ${season.name}으로 바꿨다옹!`,
+                              });
+                            }}
+                          >
+                            <span className={cn("chips")}>
+                              <i
+                                style={{
+                                  background: p.color,
+                                  borderRadius: shape,
+                                }}
+                              />
+                            </span>
+                            <span className={cn("name")}>{season.name}</span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </>
               ) : isLoading ? (
                 <ul className={cn("loading")}>
                   {Array.from({ length: 4 }).map((_, i) => (
@@ -394,11 +509,13 @@ export default function CatTowerSheet({
                                   detach(cat.key);
                                   addToastMessage({
                                     message: `${cat.name}가 휴식하며 근무 시간을 회복한다옹!`,
+                                    position: "top",
                                   });
                                 } else {
                                   attach(cat.key);
                                   addToastMessage({
                                     message: `${cat.name}가 캣 타워에 붙었다옹!`,
+                                    position: "top",
                                   });
                                 }
                               }}

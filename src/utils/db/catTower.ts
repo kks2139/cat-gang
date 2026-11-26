@@ -22,17 +22,34 @@ export interface CatTowerRecord {
   attachedKeys: string[];
   /** 꾸미기 색 테마 id (cat_towers.color 컬럼 — 컬럼 추가 전엔 기본값으로 폴백) */
   color: string;
+  /** 타워 이름 (cat_towers.name 컬럼 — 컬럼 추가 전/미입력엔 null) */
+  name: string | null;
+  /** 시즌 효과 (cat_towers.season 컬럼 — spring/summer/fall/winter, 컬럼 추가 전/미선택엔 null) */
+  season: string | null;
+  /** 조명(빔) 표시 여부 (cat_towers.beams 컬럼 — 밤낮 무관, 컬럼 추가 전엔 true) */
+  beams: boolean;
   /** 완공 시각 (ms epoch) — 건설중엔 null */
   completedAt: number | null;
 }
 
-// 컬럼 추가 순서대로 폴백한다:
+// 컬럼 추가 순서대로 폴백한다 — 반드시 "최신 컬럼부터" 하나씩 뺀다:
+// - beams: 2026-11-26 조명 토글 (supabase/sql/cat_towers_beams.sql)
+// - season: 2026-11-26 계절 효과 (supabase/sql/cat_towers_season.sql)
+// - name: 2026-11-26 타워 이름 (supabase/sql/cat_towers_name.sql)
 // - id/completed_at: 2026-11-24 다중 타워 마이그레이션 (supabase/sql/cat_towers_multi.sql)
 // - color: 2026-11-23 꾸미기 색 (supabase/sql/cat_towers_color.sql)
-// 마이그레이션 전 환경(컬럼 없음)에서도 단일 타워 저장은 계속 동작하게 3단 폴백.
+// 중간 단계에서 오래된 컬럼(id/completed_at)을 함께 빼면 안 된다 — 완공 시각이
+// 조회에서 유실되면 완공 타워가 매번 재완공되고, 저장이 id 없이 upsert되면
+// 매번 중복 행이 생긴다.
 const COLUMNS_FULL =
+  "id, position, height_at, attached_keys, updated_at, created_at, completed_at, color, name, season, beams";
+const COLUMNS_NO_BEAMS =
+  "id, position, height_at, attached_keys, updated_at, created_at, completed_at, color, name, season";
+const COLUMNS_NO_SEASON =
+  "id, position, height_at, attached_keys, updated_at, created_at, completed_at, color, name";
+const COLUMNS_NO_NAME =
   "id, position, height_at, attached_keys, updated_at, created_at, completed_at, color";
-const COLUMNS_MID =
+const COLUMNS_NO_ID =
   "position, height_at, attached_keys, updated_at, created_at, color";
 const COLUMNS_BASE = "position, height_at, attached_keys, updated_at, created_at";
 
@@ -45,6 +62,9 @@ type CatTowerRow = {
   created_at?: string | null;
   completed_at?: string | null;
   color?: string | null;
+  name?: string | null;
+  season?: string | null;
+  beams?: boolean | null;
 };
 
 type CatTowerListResult = {
@@ -69,7 +89,19 @@ const fetchTowerRows = async (userKey: string): Promise<CatTowerRow[]> => {
   let { data, error } = (await query(COLUMNS_FULL)) as unknown as CatTowerListResult;
 
   if (error) {
-    ({ data, error } = (await query(COLUMNS_MID)) as unknown as CatTowerListResult);
+    ({ data, error } = (await query(COLUMNS_NO_BEAMS)) as unknown as CatTowerListResult);
+  }
+
+  if (error) {
+    ({ data, error } = (await query(COLUMNS_NO_SEASON)) as unknown as CatTowerListResult);
+  }
+
+  if (error) {
+    ({ data, error } = (await query(COLUMNS_NO_NAME)) as unknown as CatTowerListResult);
+  }
+
+  if (error) {
+    ({ data, error } = (await query(COLUMNS_NO_ID)) as unknown as CatTowerListResult);
   }
 
   if (error) {
@@ -122,6 +154,9 @@ export const fetchCatTowers = async (): Promise<CatTowerRecord[]> => {
         attachedKeys,
         // 컬럼이 아직 없으면 조회 결과에 color가 없다 — 기본 테마로 폴백
         color: typeof data.color === "string" ? data.color : "oak",
+        name: typeof data.name === "string" && data.name ? data.name : null,
+        season: typeof data.season === "string" && data.season ? data.season : null,
+        beams: typeof data.beams === "boolean" ? data.beams : true,
         completedAt: data.completed_at
           ? new Date(data.completed_at).getTime()
           : null,
@@ -154,16 +189,74 @@ export const saveCatTower = async (
       ? new Date(record.completedAt).toISOString()
       : null,
     color: record.color,
+    name: record.name,
+    season: record.season,
+    beams: record.beams,
   };
   // 생성 타입에 컬럼이 생기기 전까지 초과 프로퍼티 검사를 우회한다
   let { error } = await supabase
     .from("cat_towers")
     .upsert(fullRow as never);
 
-  // id/completed_at 컬럼이 아직 없으면(마이그레이션 전) 둘을 뺀 상태라도 저장한다 —
+  // beams 컬럼이 아직 없으면(2026-11-26 이전) 조명 플래그를 뺀 상태로 저장한다
+  if (error) {
+    const noBeamsRow = {
+      user_id: fullRow.user_id,
+      id: fullRow.id,
+      position: fullRow.position,
+      height_at: fullRow.height_at,
+      attached_keys: fullRow.attached_keys,
+      created_at: fullRow.created_at,
+      updated_at: fullRow.updated_at,
+      completed_at: fullRow.completed_at,
+      color: fullRow.color,
+      name: fullRow.name,
+      season: fullRow.season,
+    };
+
+    ({ error } = await supabase.from("cat_towers").upsert(noBeamsRow as never));
+  }
+
+  // season 컬럼이 아직 없으면(2026-11-26 이전) 계절을 뺀 상태로 저장한다
+  if (error) {
+    const noSeasonRow = {
+      user_id: fullRow.user_id,
+      id: fullRow.id,
+      position: fullRow.position,
+      height_at: fullRow.height_at,
+      attached_keys: fullRow.attached_keys,
+      created_at: fullRow.created_at,
+      updated_at: fullRow.updated_at,
+      completed_at: fullRow.completed_at,
+      color: fullRow.color,
+      name: fullRow.name,
+    };
+
+    ({ error } = await supabase.from("cat_towers").upsert(noSeasonRow as never));
+  }
+
+  // name 컬럼이 아직 없으면(2026-11-26 이전) 이름을 뺀 상태로 저장한다 —
+  // id/completed_at은 유지해야 기존 행이 갱신된다 (빼면 중복 행이 생긴다)
+  if (error) {
+    const noNameRow = {
+      user_id: fullRow.user_id,
+      id: fullRow.id,
+      position: fullRow.position,
+      height_at: fullRow.height_at,
+      attached_keys: fullRow.attached_keys,
+      created_at: fullRow.created_at,
+      updated_at: fullRow.updated_at,
+      completed_at: fullRow.completed_at,
+      color: fullRow.color,
+    };
+
+    ({ error } = await supabase.from("cat_towers").upsert(noNameRow as never));
+  }
+
+  // id/completed_at 컬럼이 아직 없으면(2026-11-24 이전) 둘을 뺀 상태라도 저장한다 —
   // 이때는 user_id가 PK라 단일 타워 upsert로 계속 동작한다
   if (error) {
-    const midRow = {
+    const noIdRow = {
       user_id: fullRow.user_id,
       position: fullRow.position,
       height_at: fullRow.height_at,
@@ -173,7 +266,7 @@ export const saveCatTower = async (
       color: fullRow.color,
     };
 
-    ({ error } = await supabase.from("cat_towers").upsert(midRow as never));
+    ({ error } = await supabase.from("cat_towers").upsert(noIdRow as never));
   }
 
   // color 컬럼이 아직 없으면 색까지 뺀 나머지 상태라도 저장한다

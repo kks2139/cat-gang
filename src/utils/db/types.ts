@@ -17,34 +17,43 @@ export type Database = {
       cat_towers: {
         Row: {
           attached_keys: Json
+          beams: boolean
           color: string
           completed_at: string | null
           created_at: string
           height_at: number
           id: string
+          name: string | null
           position: Json
+          season: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           attached_keys?: Json
+          beams?: boolean
           color?: string
           completed_at?: string | null
           created_at?: string
           height_at?: number
           id?: string
+          name?: string | null
           position: Json
+          season?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           attached_keys?: Json
+          beams?: boolean
           color?: string
           completed_at?: string | null
           created_at?: string
           height_at?: number
           id?: string
+          name?: string | null
           position?: Json
+          season?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -131,6 +140,8 @@ export type Database = {
           minion_count: number
           name: string
           total_distance: number
+          tower_count: number
+          tower_height: number
           user_id: string
         }[]
       }

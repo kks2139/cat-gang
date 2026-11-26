@@ -24,6 +24,8 @@ export interface CatTowerTheme {
   name: string;
   day: CatTowerPalette;
   night: CatTowerPalette;
+  /** UI 노출 여부 — 과거 선택분 렌더 보존용으로만 남기는 테마에 true */
+  hidden?: boolean;
 }
 
 export const TOWER_THEMES: CatTowerTheme[] = [
@@ -173,10 +175,11 @@ export const TOWER_THEMES: CatTowerTheme[] = [
       perch: "#d8c2f2",
     },
   },
-  // ----- 파스텔 -----
+  // ----- 파스텔 (2026-11-26 UI에서 제거 — 기존 선택분 렌더 보존용으로만 유지) -----
   {
     id: "pastel-pink",
     name: "파스텔 핑크",
+    hidden: true,
     day: {
       trunkA: "#d8a0b0",
       trunkB: "#eac2cd",
@@ -195,6 +198,7 @@ export const TOWER_THEMES: CatTowerTheme[] = [
   {
     id: "pastel-sky",
     name: "파스텔 하늘",
+    hidden: true,
     day: {
       trunkA: "#a3c4de",
       trunkB: "#c6dcec",
@@ -213,6 +217,7 @@ export const TOWER_THEMES: CatTowerTheme[] = [
   {
     id: "pastel-mint",
     name: "파스텔 민트",
+    hidden: true,
     day: {
       trunkA: "#9cc7ab",
       trunkB: "#c0e0cb",
@@ -231,6 +236,7 @@ export const TOWER_THEMES: CatTowerTheme[] = [
   {
     id: "pastel-lavender",
     name: "파스텔 라벤더",
+    hidden: true,
     day: {
       trunkA: "#b0a2d8",
       trunkB: "#cdc3e9",

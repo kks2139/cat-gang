@@ -61,6 +61,12 @@ export interface CatTowerState {
   attachedKeys: string[];
   /** 꾸미기 색 테마 id (`utils/catTowerThemes.ts`의 TOWER_THEMES) */
   color: string;
+  /** 타워 이름 (미입력 시 null — 높이 뱃지 표기에 쓴다) */
+  name: string | null;
+  /** 시즌 효과 (spring/summer/fall/winter — 미선택 시 null, 파티클/덮개 효과) */
+  season: string | null;
+  /** 조명(빔) 표시 여부 — 밤낮 무관, 꾸미기 시트에서 토글 */
+  beams: boolean;
   /** 완공 시각 (ms epoch) — 건설중엔 null */
   completedAt: number | null;
 }
@@ -112,6 +118,12 @@ interface CatTowerStore {
     detach: (key: string) => void;
     /** 타워 색 테마 변경 (꾸미기) */
     setColor: (id: string, color: string) => void;
+    /** 타워 이름 변경 (null = 삭제 — 꼭대기 깃발도 내린다) */
+    setName: (id: string, name: string | null) => void;
+    /** 타워 시즌 효과 변경 (null = 효과 없음 — 파티클/발판 덮개 제거) */
+    setSeason: (id: string, season: string | null) => void;
+    /** 조명(빔) 표시 토글 (밤낮 무관) */
+    setBeams: (id: string, beams: boolean) => void;
     /** 실시간 높이 재계산 + 완공 판정 (타이머에서 주기 호출) */
     tick: () => void;
   };
@@ -530,6 +542,9 @@ export const useCatTowerStore = create<CatTowerStore>()(
             heightAt: 0,
             attachedKeys: [],
             color: DEFAULT_TOWER_COLOR,
+            name: null,
+            season: null,
+            beams: true,
             completedAt: null,
           };
 
@@ -616,6 +631,57 @@ export const useCatTowerStore = create<CatTowerStore>()(
 
             if (idx >= 0) {
               state.towers[idx].color = color;
+            }
+          });
+        },
+        setName(id, name) {
+          const tower = get().towers.find((t) => t.id === id);
+
+          if (!tower || tower.name === name) {
+            return;
+          }
+
+          // 이름도 성장 계산과 무관 — 기준점 스냅샷 없이 그대로 저장한다
+          void saveCatTower({ ...tower, name });
+          set((state) => {
+            const idx = state.towers.findIndex((t) => t.id === id);
+
+            if (idx >= 0) {
+              state.towers[idx].name = name;
+            }
+          });
+        },
+        setSeason(id, season) {
+          const tower = get().towers.find((t) => t.id === id);
+
+          if (!tower || tower.season === season) {
+            return;
+          }
+
+          // 시즌도 성장 계산과 무관 — 기준점 스냅샷 없이 그대로 저장한다
+          void saveCatTower({ ...tower, season });
+          set((state) => {
+            const idx = state.towers.findIndex((t) => t.id === id);
+
+            if (idx >= 0) {
+              state.towers[idx].season = season;
+            }
+          });
+        },
+        setBeams(id, beams) {
+          const tower = get().towers.find((t) => t.id === id);
+
+          if (!tower || tower.beams === beams) {
+            return;
+          }
+
+          // 조명 토글도 성장 계산과 무관 — 기준점 스냅샷 없이 그대로 저장한다
+          void saveCatTower({ ...tower, beams });
+          set((state) => {
+            const idx = state.towers.findIndex((t) => t.id === id);
+
+            if (idx >= 0) {
+              state.towers[idx].beams = beams;
             }
           });
         },

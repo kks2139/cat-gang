@@ -75,7 +75,7 @@ const OWN_CAT_KEY_TOKEN = "_";
 const PAW_INTERVAL_METER = 7; // 한 걸음(발자국) 기본 간격 (m)
 const PAW_SPREAD_METER = 1.2; // 중심축에서 좌우로 벌어지는 오프셋 (m)
 const PAW_ICON_PX = 22; // 발자국 아이콘 픽셀 크기 (symbol/오버레이 공용 — 살짝 크게)
-const PAW_MAX_COUNT = 30; // 발자국 최대 개수 (성능 보호 — 오래된 것부터 잘라낸다)
+const PAW_MAX_COUNT = 20; // 발자국 최대 개수 (성능 보호 — 오래된 것부터 잘라낸다)
 const WALK_DURATION = 1500; // 캐릭터 이동 애니메이션 시간 (ms)
 const MAX_PAWS_PER_MOVE = 50; // 한 번의 위치 업데이트당 찍히는 최대 발자국 수
 const MAX_SAVED_PATH = 600; // 스토리지에 저장할 궤적 좌표 최대 개수
@@ -451,6 +451,8 @@ interface Props {
   onTowerAddCats?: () => void;
   /** 캣 타워 팝업의 꾸미기 클릭 — 해당 타워의 색상 선택 시트를 연다 */
   onTowerDecor?: (towerId: string) => void;
+  /** 캣 타워 팝업의 이름 짓기 클릭 — 이름 입력 다이얼로그를 연다 */
+  onTowerName?: (towerId: string) => void;
   /** 캣 타워를 새로 세웠을 때 */
   onTowerPlaced?: () => void;
 }
@@ -467,6 +469,7 @@ function MapContent({
   onDistanceChange,
   onTowerAddCats,
   onTowerDecor,
+  onTowerName,
   onTowerPlaced,
 }: Omit<Props, "onClickKkang">) {
   const isStopFocusMe = useViewStore((s) => s.isStopFocusMe);
@@ -1059,7 +1062,7 @@ function MapContent({
       myCatRef.current?.getLngLat(),
       ...catMarkersRef.current.map((marker) => marker.getLngLat()),
       ...Object.values(ownCatMarkersRef.current).map((marker) =>
-        marker.getLngLat(),
+        marker.getLngLat()
       ),
       ...itemMarkersRef.current.map((marker) => marker.getLngLat()),
       ...towers.map((tower) => ({ lat: tower.lat, lng: tower.lng })),
@@ -1112,7 +1115,7 @@ function MapContent({
         const [lng, lat] = getFreeSpawnLocation(
           myPosition,
           BOUNDARY_METER_OF_ME,
-          getSpawnBlockers(),
+          getSpawnBlockers()
         );
 
         const marker = createMarker({
@@ -1827,7 +1830,11 @@ function MapContent({
 
       if (!myPosition || !map) return;
 
-      const [lng, lat] = getFreeSpawnLocation(myPosition, 70, getSpawnBlockers());
+      const [lng, lat] = getFreeSpawnLocation(
+        myPosition,
+        70,
+        getSpawnBlockers()
+      );
       // 광고 보상(+2)과의 균형을 위해 스폰 확률을 10%(아이템당 약 3.3%)로 낮춘다
       // — 30번 시도 중 3번만 스폰되며, 각 아이템은 시도당 1/30 확률로 나온다
       const randomNum = getRandomNumber(30);
@@ -1967,6 +1974,7 @@ function MapContent({
         getMyPosition={getMyPosition}
         onAddCats={onTowerAddCats}
         onDecorTower={(towerId) => onTowerDecor?.(towerId)}
+        onNameTower={(towerId) => onTowerName?.(towerId)}
         onTowerPlaced={onTowerPlaced}
       />
     </div>

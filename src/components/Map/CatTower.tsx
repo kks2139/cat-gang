@@ -15,6 +15,7 @@ import {
   useCatTowerStore,
 } from "@/store/catTower";
 import { useViewStore } from "@/store/view";
+import { resolveTowerSeason } from "@/utils/catTowerSeasons";
 import {
   type CatTowerTheme,
   resolveTowerColor,
@@ -114,6 +115,39 @@ const ZONE_PULSE_REACH_M = TOWER_ZONE_RADIUS / 3; // 파동이 퍼지는 반경 
 const HAMMER_STAY_MS = 3600;
 const WORK_DUST_COUNT = 8;
 
+// 시즌 파티클 — 파티클 배치(각도/반경/속도)를 타워별로 결정적으로 유지하기 위한
+// 문자열 해시 기반 난수 (Math.random은 렌더 재생성마다 배치를 흔들린다)
+const hashString = (s: string) => {
+  let h = 7;
+
+  for (let i = 0; i < s.length; i += 1) {
+    h = (h * 31 + s.charCodeAt(i)) % 2147483647;
+  }
+
+  return h || 1;
+};
+
+const seededRand = (seed: number) => {
+  let s = seed % 2147483647;
+
+  if (s <= 0) {
+    s += 2147483646;
+  }
+
+  return () => {
+    s = (s * 16807) % 2147483647;
+
+    return (s - 1) / 2147483646;
+  };
+};
+
+// 시즌 파티클 화면 스케일 — 낙하 시작점(꼭대기 위)/낙하 범위/크기를 현재 줌의
+// px-per-meter에 비례시켜 줌인/아웃에도 타워와 비례 크기를 유지한다
+const SEASON_PPM_REF = 2.1; // 기준 px/m (줌 18 부근) — 이 배율에서 파티클 기본 크기
+const SEASON_SPAN_MIN_PX = 36; // 낙하 범위 최소 (부감 등에서 너무 짧아지지 않게)
+const SEASON_SPAN_MAX_PX = 400; // 낙하 범위 최대 (고줌+고탑에서 화면 밖으로 너무 멀어지지 않게)
+const SEASON_SPAWN_MARGIN_M = 4; // 꼭대기 층 위 생성 여유 (축소 스케일 m)
+
 // 건물 위 배치 금지 — 타워가 건물에 묻히는 걸 막는 방식으로,
 // 위치 지정 시 클릭 자리가 건물이면 세우지 않는다 (게임 규칙).
 const SOURCE_ID = "cat-tower-source";
@@ -126,6 +160,8 @@ const LAYER_BRANCH = "cat-tower-branch";
 const LAYER_NEST = "cat-tower-nest";
 const LAYER_PERCH = "cat-tower-perch";
 const LAYER_PAW = "cat-tower-paw";
+// 시즌 덮개 (발판 위 꽃잎/낙엽/눈 층 — 봄/가을/겨울에만 지물이 생긴다)
+const LAYER_MANTLE = "cat-tower-mantle";
 const LAYER_ZONE_FILL = "cat-tower-zone-fill";
 const LAYER_ZONE_LINE = "cat-tower-zone-line";
 
@@ -137,6 +173,7 @@ export const TOWER_HIT_LAYERS = [
   LAYER_NEST,
   LAYER_PERCH,
   LAYER_PAW,
+  LAYER_MANTLE,
 ];
 
 // 스타일의 3D 건물 레이어 — 위치 지정 시 건물 위 배치 판정에 사용
@@ -187,6 +224,19 @@ const trunkBandColor = (theme: CatTowerTheme, isNight: boolean): never => {
   const pal = isNight ? theme.night : theme.day;
 
   return ["match", ["get", "band"], 0, pal.trunkA, pal.trunkB] as never;
+};
+
+// 시즌 덮개 색 — hex를 밝게 섞어 밤 팔레트용 톤을 만든다
+const lightenSeasonMantle = (hex: string): string => {
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n >> 16) & 0xff;
+  const g = (n >> 8) & 0xff;
+  const b = n & 0xff;
+  const mix = (c: number) => Math.round(c + (255 - c) * 0.35);
+
+  return `#${((mix(r) << 16) | (mix(g) << 8) | mix(b))
+    .toString(16)
+    .padStart(6, "0")}`;
 };
 
 // 평면 근사 좌표 변환 (근접 거리라 충분) — 헬퍼의 getRandomLocationInCircle과 동일 방식
@@ -345,7 +395,8 @@ const getTowerData = (
   lat: number,
   lng: number,
   realHeight: number,
-  tid: string
+  tid: string,
+  season?: string | null
 ): GeoJSONData => {
   // 축소 비율 × 전체 확대 배율
   const visualHeight = realHeight * TOWER_VISUAL_HEIGHT_RATIO * TOWER_SCALE;
@@ -569,6 +620,87 @@ const getTowerData = (
 
     // 꼭대기 발판 중앙 흰색 발바닥 — 정북 방향, 둥지 문양보다 크게
     pushPawMark(visualHeight + TOWER_PERCH_T * TOWER_SCALE, 90, TOWER_SCALE);
+
+    // 시즌 덮개 — 봄(꽃잎)/가을(낙엽)/겨울(눈)은 발판 위에 얇은 층이 쌓인다.
+    // 꼭대기 발판 전체 + 각 둥지 발판 위로 발판보다 살짝 작은 원판을 얹는다
+    const seasonInfo = resolveTowerSeason(season);
+
+    if (seasonInfo?.mantleColor && realHeight > 0) {
+      // 꼭대기 발판 덮개 — 발바닥 마크를 살짝 덮어도 시즌 느낌이 우선
+      const perchTop = visualHeight + TOWER_PERCH_T * TOWER_SCALE;
+
+      features.push({
+        type: "Feature",
+        properties: {
+          tid,
+          kind: "mantle",
+          base: perchTop,
+          h: perchTop + seasonInfo.mantleThicknessM * TOWER_SCALE,
+        },
+        geometry: {
+          type: "Polygon",
+          coordinates: getCirclePolygon(
+            lat,
+            lng,
+            PERCH_RADIUS_M * TOWER_SCALE * 0.98
+          ),
+        },
+      });
+
+      // 둥지 발판 덮개 — 각 가지 끝 둥지 위에 얹는다 (가지 루프와 동일 조건)
+      let mk = 0;
+
+      for (
+        let realAt = BRANCH_START_M;
+        realAt < realHeight;
+        realAt += BRANCH_INTERVAL_M, mk += 1
+      ) {
+        const attachH = realAt * TOWER_VISUAL_HEIGHT_RATIO * TOWER_SCALE;
+
+        if (attachH + BRANCH_STACK_M + BRANCH_PERCH_CLEAR_M >= visualHeight) {
+          break;
+        }
+
+        const angleRad =
+          ((BRANCH_ANGLE_OFFSET + mk * BRANCH_GOLDEN_ANGLE) * Math.PI) / 180;
+        const reach =
+          (BRANCH_REACH_MIN_M +
+            (BRANCH_BASE_REACH_M - BRANCH_REACH_MIN_M) *
+              Math.pow(BRANCH_REACH_SHRINK, mk)) *
+          TOWER_SCALE;
+        const nestRadius =
+          (NEST_RADIUS_MIN_M +
+            (NEST_RADIUS_M - NEST_RADIUS_MIN_M) *
+              Math.pow(NEST_RADIUS_SHRINK, mk)) *
+          TOWER_SCALE;
+        const nestTop =
+          attachH +
+          (BRANCH_SEG_COUNT - 1) * BRANCH_SEG_RISE_M * TOWER_SCALE +
+          BRANCH_SEG_H_M * TOWER_SCALE +
+          NEST_T;
+
+        features.push({
+          type: "Feature",
+          properties: {
+            tid,
+            kind: "mantle",
+            base: nestTop,
+            h: nestTop + seasonInfo.mantleThicknessM * TOWER_SCALE,
+          },
+          geometry: {
+            type: "Polygon",
+            coordinates: getOffsetCirclePolygon(
+              lat,
+              lng,
+              reach * Math.cos(angleRad),
+              reach * Math.sin(angleRad),
+              nestRadius * 0.98,
+              24
+            ),
+          },
+        });
+      }
+    }
   }
 
   return {
@@ -585,8 +717,13 @@ const getTowersData = (
   type: "FeatureCollection",
   features: towers.flatMap(
     (tower) =>
-      getTowerData(tower.lat, tower.lng, heights[tower.id] ?? 0, tower.id)
-        .features
+      getTowerData(
+        tower.lat,
+        tower.lng,
+        heights[tower.id] ?? 0,
+        tower.id,
+        tower.season
+      ).features
   ),
 });
 
@@ -613,15 +750,17 @@ const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 
 // ----- 타워 옆 팝업 정보창 (포탈로 마커 엘리먼트에 렌더) -----
 function TowerPopupContent({
-  height,
+  hasName,
   attachedCount,
   workingCount,
   isCompleted,
   onAddCats,
   onDecor,
   onMove,
+  onName,
 }: {
-  height: number;
+  /** 타워 이름 설정 여부 — 버튼 라벨(이름 짓기/바꾸기)에 쓴다 */
+  hasName: boolean;
   /** 붙어 있는 부하 수 */
   attachedCount: number;
   /** 그중 오늘 근무가 남은(일하는 중) 부하 수 */
@@ -630,19 +769,13 @@ function TowerPopupContent({
   onAddCats?: () => void;
   onDecor: () => void;
   onMove: () => void;
+  onName: () => void;
 }) {
   const restingCount = attachedCount - workingCount;
 
   return (
     <div className="cat-tower-popup-body">
-      <div className="cat-tower-popup-title-row">
-        <span className="cat-tower-popup-icon">🗼</span>
-        <span className="cat-tower-popup-title">캣 타워</span>
-        <span className="cat-tower-popup-height">
-          {height.toFixed(1)}
-          <em>m</em>
-        </span>
-      </div>
+      {/* 타워 이름/높이는 위쪽 뱃지가 표시하므로 팝업에선 상태/액션만 담는다 */}
       {isCompleted ? (
         <div className="cat-tower-popup-info">완공 타워다옹!</div>
       ) : attachedCount === 0 ? (
@@ -677,6 +810,13 @@ function TowerPopupContent({
         <button
           type="button"
           className="cat-tower-popup-btn sub"
+          onClick={onName}
+        >
+          {hasName ? "이름 바꾸기" : "이름 짓기"}
+        </button>
+        <button
+          type="button"
+          className="cat-tower-popup-btn sub"
           onClick={onDecor}
         >
           꾸미기
@@ -700,6 +840,8 @@ interface Props {
   onAddCats?: () => void;
   /** 팝업의 꾸미기 클릭 — 해당 타워의 색상 선택 바텀시트를 연다 */
   onDecorTower?: (towerId: string) => void;
+  /** 팝업의 이름 짓기 클릭 — 이름 입력 다이얼로그를 연다 (팝업은 유지) */
+  onNameTower?: (towerId: string) => void;
   /** 타워를 새로 세웠을 때 */
   onTowerPlaced?: () => void;
 }
@@ -718,6 +860,7 @@ export default function CatTower({
   getMyPosition,
   onAddCats,
   onDecorTower,
+  onNameTower,
   onTowerPlaced,
 }: Props) {
   const map = useViewStore((s) => s.map);
@@ -744,6 +887,16 @@ export default function CatTower({
   const zonePulseMarkerRef = useRef<Marker | null>(null);
   // 공사중 모션 마커들(먼지 구름 여럿 + 망치 1개) — 근무 중 부하가 있을 때만
   const workMarkersRef = useRef<Marker[]>([]);
+  // 밤 조명 마커들 — 타워별 기초 앞 양옆 2개 (야간에만 생성).
+  // 줌 배율 갱신을 위해 요소/타워 메타를 함께 둔다
+  const beamMarkersRef = useRef<
+    Array<{ marker: Marker; el: HTMLElement; towerId: string }>
+  >([]);
+  // 시즌 파티클 마커들 — 시즌 지정 타워별 N개 (꽃잎/잎/눈송이).
+  // 화면 배율 갱신에 필요한 메타(내부 요소/타워/드리프트)를 함께 둔다
+  const seasonMarkersRef = useRef<
+    Array<{ marker: Marker; el: HTMLElement; towerId: string; driftM: number }>
+  >([]);
   // 근무 중(오늘 근무가 남은) 부하가 있는 건설중 타워 id — 공사 모션 조건.
   // 부하별 남은 시간은 분 단위로 반올림돼 틱마다 흔들리지 않고, 소진(퇴근) 시에만
   // 값이 바뀌므로 모션이 의도 없이 재시작되지 않는다
@@ -870,9 +1023,15 @@ export default function CatTower({
               tower.lat,
               tower.lng,
               state.heights[tower.id] ?? 0,
-              tower.id
+              tower.id,
+              tower.season
             ).features
         );
+
+      // 모션 중에도 대상 타워의 시즌(덮개)을 유지한다
+      const motionSeason = useCatTowerStore
+        .getState()
+        .towers.find((tower) => tower.id === towerId)?.season;
 
       const startAt = performance.now();
 
@@ -884,7 +1043,8 @@ export default function CatTower({
           type: "FeatureCollection",
           features: [
             ...otherFeatures,
-            ...getTowerData(lat, lng, realHeight, towerId).features,
+            ...getTowerData(lat, lng, realHeight, towerId, motionSeason)
+              .features,
           ],
         });
 
@@ -998,6 +1158,23 @@ export default function CatTower({
         "fill-extrusion-base": ["get", "base"],
         "fill-extrusion-color": "#ffffff",
         "fill-extrusion-opacity": 0.95,
+      },
+    });
+
+    // 시즌 덮개 (봄 꽃잎/가을 낙엽/겨울 눈 — 발판 위 얇은 층).
+    // 발바닥 마크를 덮어야 하므로 paw 레이어 뒤(위)에 추가한다.
+    // 색은 시즌별로 다르므로 tid match 표현식은 아니고 kind 매칭 + 이후
+    // 낮/밤 effect에서 타워별로 교체한다
+    map.addLayer({
+      id: LAYER_MANTLE,
+      type: "fill-extrusion",
+      source: SOURCE_ID,
+      filter: ["==", ["get", "kind"], "mantle"],
+      paint: {
+        "fill-extrusion-height": ["get", "h"],
+        "fill-extrusion-base": ["get", "base"],
+        "fill-extrusion-color": "#f4f9ff",
+        "fill-extrusion-opacity": 0.92,
       },
     });
 
@@ -1138,6 +1315,29 @@ export default function CatTower({
         "fill-extrusion-color",
         makeTowerColorPaint("foundation")
       );
+    }
+
+    // 시즌 덮개 — 타워별 시즌 색 (밤엔 명도를 올려 어두운 지도에서 보이게)
+    if (map.getLayer(LAYER_MANTLE)) {
+      const mantleBranches: unknown[] = [];
+      const fallbackSeason = resolveTowerSeason(towers[0]?.season);
+
+      towers.forEach((tower) => {
+        const season = resolveTowerSeason(tower.season);
+        const base = season?.mantleColor ?? "#f4f9ff";
+        const color = isNight ? lightenSeasonMantle(base) : base;
+
+        mantleBranches.push(tower.id, color);
+      });
+
+      const fallbackMantle = fallbackSeason?.mantleColor ?? "#f4f9ff";
+
+      map.setPaintProperty(LAYER_MANTLE, "fill-extrusion-color", [
+        "match",
+        ["get", "tid"],
+        ...mantleBranches,
+        isNight ? lightenSeasonMantle(fallbackMantle) : fallbackMantle,
+      ] as never);
     }
   }, [map, towers, isNight]);
 
@@ -1282,6 +1482,237 @@ export default function CatTower({
 
     return cleanup;
   }, [map, towers, workingTowerId]);
+
+  // 시즌 파티클/밤 조명 화면 배율 갱신 — 현재 줌의 px-per-meter에 비례해
+  // 낙하 범위·크기를 다시 계산해 CSS 변수로 반영한다 (줌인/아웃에서도
+  // 타워와 비례 크기를 유지 — 고정 px의 이질감 해소)
+  const updateFxScale = useCallback(() => {
+    if (!map) {
+      return;
+    }
+
+    const state = useCatTowerStore.getState();
+    const sinPitch = Math.sin((map.getPitch() * Math.PI) / 180);
+    const cache: Record<
+      string,
+      { ppm: number; spanPx: number } | undefined
+    > = {};
+
+    const infoOf = (
+      towerId: string
+    ): { ppm: number; spanPx: number } | undefined => {
+      const hit = cache[towerId];
+
+      if (hit) {
+        return hit;
+      }
+
+      const tower = state.towers.find((t) => t.id === towerId);
+
+      if (!tower) {
+        return undefined;
+      }
+
+      const realHeight = state.heights[towerId] ?? 0;
+      const pos = map.project([tower.lng, tower.lat]);
+      const probe = map.project([
+        tower.lng + metersToDegLng(1, tower.lat),
+        tower.lat,
+      ]);
+      // 지상 1m가 화면에서 차지하는 px (줌 배율)
+      const ppm = Math.hypot(probe.x - pos.x, probe.y - pos.y) || 0.3;
+      const visualTop =
+        realHeight * TOWER_VISUAL_HEIGHT_RATIO * TOWER_SCALE +
+        TOWER_PERCH_T * TOWER_SCALE;
+      // 꼭대기 층보다 약간 위에서 생성 — 타워 전체를 감싸고 떨어진다
+      const spawnH = visualTop + SEASON_SPAWN_MARGIN_M;
+      // 수직 거리의 화면 투영은 피치에 비례해 줄어든다 (부감 = 0)
+      const spanPx = spawnH * ppm * sinPitch;
+
+      cache[towerId] = {
+        ppm,
+        spanPx: Math.min(
+          SEASON_SPAN_MAX_PX,
+          Math.max(SEASON_SPAN_MIN_PX, spanPx)
+        ),
+      };
+
+      return cache[towerId];
+    };
+
+    // 시즌 파티클 — 낙하 시작점/범위/드리프트/크기
+    seasonMarkersRef.current.forEach(({ el, towerId, driftM }) => {
+      const info = infoOf(towerId);
+
+      if (!info) {
+        return;
+      }
+
+      const scale = Math.min(
+        2.4,
+        Math.max(0.55, Math.pow(info.ppm / SEASON_PPM_REF, 0.6))
+      );
+      const mag = Math.min(40, Math.max(2, Math.abs(driftM) * info.ppm));
+      const drift = driftM < 0 ? -mag : mag;
+
+      el.style.setProperty("--h0", `-${info.spanPx.toFixed(1)}px`);
+      el.style.setProperty("--drift", `${drift.toFixed(1)}px`);
+      el.style.setProperty("--pscale", scale.toFixed(2));
+    });
+
+    // 밤 조명 — 빔/램프 전체 배율 (래퍼에 변수를 심어 자식들이 상속)
+    beamMarkersRef.current.forEach(({ el, towerId }) => {
+      const info = infoOf(towerId);
+
+      if (!info) {
+        return;
+      }
+
+      el.style.setProperty(
+        "--bscale",
+        Math.min(2.4, Math.max(0.55, Math.pow(info.ppm / SEASON_PPM_REF, 0.6)))
+          .toFixed(2)
+      );
+    });
+  }, [map]);
+
+  // --- 조명 (검색등 — 기초 앞 양옆에서 하늘로 쏘는 빛기둥) ---
+  // 지상 좌표에 바닥을 고정한 DOM 마커 + CSS 스윙 모션(합성 스레드, 맵 렌더 비용 0).
+  // 밤낮 무관 — 꾸미기 시트의 타워별 beams 토글로 on/off 한다
+  useEffect(() => {
+    if (!map) {
+      return;
+    }
+
+    const beams: Array<{ marker: Marker; el: HTMLElement; towerId: string }> =
+      [];
+
+    towers
+      .filter((tower) => tower.beams)
+      .forEach((tower) => {
+        const lat = tower.lat - metersToDegLat(FOUNDATION_EDGE_M * 0.75);
+
+        [-0.55, 0.55].forEach((dirX) => {
+          const el = document.createElement("div");
+          el.className = `cat-tower-beam ${dirX < 0 ? "left" : "right"}`;
+          el.innerHTML = '<i></i><span class="lamp"></span>';
+
+          beams.push({
+            marker: new Marker({ element: el, anchor: "bottom" })
+              .setLngLat([
+                tower.lng + metersToDegLng(FOUNDATION_EDGE_M * dirX, tower.lat),
+                lat,
+              ] as LngLatLike)
+              .addTo(map),
+            el,
+            towerId: tower.id,
+          });
+        });
+      });
+
+    beamMarkersRef.current = beams;
+    updateFxScale();
+
+    return () => {
+      beamMarkersRef.current.forEach(({ marker }) => marker.remove());
+      beamMarkersRef.current = [];
+    };
+  }, [map, towers, updateFxScale]);
+
+  // --- 시즌 파티클 (타워 주변을 떠다니는 꽃잎/잎/눈송이) ---
+  // DOM 마커 + CSS 애니메이션(합성 스레드) — 맵 렌더 비용 0.
+  // towers 배열 참조는 색/이름 변경에도 매번 바뀌므로, 시즌/위치 조합의
+  // 시그니처가 바뀔 때만 파티클을 다시 만들어 모션이 리셋되지 않게 한다
+  const seasonSig = towers
+    .map(
+      (t) => `${t.id}:${t.lat.toFixed(6)},${t.lng.toFixed(6)}:${t.season ?? ""}`
+    )
+    .join("|");
+
+  useEffect(() => {
+    if (!map) {
+      return;
+    }
+
+    const cleanup = () => {
+      seasonMarkersRef.current.forEach(({ marker }) => marker.remove());
+      seasonMarkersRef.current = [];
+    };
+
+    const state = useCatTowerStore.getState();
+    const seasonalTowers = state.towers.filter((tower) => tower.season);
+
+    if (seasonalTowers.length === 0) {
+      cleanup();
+      return;
+    }
+
+    const markers: NonNullable<(typeof seasonMarkersRef.current)[number]>[] =
+      [];
+
+    seasonalTowers.forEach((tower) => {
+      const season = resolveTowerSeason(tower.season);
+
+      if (!season) {
+        return;
+      }
+
+      const rand = seededRand(hashString(`${tower.id}:${tower.season}`));
+
+      for (let i = 0; i < season.particleCount; i += 1) {
+        const angle = rand() * Math.PI * 2;
+        const radius = (2.5 + rand() * 9.5) * TOWER_SCALE;
+        const particle = season.particles[i % season.particles.length];
+        const isSnow = particle.kind === "snow";
+        const duration = isSnow ? 6.5 + rand() * 3 : 4.5 + rand() * 2.5;
+        const driftM = (rand() < 0.5 ? -1 : 1) * (0.6 + rand() * 1.6);
+        const el = document.createElement("div");
+
+        el.className = "cat-tower-season-p";
+        el.innerHTML =
+          `<i class="${particle.kind}" style="background:${particle.color};` +
+          `--delay:${(rand() * duration).toFixed(2)}s;` +
+          `--dur:${duration.toFixed(2)}s;` +
+          `--spin:${Math.round(160 + rand() * 320)}deg"></i>`;
+
+        markers.push({
+          marker: new Marker({ element: el, anchor: "center" })
+            .setLngLat([
+              tower.lng + metersToDegLng(radius * Math.sin(angle), tower.lat),
+              tower.lat + metersToDegLat(radius * Math.cos(angle)),
+            ] as LngLatLike)
+            .addTo(map),
+          el: el.firstElementChild as HTMLElement,
+          towerId: tower.id,
+          driftM,
+        });
+      }
+    });
+
+    seasonMarkersRef.current = markers;
+    updateFxScale();
+
+    return cleanup;
+  }, [map, seasonSig, updateFxScale]);
+
+  // 줌/피치 변화에 파티클·조명 배율을 따라잡는다 + 타워 성장(높이 변화)도 1초 간격으로
+  useEffect(() => {
+    if (!map) {
+      return;
+    }
+
+    updateFxScale();
+    map.on("zoom", updateFxScale);
+    map.on("pitch", updateFxScale);
+
+    const timer = window.setInterval(updateFxScale, 1000);
+
+    return () => {
+      map.off("zoom", updateFxScale);
+      map.off("pitch", updateFxScale);
+      window.clearInterval(timer);
+    };
+  }, [map, updateFxScale]);
 
   // --- 위치 지정 모드 구역 토글 + 중앙 펄스 링 (DOM/CSS 애니메이션) ---
   // 파동을 WebGL 지물로 그리면 프레임마다 GeoJSON 재생성 + GPU 지물 렌더로 렉이 걸려
@@ -1785,6 +2216,9 @@ export default function CatTower({
       workMarkersRef.current.forEach((marker) => marker.remove());
       workMarkersRef.current = [];
 
+      seasonMarkersRef.current.forEach(({ marker }) => marker.remove());
+      seasonMarkersRef.current = [];
+
       popupMarkerRef.current?.remove();
       popupMarkerRef.current = null;
 
@@ -1809,6 +2243,7 @@ export default function CatTower({
           LAYER_NEST,
           LAYER_PERCH,
           LAYER_PAW,
+          LAYER_MANTLE,
           LAYER_ZONE_FILL,
           LAYER_ZONE_LINE,
         ].forEach((layerId) => {
@@ -1837,9 +2272,12 @@ export default function CatTower({
 
   return (
     <>
-      {Object.entries(labelEls).map(([id, el]) =>
-        createPortal(
+      {Object.entries(labelEls).map(([id, el]) => {
+        const name = towers.find((tower) => tower.id === id)?.name ?? null;
+
+        return createPortal(
           <>
+            {name && <span className="cat-tower-label-name">{name}</span>}
             <span className="cat-tower-label-icon">🗼</span>
             <NumberFlow
               className="cat-tower-label-num"
@@ -1853,14 +2291,14 @@ export default function CatTower({
             <span className="cat-tower-label-unit">m</span>
           </>,
           el
-        )
-      )}
+        );
+      })}
 
       {popupEl &&
         popupTower &&
         createPortal(
           <TowerPopupContent
-            height={heights[popupTower.id] ?? 0}
+            hasName={!!popupTower.name}
             attachedCount={popupTower.attachedKeys.length}
             workingCount={popupWorkingCount}
             isCompleted={!!popupTower.completedAt}
@@ -1876,6 +2314,9 @@ export default function CatTower({
               // 팝업(타워 포커스)을 유지한 채 색상 선택 시트만 연다 —
               // 시트에서 고른 색이 포커스된 타워에 실시간으로 반영된다
               onDecorTower?.(popupTower.id);
+            }}
+            onName={() => {
+              onNameTower?.(popupTower.id);
             }}
             onMove={() => {
               const movedTowerId = popupTower.id;
